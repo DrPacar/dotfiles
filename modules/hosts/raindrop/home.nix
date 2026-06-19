@@ -1,7 +1,7 @@
-{ self, pkgs, ... }:
+{ self, inputs, ... }:
 {
   flake.homeModules.raindropHome =
-    { ... }:
+    { pkgs, ... }:
     {
       home.username = "luka";
       home.homeDirectory = "/home/luka";
