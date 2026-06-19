@@ -1,6 +1,6 @@
 { ... }:
 {
-  flake.homeModules.ssh =
+  flake.homeModules.git =
     { ... }:
     {
       programs.git = {

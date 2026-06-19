@@ -10,7 +10,8 @@
         flake = "/home/luka/dotfiles/";
       };
 
-      environment.systemPackages = with pkgs; [
+      # Richtig für Home-Manager: home.packages nutzen!
+      home.packages = with pkgs; [
         nix-output-monitor
         nvd
       ];
