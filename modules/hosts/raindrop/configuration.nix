@@ -8,7 +8,7 @@
       ...
     }:
     {
-      imports = [ ./hardware-configuration.nix ];
+      imports = [ self.nixosModules.raindropHardware ];
 
       nix.settings.experimental-features = [
         "nix-command"
