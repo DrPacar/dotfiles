@@ -71,10 +71,11 @@
           cockpit
       ];
 
-      # User & Pakete
+      programs.fish.enable = true;      
       users.users.luka = {
         isNormalUser = true;
         extraGroups = [ "networkmanager" "wheel" ];
+	shell = pkgs.fish;
       };
 
       nixpkgs.config.allowUnfree = true;

@@ -14,6 +14,8 @@
         self.homeModules.cli-tools
         self.homeModules.shell
         self.homeModules.starship
+	self.homeModules.ghostty
+	self.homeModules.neovim
 
         self.homeModules.terminal
         self.homeModules.firefox
@@ -23,6 +25,7 @@
         python3
         just
         spotify
+	fastfetch
       ];
 
       programs.home-manager.enable = true;
