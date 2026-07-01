@@ -7,7 +7,7 @@
         enable = true;
         settings = {
          user.name = "DrPacar";
-         user.email = "lukapacar11@gmail.com";
+         user.email = "lukapacar06@gmail.com";
         };
       };
     };
