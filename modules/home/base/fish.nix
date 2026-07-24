@@ -10,7 +10,7 @@
       microfetch
     '';
 
-    shellAbbrs = {
+    shellAliases = {
       d = "cd ~/dotfiles";
     };
   }; 
