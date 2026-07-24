@@ -26,10 +26,19 @@
           let
             hostDir = ./configurations/hosts;
             hosts = builtins.attrNames (builtins.readDir hostDir);
+            lib = nixpkgs.lib;
+
+            mkMod = import ./lib/mod.nix { inherit lib; } ./.;
+            modSys  = mkMod "modules/system";
+            modHome = mkMod "modules/home";
           in
           nixpkgs.lib.genAttrs hosts (host: nixpkgs.lib.nixosSystem {
             system = "x86_64-linux";
-            specialArgs = { inherit inputs; };
+            specialArgs = {
+              inherit inputs;
+              mod = modSys;
+            };
+
             modules = [
               (hostDir + "/${host}/configuration.nix")
               
@@ -37,7 +46,10 @@
               {
                 home-manager.useGlobalPkgs = true;
                 home-manager.useUserPackages = true;
-                home-manager.extraSpecialArgs = { inherit inputs; };
+                home-manager.extraSpecialArgs = {
+                  inherit inputs; 
+                  mod = modHome;
+                };
               }
             ];
           });

@@ -2,14 +2,13 @@
   imports = [
     ./hardware-configuration.nix
     ./boot.nix
+    ./packages.nix
     ../base-system.nix
-    ../../../modules/hosts/steam.nix
   ];
   
   networking.hostName = "waterfall";
-  networking.networkmanager = {
-    enable = true;
-  };
+  networking.networkmanager.enable = true;
+  systemd.services.NetworkManager-wait-online.enable = false;
   system.stateVersion = "24.05";
 
   programs.fish.enable = true;
