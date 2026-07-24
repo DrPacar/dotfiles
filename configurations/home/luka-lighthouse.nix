@@ -2,6 +2,7 @@
   imports = lib.concatMap mod [
     "base"
     "browsers/firefox"
+    "browsers/zen-browser"
     "terminals/ghostty"
     "media"
   ];

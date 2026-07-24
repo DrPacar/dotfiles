@@ -18,5 +18,5 @@
     extraGroups = [ "wheel" "networkmanager" ];
     shell = pkgs.fish;
   };
-  home-manager.users.luka = import ../../home/luka-waterfall.nix;
+  home-manager.users.luka = import ../../home/luka-lighthouse.nix;
 }

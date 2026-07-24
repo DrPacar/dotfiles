@@ -15,9 +15,17 @@
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    
+    zen-browser = {
+      url = "github:0xc000022070/zen-browser-flake";
+      inputs = {
+        home-manager.follows = "home-manager";
+        nixpkgs.follows = "nixpkgs";
+      };
+    };
   };
 
-  outputs = inputs@{ flake-parts, nixpkgs, home-manager, ... }:
+  outputs = inputs@{ nixpkgs, flake-parts, home-manager, zen-browser, ... }:
     flake-parts.lib.mkFlake { inherit inputs; } {
       systems = [ "x86_64-linux" ];
 
