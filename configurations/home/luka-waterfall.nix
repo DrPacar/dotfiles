@@ -1,9 +1,9 @@
 { pkgs, lib, mod, ... }: {
   imports = lib.concatMap mod [
     "base"
-    "firefox"
-    "ghostty"
-    "spotify"
+    "browsers/firefox"
+    "terminals/ghostty"
+    "media"
   ];
 
   home.username = "luka";

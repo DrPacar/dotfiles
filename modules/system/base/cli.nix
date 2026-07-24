@@ -6,5 +6,5 @@
     ouch
     # downloading
     wget
-  ]
+  ];
 }
