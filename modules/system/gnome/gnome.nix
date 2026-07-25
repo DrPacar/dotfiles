@@ -14,4 +14,6 @@
     alsa.enable = true;
     pulse.enable = true;
   };
+
+  programs.dconf.enable = true;
 }

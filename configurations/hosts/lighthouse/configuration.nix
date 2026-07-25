@@ -5,8 +5,15 @@
     ./packages.nix
     ../base-system.nix
   ];
+  services.flatpak.enable = true;
+
+  # Optional: Ensure XDG Desktop Portal is enabled for smooth UI integration
+  xdg.portal = {
+    enable = true;
+    extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
+  }; 
   
-  networking.hostName = "waterfall";
+  networking.hostName = "lighthouse";
   networking.networkmanager.enable = true;
   systemd.services.NetworkManager-wait-online.enable = false;
   system.stateVersion = "24.05";
