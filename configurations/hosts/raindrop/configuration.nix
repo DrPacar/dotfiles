@@ -9,7 +9,8 @@
   networking.hostName = "raindrop";
   networking.networkmanager = {
     enable = true;
-  }
+  };
+
   system.stateVersion = "24.05";
 
   programs.fish.enable = true;
