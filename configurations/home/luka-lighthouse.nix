@@ -1,8 +1,8 @@
 { pkgs, lib, mod, ... }: {
   imports = lib.concatMap mod [
     "base"
-    "browsers/firefox-family/firefox/firefox"
-    "browsers/firefox-family/zen-browser/zen-browser"
+    "browsers/firefox-family"
+    "browsers/firefox-family"
     "terminals/ghostty"
     "media"
   ];
