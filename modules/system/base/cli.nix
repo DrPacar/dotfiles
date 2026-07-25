@@ -6,5 +6,6 @@
     ouch
     # downloading
     wget
+    curl
   ];
 }
