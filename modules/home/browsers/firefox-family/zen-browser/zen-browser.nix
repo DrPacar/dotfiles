@@ -195,7 +195,7 @@ in
         # --- Uni Pinned Tabs ---
         "Outlook" = {
           id = "aaaaaamm-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
-          url = "https://outlook.live.com";
+          url = "https://outlook.office.com/mail";
           container = 3;
           workspace = "f6a1b2c3-0123-45ab-cdef-6789012345ab";
           position = 301;
