@@ -1,6 +1,9 @@
 { pkgs, lib, config, ... }:
 let
   firefoxSettings = import ./_settings.nix;
+  extensions = import ../_extensions.nix {};
+  searchSettings = import ../_searches.nix;
+  bookmarkSettings = import ../_bookmarks.nix;
 in
 {
   xdg.mimeApps = {
@@ -16,63 +19,19 @@ in
 
   programs.firefox = {
     enable = true;
+    configPath = "${config.xdg.configHome}/mozilla/firefox";
 
-    policies = import ../_extensions.nix {};
+    policies = extensions;
 
     profiles.default = {
       id = 0;
       name = "default";
-      isDefault = true;
-
-      search = {
-        default = "google";
-        force = true;
-        engines = {
-          "Nix Packages" = {
-            urls = [{
-              template = "https://search.nixos.org/packages";
-              params = [
-                { name = "type"; value = "packages"; }
-                { name = "query"; value = "{searchTerms}"; }
-              ];
-            }];
-            definedAliases = [ "@np" ];
-          };
-          "NixOS Options" = {
-            urls = [{
-              template = "https://search.nixos.org/options";
-              params = [
-                { name = "type"; value = "options"; }
-                { name = "query"; value = "{searchTerms}"; }
-              ];
-            }];
-            definedAliases = [ "@no" ];
-          };
-        };
-      };
+      isDefault = true; 
 
       settings = firefoxSettings;
-      
-      bookmarks = [
-        {
-          name = "toolbar";
-          toolbar = true;
-          bookmarks = [
-            {
-              name = "AI Tools";
-              bookmarks = [
-                { name = "Claude"; url = "https://claude.ai/"; }
-                { name = "Gemini"; url = "https://gemini.google.com/"; }
-                { name = "ChatGPT"; url = "https://chatgpt.com/"; }
-              ];
-            }
-            { name = "GitHub Repos"; url = "https://github.com/DrPacar?tab=repositories"; }
-            { name = "YouTube"; url = "https://www.youtube.com/"; }
-            { name = "Gmail"; url = "https://mail.google.com/"; }
-            { name = "TU Wien TISS"; url = "https://tiss.tuwien.ac.at/"; }
-          ];
-        }
-      ];
+      search = searchSettings;
+      bookmarks = bookmarkSettings;
+
       userChrome = ''
         /* Die Tab-Leiste transparent machen und Buttons erhalten */
         #TabsToolbar {

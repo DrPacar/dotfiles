@@ -1,6 +1,11 @@
 { inputs, pkgs, ... }: 
 let
   zenSettings = import ./_settings.nix;
+  extensions = import ../_extensions.nix {
+    exclude = [ "{3c078156-979c-498b-8990-85f7987dd929}" ]; # Excludes Sidebery
+  };
+  searchSettings = import ../_searches.nix;
+  bookmarkSettings = import ../_bookmarks.nix;
 in
 {
   imports = [ inputs.zen-browser.homeModules.beta ];
@@ -39,10 +44,8 @@ in
 
   programs.zen-browser = {
     enable = true;
-    policies = import ../_extensions.nix {
-      exclude = [ "{3c078156-979c-498b-8990-85f7987dd929}" ]; # Excludes Sidebery
-    };
-    
+    policies = extensions;    
+
     profiles.default = {
       id = 0;
       name = "default";
@@ -50,6 +53,8 @@ in
       isDefault = true;
 
       settings = zenSettings;
+      search = searchSettings;
+      bookmarks = bookmarkSettings;
 
       mods = [
         "253a3a74-0cc4-47b7-8b82-996a64f030d5" # Floating History
@@ -211,26 +216,7 @@ in
           position = 303;
         };
       };
-
-      # --- Bookmarks ---
-      bookmarks = {
-        force = true;
-        settings = [
-          {
-            name = "Global Bookmarks";
-            toolbar = true;
-            bookmarks = [
-              { name = "Gemini"; url = "https://gemini.google.com"; }
-              { name = "Claude"; url = "https://claude.ai"; }
-              { name = "ChatGPT"; url = "https://chatgpt.com"; }
-              { name = "GitHub"; url = "https://github.com/DrPacar?tab=repositories"; }
-              { name = "Post Briefkasten"; url = "https://www.e-brief.at/fe/deliveries"; }
-              { name = "Finanzonline"; url = "https://finanzonline.bmf.gv.at"; }
-              { name = "ID Austria"; url = "https://oesterreich.gv.at"; }
-            ];
-          }
-        ];
-      };
+      
     };
   };
 }
