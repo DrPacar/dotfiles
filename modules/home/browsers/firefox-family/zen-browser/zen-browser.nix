@@ -131,7 +131,6 @@ in
           id = "33333333-3333-3333-3333-333333333333";
           url = "https://www.notion.so";
           isEssential = true;
-          container = 1;
           position = 30;
         };
         "Notion Calendar" = {
