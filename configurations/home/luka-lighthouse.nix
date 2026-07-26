@@ -9,6 +9,8 @@
     "onlyoffice"
     "gimp"
     "gaming"
+    "dev"
+    "gsconnect"
   ];
 
   home.username = "luka";
