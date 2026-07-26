@@ -5,7 +5,6 @@
     ./packages.nix
     ../base-system.nix
   ];
-  services.flatpak.enable = true;
 
   xdg.portal = {
     enable = true;
