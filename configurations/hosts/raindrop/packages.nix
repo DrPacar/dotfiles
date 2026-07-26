@@ -3,5 +3,6 @@
     "base"
     "gaming"
     "gnome"
+    "kdeconnect"
   ];
 }

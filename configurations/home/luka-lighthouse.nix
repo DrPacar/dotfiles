@@ -5,7 +5,6 @@
     "terminals/ghostty"
     "media"
     "jetbrains"
-    "python"
     "onlyoffice"
     "gimp"
     "gaming"

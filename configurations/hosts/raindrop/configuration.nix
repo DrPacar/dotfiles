@@ -7,6 +7,7 @@
   ];
 
   networking.hostName = "raindrop";
+
   networking.networkmanager = {
     enable = true;
   };

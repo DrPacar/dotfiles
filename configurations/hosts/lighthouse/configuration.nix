@@ -4,16 +4,13 @@
     ./boot.nix
     ./packages.nix
     ../base-system.nix
-  ];
-
-  xdg.portal = {
-    enable = true;
-    extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
-  }; 
+  ]; 
   
   networking.hostName = "lighthouse";
+
   networking.networkmanager.enable = true;
   systemd.services.NetworkManager-wait-online.enable = false;
+  
   system.stateVersion = "24.05";
 
   programs.fish.enable = true;

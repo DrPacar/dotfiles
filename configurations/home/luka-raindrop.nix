@@ -4,6 +4,11 @@
     "browsers/firefox-family/zen-browser"
     "terminals/ghostty"
     "media"
+    "jetbrains"
+    "onlyoffice"
+    "dev"
+    "gsconnect"
+    "thunderbird"
   ];
 
   home.username = "luka";
