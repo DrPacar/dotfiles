@@ -4,5 +4,6 @@
     "gaming"
     "gnome"
     "kdeconnect"
+    "virtualization"
   ];
 }
