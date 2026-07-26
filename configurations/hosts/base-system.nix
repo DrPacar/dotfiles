@@ -26,6 +26,8 @@
     font = "Lat2-Terminus16";
     keyMap = "de";
   };
+  
+  services.flatpak.enable = true;
 
   # Enable Nix dynamic linker (needed by Jetbrains)
   programs.nix-ld.enable = true;
@@ -39,7 +41,7 @@
     ];
   };
 
-  # Enable Avahi for network discovery (essential for Wi-Fi/Ethernet printers)
+  # Enable Avahi for network discovery
   services.avahi = {
     enable = true;
     nssmdns4 = true;
