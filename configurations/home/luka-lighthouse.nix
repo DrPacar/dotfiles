@@ -4,6 +4,8 @@
     "browsers/firefox-family/zen-browser"
     "terminals/ghostty"
     "media"
+    "jetbrains"
+    "python"
   ];
 
   home.username = "luka";

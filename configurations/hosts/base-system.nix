@@ -26,4 +26,7 @@
     font = "Lat2-Terminus16";
     keyMap = "de";
   };
+
+  # Enable Nix dynamic linker (needed by Jetbrains)
+  programs.nix-ld.enable = true;
 }

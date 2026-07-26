@@ -7,7 +7,6 @@
   ];
   services.flatpak.enable = true;
 
-  # Optional: Ensure XDG Desktop Portal is enabled for smooth UI integration
   xdg.portal = {
     enable = true;
     extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
