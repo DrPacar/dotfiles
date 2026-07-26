@@ -29,4 +29,20 @@
 
   # Enable Nix dynamic linker (needed by Jetbrains)
   programs.nix-ld.enable = true;
+
+  services.printing = {
+    enable = true;
+    
+    drivers = with pkgs; [
+      brlaser
+      gutenprint
+    ];
+  };
+
+  # Enable Avahi for network discovery (essential for Wi-Fi/Ethernet printers)
+  services.avahi = {
+    enable = true;
+    nssmdns4 = true;
+    openFirewall = true;
+  };
 }

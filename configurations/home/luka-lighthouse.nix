@@ -8,6 +8,7 @@
     "python"
     "onlyoffice"
     "gimp"
+    "gaming"
   ];
 
   home.username = "luka";
