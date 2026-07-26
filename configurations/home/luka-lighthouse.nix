@@ -6,6 +6,8 @@
     "media"
     "jetbrains"
     "python"
+    "onlyoffice"
+    "gimp"
   ];
 
   home.username = "luka";
