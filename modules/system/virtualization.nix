@@ -9,6 +9,7 @@
   };
 
   programs.virt-manager.enable = true;
+  programs.dconf.enable = true;
   virtualisation.spiceUSBRedirection.enable = true;
   environment.systemPackages = with pkgs; [ dnsmasq ];
 }
