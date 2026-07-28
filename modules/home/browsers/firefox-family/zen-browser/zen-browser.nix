@@ -96,6 +96,11 @@ in
           icon = "circle";
           id = 3;
         };
+        "Chess" = {
+          color = "green";
+          icon = "circle";
+          id = 4;
+        };
       };
 
       # --- Workspaces / Spaces ---
@@ -118,6 +123,12 @@ in
           position = 300;
           icon = "🎓";
           container = 3;
+        };
+        "Chess" = {
+          id = "a1b2c3d4-1234-56ab-cdef-7890123456ab";
+          position = 400;
+          icon = "♟️";
+          container = 4;
         };
       };
       
@@ -224,6 +235,22 @@ in
           container = 3;
           workspace = "f6a1b2c3-0123-45ab-cdef-6789012345ab";
           position = 303;
+        };
+
+        # --- Chess Pinned Tabs ---
+        "Chess.com Library" = {
+          id = "cc000001-cc00-cc00-cc00-cc0000000001";
+          url = "https://www.chess.com/library";
+          container = 4;
+          workspace = "a1b2c3d4-1234-56ab-cdef-7890123456ab";
+          position = 401;
+        };
+        "Lichess Study" = {
+          id = "cc000002-cc00-cc00-cc00-cc0000000002";
+          url = "https://lichess.org/study/BPdatP6K";
+          container = 4;
+          workspace = "a1b2c3d4-1234-56ab-cdef-7890123456ab";
+          position = 402;
         };
       };
       
