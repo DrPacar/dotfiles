@@ -21,4 +21,11 @@
     shell = pkgs.fish;
   };
   home-manager.users.luka = import ../../home/luka-lighthouse.nix;
+  
+  swapDevices = [{
+    device = "/swapfile";
+    size = 8192;  # 8GB in MB
+  }];
+  
+  virtualisation.podman.enable = true;
 }
