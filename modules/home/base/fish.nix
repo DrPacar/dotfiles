@@ -12,6 +12,7 @@
       gs = "git status";
     };
     interactiveShellInit = ''
+      direnv hook fish | source
       set -g fish_greeting ""
       microfetch
     '';
