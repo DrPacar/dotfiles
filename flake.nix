@@ -4,8 +4,8 @@
   inputs = {
     nixpkgs.url = "https://channels.nixos.org/nixos-unstable/nixexprs.tar.xz";
     nixpkgs-stable.url = "https://channels.nixos.org/nixos-26.05/nixexprs.tar.xz";
-    systems.url = "github:nix-systems/default-linux"; 
-    
+    systems.url = "github:nix-systems/default-linux";
+
     flake-parts = {
       url = "github:hercules-ci/flake-parts";
       inputs.nixpkgs-lib.follows = "nixpkgs";
@@ -15,7 +15,7 @@
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    
+
     spicetify-nix = {
       url = "github:Gerg-L/spicetify-nix";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -33,49 +33,80 @@
         nixpkgs.follows = "nixpkgs";
       };
     };
+
+    treefmt-nix = {
+      url = "github:numtide/treefmt-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = inputs@{ nixpkgs, flake-parts, home-manager, zen-browser, ... }:
-    flake-parts.lib.mkFlake { inherit inputs; } {
-      systems = [ "x86_64-linux" ];
+  outputs = inputs @ {
+    nixpkgs,
+    flake-parts,
+    home-manager,
+    zen-browser,
+    treefmt-nix,
+    ...
+  }:
+    flake-parts.lib.mkFlake {inherit inputs;} {
+      systems = ["x86_64-linux"];
+
+      imports = [
+        treefmt-nix.flakeModule
+      ];
+
+      perSystem = {
+        config,
+        pkgs,
+        ...
+      }: {
+        treefmt.config = {
+          projectRootFile = "flake.nix";
+
+          programs = {
+            alejandra.enable = true;
+            shfmt.enable = true;
+          };
+        };
+      };
 
       flake = {
-        nixosConfigurations = 
-          let
-            hostDir = ./configurations/hosts;
-            hosts = builtins.attrNames (builtins.readDir hostDir);
-            lib = nixpkgs.lib;
+        nixosConfigurations = let
+          hostDir = ./configurations/hosts;
+          hosts = builtins.attrNames (builtins.readDir hostDir);
+          lib = nixpkgs.lib;
 
-            mkMod = import ./lib/mod.nix { inherit lib; } ./.;
-            modSys  = mkMod "modules/system";
-            modHome = mkMod "modules/home";
-          in
-          nixpkgs.lib.genAttrs hosts (host: nixpkgs.lib.nixosSystem {
-            system = "x86_64-linux";
-            specialArgs = {
-              inherit inputs;
-              mod = modSys;
-            };
+          mkMod = import ./lib/mod.nix {inherit lib;} ./.;
+          modSys = mkMod "modules/system";
+          modHome = mkMod "modules/home";
+        in
+          nixpkgs.lib.genAttrs hosts (host:
+            nixpkgs.lib.nixosSystem {
+              system = "x86_64-linux";
+              specialArgs = {
+                inherit inputs;
+                mod = modSys;
+              };
 
-            modules = [
-              (hostDir + "/${host}/configuration.nix")
-              
-              home-manager.nixosModules.home-manager
-              {
-                home-manager.useGlobalPkgs = true;
-                home-manager.useUserPackages = true;
-                home-manager.backupFileExtension = "backup";
-                home-manager.sharedModules = [
-                  inputs.nix-flatpak.homeManagerModules.nix-flatpak
-                ];
+              modules = [
+                (hostDir + "/${host}/configuration.nix")
 
-                home-manager.extraSpecialArgs = {
-                  inherit inputs; 
-                  mod = modHome;
-                };
-              }
-            ];
-          });
+                home-manager.nixosModules.home-manager
+                {
+                  home-manager.useGlobalPkgs = true;
+                  home-manager.useUserPackages = true;
+                  home-manager.backupFileExtension = "backup";
+                  home-manager.sharedModules = [
+                    inputs.nix-flatpak.homeManagerModules.nix-flatpak
+                  ];
+
+                  home-manager.extraSpecialArgs = {
+                    inherit inputs;
+                    mod = modHome;
+                  };
+                }
+              ];
+            });
       };
     };
 }
