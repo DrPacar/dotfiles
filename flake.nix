@@ -52,23 +52,8 @@
       systems = ["x86_64-linux"];
 
       imports = [
-        treefmt-nix.flakeModule
+        ./modules/flake/treefmt.nix
       ];
-
-      perSystem = {
-        config,
-        pkgs,
-        ...
-      }: {
-        treefmt.config = {
-          projectRootFile = "flake.nix";
-
-          programs = {
-            alejandra.enable = true;
-            shfmt.enable = true;
-          };
-        };
-      };
 
       flake = {
         nixosConfigurations = let
