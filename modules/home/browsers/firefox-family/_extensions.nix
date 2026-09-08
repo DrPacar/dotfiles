@@ -1,5 +1,4 @@
-{ exclude ? [] }:
-let
+{exclude ? []}: let
   extensions = {
     "adguardadblocker@adguard.com" = {
       install_url = "https://addons.mozilla.org/firefox/downloads/latest/adguard-adblocker/latest.xpi";
@@ -31,11 +30,11 @@ let
       installation_mode = "force_installed";
       default_area = "menupanel";
     };
-#    "addon@darkreader.org" = {
-#      install_url = "https://addons.mozilla.org/firefox/downloads/latest/darkreader/latest.xpi";
-#      installation_mode = "force_installed";
-#      default_area = "menupanel";
-#    };
+    #    "addon@darkreader.org" = {
+    #      install_url = "https://addons.mozilla.org/firefox/downloads/latest/darkreader/latest.xpi";
+    #      installation_mode = "force_installed";
+    #      default_area = "menupanel";
+    #    };
     "{3c078156-979c-498b-8990-85f7987dd929}" = {
       install_url = "https://addons.mozilla.org/firefox/downloads/latest/sidebery/latest.xpi";
       installation_mode = "force_installed";
@@ -57,7 +56,6 @@ let
       default_area = "menupanel";
     };
   };
-in
-{
+in {
   ExtensionSettings = builtins.removeAttrs extensions exclude;
 }

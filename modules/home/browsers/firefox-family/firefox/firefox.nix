@@ -1,11 +1,14 @@
-{ pkgs, lib, config, ... }:
-let
+{
+  pkgs,
+  lib,
+  config,
+  ...
+}: let
   firefoxSettings = import ./_settings.nix;
   extensions = import ../_extensions.nix {};
   searchSettings = import ../_searches.nix;
   bookmarkSettings = import ../_bookmarks.nix;
-in
-{
+in {
   programs.firefox = {
     enable = true;
     configPath = "${config.xdg.configHome}/mozilla/firefox";
@@ -15,7 +18,7 @@ in
     profiles.default = {
       id = 0;
       name = "default";
-      isDefault = true; 
+      isDefault = true;
 
       settings = firefoxSettings;
       search = searchSettings;
@@ -43,7 +46,7 @@ in
         #PanelUI-button {
           margin-left: auto !important;
         }
-      ''; 
+      '';
     };
   };
 }

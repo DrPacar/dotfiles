@@ -1,5 +1,9 @@
-{ config, pkgs, ... }: {
-  nix.settings.experimental-features = [ "nix-command" "flakes" ];
+{
+  config,
+  pkgs,
+  ...
+}: {
+  nix.settings.experimental-features = ["nix-command" "flakes"];
 
   nixpkgs.config.allowUnfree = true;
 
@@ -8,7 +12,7 @@
     dates = "weekly";
     options = "--delete-older-than 14d";
   };
-  
+
   time.timeZone = "Europe/Vienna";
 
   i18n.defaultLocale = "en_US.UTF-8";
@@ -26,7 +30,7 @@
     font = "Lat2-Terminus16";
     keyMap = "de";
   };
-  
+
   services.flatpak.enable = true;
 
   # Enable Nix dynamic linker (needed by Jetbrains)
@@ -34,7 +38,7 @@
 
   services.printing = {
     enable = true;
-    
+
     drivers = with pkgs; [
       brlaser
       gutenprint
@@ -50,6 +54,6 @@
 
   xdg.portal = {
     enable = true;
-    extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
+    extraPortals = [pkgs.xdg-desktop-portal-gtk];
   };
 }

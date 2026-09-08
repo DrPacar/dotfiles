@@ -31,7 +31,6 @@
   "devtools.netmonitor.persistlog" = true;
   "devtools.cache.disabled" = true;
 
-
   # ==========================================
   # 2. NEW TAB PAGE & PINNED SITES
   # ==========================================
@@ -43,27 +42,83 @@
   "browser.newtabpage.activity-stream.feeds.section.topstories" = false;
 
   "browser.newtabpage.pinned" = builtins.toJSON [
-    { url = "https://github.com/DrPacar?tab=repositories"; label = "GitHub"; }
-    { url = "https://claude.ai"; label = "Claude"; }
-    { url = "https://gemini.google.com"; label = "Gemini"; }
-    { url = "https://chatgpt.com"; label = "ChatGPT"; }
-    { url = "https://oesterreich.gv.at"; label = "ID"; }
-    { url = "https://finanzonline.bmf.gv.at"; label = "FinanzOnline"; }
-    { url = "https://www.e-brief.at/fe/deliveries"; label = "Post-Briefkasten"; }
-    { url = "https://web.whatsapp.com/"; label = "WhatsApp"; }
-    { url = "https://mail.google.com/"; label = "Gmail"; }
-    { url = "https://www.reddit.com"; label = "Reddit"; }
-    { url = "https://www.netflix.com"; label = "Netflix"; }
-    { url = "https://youtube.com"; label = "Youtube"; }
-    { url = "https://twitch.tv"; label = "Twitch"; }
-    { url = "https://www.amazon.de"; label = "Amazon"; }
-    { url = "https://dash.cloudflare.com"; label = "Cloudflare"; }
-    { url = "https://www.chess.com/play/online"; label = "Chess.com"; }
-    { url = "https://lichess.org/study"; label = "Lichess Studies"; }
-    { url = "https://chesstempo.com"; label = "Chesstempo"; }
-    { url = "https://www.tuwien.at/"; label = "TU Wien"; }
+    {
+      url = "https://github.com/DrPacar?tab=repositories";
+      label = "GitHub";
+    }
+    {
+      url = "https://claude.ai";
+      label = "Claude";
+    }
+    {
+      url = "https://gemini.google.com";
+      label = "Gemini";
+    }
+    {
+      url = "https://chatgpt.com";
+      label = "ChatGPT";
+    }
+    {
+      url = "https://oesterreich.gv.at";
+      label = "ID";
+    }
+    {
+      url = "https://finanzonline.bmf.gv.at";
+      label = "FinanzOnline";
+    }
+    {
+      url = "https://www.e-brief.at/fe/deliveries";
+      label = "Post-Briefkasten";
+    }
+    {
+      url = "https://web.whatsapp.com/";
+      label = "WhatsApp";
+    }
+    {
+      url = "https://mail.google.com/";
+      label = "Gmail";
+    }
+    {
+      url = "https://www.reddit.com";
+      label = "Reddit";
+    }
+    {
+      url = "https://www.netflix.com";
+      label = "Netflix";
+    }
+    {
+      url = "https://youtube.com";
+      label = "Youtube";
+    }
+    {
+      url = "https://twitch.tv";
+      label = "Twitch";
+    }
+    {
+      url = "https://www.amazon.de";
+      label = "Amazon";
+    }
+    {
+      url = "https://dash.cloudflare.com";
+      label = "Cloudflare";
+    }
+    {
+      url = "https://www.chess.com/play/online";
+      label = "Chess.com";
+    }
+    {
+      url = "https://lichess.org/study";
+      label = "Lichess Studies";
+    }
+    {
+      url = "https://chesstempo.com";
+      label = "Chesstempo";
+    }
+    {
+      url = "https://www.tuwien.at/";
+      label = "TU Wien";
+    }
   ];
-
 
   # ==========================================
   # 3. PASSWORDS, AUTOFILL & CREDENTIALS
@@ -78,7 +133,6 @@
   "extensions.formautofill.creditCards.enabled" = false;
   "extensions.formautofill.addresses.enabled" = false;
   "browser.formfill.enable" = false;
-
 
   # ==========================================
   # 4. FASTFOX (PERFORMANCE & CACHE)
@@ -126,7 +180,6 @@
   "network.prefetch-next" = false;
   "network.predictor.enabled" = false;
 
-
   # ==========================================
   # 5. SECUREFOX (SECURITY, PRIVACY & HARDENING)
   # ==========================================
@@ -170,7 +223,6 @@
   "privacy.userContext.enabled" = true;
   "privacy.userContext.ui.enabled" = true;
   "extensions.enabledScopes" = 5;
-
 
   # ==========================================
   # 6. PESKYFOX (MOZILLA BLOAT & TELEMETRY REMOVAL)

@@ -1,25 +1,27 @@
-{ inputs, pkgs, ... }: 
-let
+{
+  inputs,
+  pkgs,
+  ...
+}: let
   zenSettings = import ./_settings.nix;
   extensions = import ../_extensions.nix {
-    exclude = [ "{3c078156-979c-498b-8990-85f7987dd929}" ]; # Excludes Sidebery
+    exclude = ["{3c078156-979c-498b-8990-85f7987dd929}"]; # Excludes Sidebery
   };
   searchSettings = import ../_searches.nix;
   bookmarkSettings = import ../_bookmarks.nix;
-in
-  {
-    xdg.mimeApps = {
-  enable = true;
-  defaultApplications = {
-    "text/html" = "zen-beta.desktop";
-    "x-scheme-handler/http" = "zen-beta.desktop";
-    "x-scheme-handler/https" = "zen-beta.desktop";
-    "x-scheme-handler/about" = "zen-beta.desktop";
-    "x-scheme-handler/unknown" = "zen-beta.desktop";
+in {
+  xdg.mimeApps = {
+    enable = true;
+    defaultApplications = {
+      "text/html" = "zen-beta.desktop";
+      "x-scheme-handler/http" = "zen-beta.desktop";
+      "x-scheme-handler/https" = "zen-beta.desktop";
+      "x-scheme-handler/about" = "zen-beta.desktop";
+      "x-scheme-handler/unknown" = "zen-beta.desktop";
+    };
   };
-};
 
-  imports = [ inputs.zen-browser.homeModules.beta ];
+  imports = [inputs.zen-browser.homeModules.beta];
   home.packages = with pkgs; [
     jq
     lz4
@@ -55,7 +57,7 @@ in
 
   programs.zen-browser = {
     enable = true;
-    policies = extensions;    
+    policies = extensions;
 
     profiles.default = {
       id = 0;
@@ -77,7 +79,7 @@ in
         "d8b79d4a-6cba-4495-9ff6-d6d30b0e94fe" # Better Active Tab
         "58649066-2b6f-4a5b-af6d-c3d21d16fc00" # Private Mode Highlighting
       ];
-      
+
       # --- Multi-Account Containers ---
       containersForce = true;
       containers = {
@@ -131,7 +133,7 @@ in
           container = 4;
         };
       };
-      
+
       # --- Pinned Tabs ---
       pinsForce = true;
       pinsForceAction = "remove";
@@ -253,7 +255,6 @@ in
           position = 402;
         };
       };
-      
     };
   };
 }

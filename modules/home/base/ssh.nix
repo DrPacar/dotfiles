@@ -1,4 +1,8 @@
-{ pkgs, meta, ... }: {
+{
+  pkgs,
+  meta,
+  ...
+}: {
   programs.ssh = {
     enable = true;
 

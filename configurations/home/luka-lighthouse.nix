@@ -1,4 +1,9 @@
-{ pkgs, lib, mod, ... }: {
+{
+  pkgs,
+  lib,
+  mod,
+  ...
+}: {
   imports = lib.concatMap mod [
     "base"
     "browsers/firefox-family/zen-browser"
@@ -16,7 +21,7 @@
   home.username = "luka";
   home.homeDirectory = "/home/luka";
 
-  home.stateVersion = "24.05"; 
+  home.stateVersion = "24.05";
 
   dconf.settings = {
     "org/gnome/desktop/interface" = {
@@ -29,5 +34,4 @@
     nix-direnv.enable = true;
     enableFishIntegration = true;
   };
-  
 }

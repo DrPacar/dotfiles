@@ -1,4 +1,4 @@
-{ pkgs, ... }: {
+{pkgs, ...}: {
   home.packages = [
     pkgs.microfetch
   ];
@@ -16,5 +16,5 @@
       set -g fish_greeting ""
       microfetch
     '';
-  }; 
+  };
 }

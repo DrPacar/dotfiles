@@ -1,4 +1,8 @@
-{ config, pkgs, ... }: {
+{
+  config,
+  pkgs,
+  ...
+}: {
   imports = [
     ./hardware-configuration.nix
     ./boot.nix
@@ -18,7 +22,7 @@
   # Users
   users.users.luka = {
     isNormalUser = true;
-    extraGroups = [ "wheel" "networkmanager" ];
+    extraGroups = ["wheel" "networkmanager"];
     shell = pkgs.fish;
   };
   home-manager.users.luka = import ../../home/luka-raindrop.nix;
