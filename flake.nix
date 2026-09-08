@@ -62,6 +62,7 @@
       imports = [
         ./modules/flake/treefmt.nix
         ./modules/flake/checks.nix
+        ./modules/flake/shell.nix
       ];
 
       flake = {
