@@ -5,17 +5,16 @@
 }: {
   programs.ssh = {
     enable = true;
-
-    addKeysToAgent = "yes";
-    compression = true;
-
-    serverAliveInterval = 60;
-    serverAliveCountMax = 3;
-
-    hashKnownHosts = true;
-
-    controlMaster = "auto";
-    controlPath = "~/.ssh/cm-%r@%h:%p";
-    controlPersist = "10m";
+    enableDefaultConfig = false;
+    settings."*" = {
+      AddKeysToAgent = "yes";
+      Compression = true;
+      ServerAliveInterval = 60;
+      ServerAliveCountMax = 3;
+      HashKnownHosts = true;
+      ControlMaster = "auto";
+      ControlPath = "~/.ssh/cm-%r@%h:%p";
+      ControlPersist = "10m";
+    };
   };
 }

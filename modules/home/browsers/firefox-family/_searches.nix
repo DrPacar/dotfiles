@@ -17,7 +17,7 @@
           ];
         }
       ];
-      iconUpdateURL = "https://www.youtube.com/favicon.ico";
+      icon = "https://www.youtube.com/favicon.ico";
       definedAliases = ["@yt"];
     };
 
@@ -33,7 +33,7 @@
           ];
         }
       ];
-      iconUpdateURL = "https://github.githubassets.com/favicons/favicon.png";
+      icon = "https://github.githubassets.com/favicons/favicon.png";
       definedAliases = ["@gh"];
     };
   };
