@@ -5,6 +5,8 @@
     ...
   }: {
     devShells.default = pkgs.mkShell {
+      name = "dotfiles";
+
       packages = builtins.attrValues {
         inherit
           (pkgs)
