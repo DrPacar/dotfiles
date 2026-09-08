@@ -38,6 +38,14 @@
       url = "github:numtide/treefmt-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    git-hooks-nix = {
+      url = "github:cachix/git-hooks.nix";
+      inputs = {
+        flake-compat.follows = "";
+        nixpkgs.follows = "nixpkgs";
+      };
+    };
   };
 
   outputs = inputs @ {
@@ -53,12 +61,17 @@
 
       imports = [
         ./modules/flake/treefmt.nix
+        ./modules/flake/checks.nix
       ];
 
       flake = {
         nixosConfigurations = let
           hostDir = ./configurations/hosts;
-          hosts = builtins.attrNames (builtins.readDir hostDir);
+          hosts = builtins.attrNames (
+            lib.filterAttrs
+            (_name: type: type == "directory")
+            (builtins.readDir hostDir)
+          );
           lib = nixpkgs.lib;
 
           mkMod = import ./lib/mod.nix {inherit lib;} ./.;
