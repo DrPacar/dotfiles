@@ -16,6 +16,7 @@
     "dev"
     "gsconnect"
     "thunderbird"
+    "ai"
   ];
 
   home.username = "luka";
