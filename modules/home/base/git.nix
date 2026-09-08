@@ -29,7 +29,7 @@
         unstage = "restore --staged";
         undo = "reset --soft HEAD~1";
         discard = "checkout --";
-        lg = "log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit";
+        lg = "git log --notes='*' --graph --pretty=format:'%C(auto)%h%Creset%C(auto)% d%Creset %s %Cgreen(%ah) %C(bold blue)<%an>%Creset'";
         last = "log -1 HEAD";
       };
 
