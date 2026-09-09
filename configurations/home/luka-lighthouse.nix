@@ -17,6 +17,7 @@
     "gsconnect"
     "thunderbird"
     "ai"
+    "hyprland"
   ];
 
   home.username = "luka";

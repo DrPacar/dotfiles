@@ -8,6 +8,7 @@
     "base"
     "gaming"
     "gnome"
+    "hyprland"
     "kdeconnect"
     "virtualization"
   ];
