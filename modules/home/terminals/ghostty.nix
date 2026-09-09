@@ -7,7 +7,7 @@
       font-size = 13;
       window-padding-x = 12;
       window-padding-y = 10;
-      window-decoration = false;
+      window-decoration = true;
       background-opacity = 0.92;
       background-blur-radius = 20;
       cursor-style = "block";
