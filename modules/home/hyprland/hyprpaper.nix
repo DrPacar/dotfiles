@@ -3,7 +3,7 @@
   lib,
   ...
 }: let
-  selectedWallpaper = ./wallpapers/default.png;
+  selectedWallpaper = ./wallpapers/last_tree.jpg;
 in {
   services.hyprpaper = {
     enable = true;
@@ -11,7 +11,11 @@ in {
       ipc = "on";
       splash = false;
       preload = ["${selectedWallpaper}"];
-      wallpaper = [",${selectedWallpaper}"];
+      wallpaper = [
+        "DP-3,${selectedWallpaper}"
+        "DP-4,${selectedWallpaper}"
+        ",${selectedWallpaper}"
+      ];
     };
   };
 
