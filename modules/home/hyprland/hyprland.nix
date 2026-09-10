@@ -129,14 +129,13 @@
         # Core applications & Noctalia surfaces
         "$mod, Return, exec, ghostty"
         "$mod, Space, exec, noctalia msg panel-toggle launcher"
-        "$mod, R, exec, rofi -show run"
         "$mod, V, exec, noctalia msg panel-toggle clipboard"
         "$mod, N, exec, noctalia msg panel-toggle control-center"
         "$mod, comma, exec, noctalia msg settings-toggle"
         "ALT, Tab, exec, noctalia msg window-switcher"
         "$mod, E, exec, nautilus"
         "$mod, B, exec, zen-beta"
-        "$mod, L, exec, hyprlock"
+        "$mod, L, exec, noctalia msg session lock"
         "$mod, Escape, exec, noctalia msg panel-toggle session"
         "$mod, X, exec, noctalia msg panel-toggle session"
 
