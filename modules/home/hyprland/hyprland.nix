@@ -257,10 +257,10 @@
 
       # Layer rules for Noctalia surfaces
       layerrule = [
-        "noanim, ^(noctalia-.*)$"
-        "blur, ^(noctalia-.*)$"
-        "ignorealpha 0.5, ^(noctalia-.*)$"
-        "blurpopups, ^(noctalia-.*)$"
+        "no_anim 1, match:namespace ^(noctalia-.*)$"
+        "blur 1, match:namespace ^(noctalia-.*)$"
+        "ignore_alpha 0.5, match:namespace ^(noctalia-.*)$"
+        "blur_popups 1, match:namespace ^(noctalia-.*)$"
       ];
     };
   };
