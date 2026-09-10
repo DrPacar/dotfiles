@@ -11,7 +11,6 @@
 
     # Clipboard utilities
     wl-clipboard
-    cliphist
 
     # Audio and brightness control
     pamixer
@@ -24,14 +23,4 @@
     hyprpolkitagent
     networkmanagerapplet
   ];
-
-  # Clipboard history daemon
-  services.cliphist = {
-    enable = true;
-    allowImages = true;
-  };
-
-  # Ensure cliphist runs only in Hyprland sessions, avoiding duplicate daemons in GNOME
-  systemd.user.services.cliphist.Install.WantedBy = lib.mkForce ["hyprland-session.target"];
-  systemd.user.services.cliphist-images.Install.WantedBy = lib.mkForce ["hyprland-session.target"];
 }

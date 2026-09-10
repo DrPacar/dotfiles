@@ -5,12 +5,19 @@
     settings = {
       shell = {
         font_family = "JetBrainsMono Nerd Font";
+        screenshot = {
+          directory = "~/Pictures/Screenshots";
+          copy_to_clipboard = true;
+          save_to_file = true;
+          freeze_screen = true;
+          close_on_copy = true;
+        };
       };
 
       theme = {
         mode = "dark";
         source = "builtin";
-        builtin = "Tokyo-Night";
+        builtin = "Eldritch";
       };
 
       wallpaper = {
@@ -19,6 +26,14 @@
         default = {
           path = "${../wallpapers/nature.png}";
         };
+        directory = "${../wallpapers}";
+        automation = {
+          enabled = true;
+          interval_seconds = 1800;
+          order = "random";
+        };
+        transition = ["fade"];
+        transition_duration = 1500.0;
       };
 
       lockscreen = {
@@ -49,6 +64,11 @@
         };
       };
 
+      weather = {
+        enabled = true;
+        unit = "metric";
+      };
+
       bar.main = {
         position = "top";
         start = ["launcher" "workspaces" "active-window"];
@@ -57,14 +77,14 @@
           "media"
           "tray"
           "notifications"
-          "clipboard"
           "network"
           "volume"
-          "brightness"
-          "battery"
-          "control-center"
           "session"
         ];
+      };
+
+      widget.clock = {
+        anchor = true;
       };
     };
   };

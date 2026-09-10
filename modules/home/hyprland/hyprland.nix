@@ -8,8 +8,6 @@
       "$mod" = "SUPER";
 
       # Monitor configuration
-      # Primary 1440p 165Hz monitor (DP-3)
-      # Secondary 1080p 165Hz monitor (DP-4) on the left
       monitor = [
         "desc:Acer Technologies XZ272U V, 2560x1440@165, 1920x0, 1"
         "desc:Samsung Electric Company LS24AG32x, 1920x1080@165, 0x176, 1"
@@ -44,6 +42,9 @@
         "HYPRCURSOR_SIZE,24"
         "XCURSOR_THEME,Bibata-Modern-Classic"
         "XCURSOR_SIZE,24"
+        "NIXOS_OZONE_WL,1"
+        "ELECTRON_OZONE_PLATFORM_HINT,auto"
+        "MOZ_ENABLE_WAYLAND,1"
       ];
 
       # Input configuration
@@ -68,8 +69,8 @@
         gaps_in = 5;
         gaps_out = 8;
         border_size = 2;
-        "col.active_border" = "rgba(7aa2f7ee) rgba(bb9af7ee) 45deg";
-        "col.inactive_border" = "rgba(414868aa)";
+        "col.active_border" = "rgba(37f499ee) rgba(04d1f9ee) 45deg";
+        "col.inactive_border" = "rgba(292e42aa)";
         layout = "dwindle";
         allow_tearing = false;
       };
@@ -109,6 +110,8 @@
 
       dwindle = {
         preserve_split = true;
+        smart_split = false;
+        smart_resizing = true;
       };
 
       misc = {
@@ -116,6 +119,7 @@
         disable_splash_rendering = true;
         mouse_move_enables_dpms = true;
         key_press_enables_dpms = true;
+        vrr = 0;
       };
 
       # Autostart core services
@@ -129,6 +133,8 @@
         # Core applications & Noctalia surfaces
         "$mod, Return, exec, ghostty"
         "$mod, Space, exec, noctalia msg panel-toggle launcher"
+        "$mod, period, exec, noctalia msg panel-toggle launcher /emo"
+        "$mod, slash, exec, noctalia msg panel-toggle launcher /calc"
         "$mod, V, exec, noctalia msg panel-toggle clipboard"
         "$mod, N, exec, noctalia msg panel-toggle control-center"
         "$mod, comma, exec, noctalia msg settings-toggle"
@@ -137,15 +143,16 @@
         "$mod, B, exec, zen-beta"
         "$mod, L, exec, noctalia msg session lock"
         "$mod, Escape, exec, noctalia msg panel-toggle session"
-        "$mod, X, exec, noctalia msg panel-toggle session"
+        "$mod, W, exec, noctalia msg wallpaper-random"
 
         # Window management
         "$mod, Q, killactive"
-        "$mod, C, killactive"
         "$mod SHIFT, Space, togglefloating"
         "$mod, F, fullscreen, 0"
         "$mod, P, pseudo"
-        "$mod, J, layoutmsg, togglesplit"
+        "$mod, T, layoutmsg, togglesplit"
+        "$mod, G, togglegroup"
+        "$mod ALT, Tab, changegroupactive, f"
 
         # Focus navigation
         "$mod, left, movefocus, l"
@@ -156,6 +163,10 @@
         "$mod, l, movefocus, r"
         "$mod, k, movefocus, u"
         "$mod, j, movefocus, d"
+
+        # Cross-monitor navigation & window moving
+        "$mod, O, focusmonitor, +1"
+        "$mod SHIFT, O, movewindow, mon:+1"
 
         # Window movement
         "$mod SHIFT, left, movewindow, l"
@@ -199,11 +210,10 @@
         "$mod, mouse_down, workspace, e+1"
         "$mod, mouse_up, workspace, e-1"
 
-        # Screenshots
-        ", Print, exec, grim - | wl-copy && notify-send 'Screenshot' 'Copied to clipboard'"
-        "$mod SHIFT, S, exec, grim -g \"$(slurp)\" - | wl-copy && notify-send 'Screenshot' 'Selection copied to clipboard'"
-        "$mod, Print, exec, mkdir -p ~/Pictures/Screenshots && grim -g \"$(slurp)\" ~/Pictures/Screenshots/$(date +'%Y-%m-%d_%H-%M-%S').png && notify-send 'Screenshot' 'Saved to ~/Pictures/Screenshots'"
-        "$mod SHIFT, Print, exec, grim -g \"$(slurp)\" - | swappy -f -"
+        # Screenshots via Noctalia native suite
+        ", Print, exec, noctalia msg screenshot-fullscreen"
+        "$mod SHIFT, S, exec, noctalia msg screenshot-region"
+        "$mod SHIFT, Print, exec, noctalia msg screenshot-annotate"
 
         # Audio volume & mute
         ", XF86AudioRaiseVolume, exec, noctalia msg volume-up"
@@ -216,9 +226,9 @@
         ", XF86MonBrightnessDown, exec, noctalia msg brightness-down"
 
         # Media player controls
-        ", XF86AudioPlay, exec, playerctl play-pause"
-        ", XF86AudioNext, exec, playerctl next"
-        ", XF86AudioPrev, exec, playerctl previous"
+        ", XF86AudioPlay, exec, noctalia msg media play-pause"
+        ", XF86AudioNext, exec, noctalia msg media next"
+        ", XF86AudioPrev, exec, noctalia msg media previous"
       ];
 
       # Keyboard window resizing (repeatable when held)
@@ -242,16 +252,24 @@
       # Window rules
       windowrule = [
         "float 1, match:class ^(pavucontrol)$"
+        "center 1, match:class ^(pavucontrol)$"
         "float 1, match:class ^(org.pulseaudio.pavucontrol)$"
+        "center 1, match:class ^(org.pulseaudio.pavucontrol)$"
         "float 1, match:class ^(nm-connection-editor)$"
+        "center 1, match:class ^(nm-connection-editor)$"
         "float 1, match:class ^(blueman-manager)$"
+        "center 1, match:class ^(blueman-manager)$"
         "float 1, match:title ^(Open File|Save File|Choose Files)$"
+        "center 1, match:title ^(Open File|Save File|Choose Files)$"
         "float 1, match:class ^(xdg-desktop-portal-.*)$"
         "float 1, match:title ^(Picture-in-Picture)$"
         "pin 1, match:title ^(Picture-in-Picture)$"
+        "move 100%-w-20 100%-h-20, match:title ^(Picture-in-Picture)$"
         "idle_inhibit fullscreen, match:class ^(.*)$"
         "float 1, match:class ^(dev.noctalia.Noctalia)$"
         "size 1080 920, match:class ^(dev.noctalia.Noctalia)$"
+        "immediate 1, match:class ^(steam_app_.*)$"
+        "immediate 1, match:class ^(gamescope)$"
       ];
 
       # Layer rules for Noctalia surfaces
