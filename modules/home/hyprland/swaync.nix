@@ -1,6 +1,6 @@
 {lib, ...}: {
   services.swaync = {
-    enable = true;
+    enable = false; # Handled by Noctalia
 
     settings = {
       positionX = "right";

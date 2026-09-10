@@ -1,6 +1,11 @@
 {
   description = "Pacar's dotfiles";
 
+  nixConfig = {
+    extra-substituters = ["https://noctalia.cachix.org"];
+    extra-trusted-public-keys = ["noctalia.cachix.org-1:pCOR47nnMEo5thcxNDtzWpOxNFQsBRglJzxWPp3dkU4="];
+  };
+
   inputs = {
     nixpkgs.url = "https://channels.nixos.org/nixos-unstable/nixexprs.tar.xz";
     nixpkgs-stable.url = "https://channels.nixos.org/nixos-26.05/nixexprs.tar.xz";
@@ -42,6 +47,11 @@
         flake-compat.follows = "";
         nixpkgs.follows = "nixpkgs";
       };
+    };
+
+    noctalia = {
+      url = "github:noctalia-dev/noctalia/cachix";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
   };
 
@@ -94,6 +104,7 @@
                   home-manager.backupFileExtension = "backup";
                   home-manager.sharedModules = [
                     inputs.nix-flatpak.homeManagerModules.nix-flatpak
+                    inputs.noctalia.homeModules.default
                   ];
 
                   home-manager.extraSpecialArgs = {

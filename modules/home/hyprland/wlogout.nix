@@ -1,6 +1,6 @@
 {...}: {
   programs.wlogout = {
-    enable = true;
+    enable = false; # Handled by Noctalia
     layout = [
       {
         label = "lock";

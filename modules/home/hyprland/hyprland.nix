@@ -121,22 +121,24 @@
       # Autostart core services
       exec-once = [
         "${pkgs.hyprpolkitagent}/libexec/hyprpolkitagent"
-        "waybar"
+        "noctalia"
       ];
 
       # Keybindings
       bind = [
-        # Core applications
+        # Core applications & Noctalia surfaces
         "$mod, Return, exec, ghostty"
-        "$mod, Space, exec, rofi -show drun"
+        "$mod, Space, exec, noctalia msg panel-toggle launcher"
         "$mod, R, exec, rofi -show run"
-        "$mod, V, exec, cliphist list | rofi -dmenu -p 'Clipboard' | cliphist decode | wl-copy"
-        "$mod, N, exec, swaync-client -t -sw"
+        "$mod, V, exec, noctalia msg panel-toggle clipboard"
+        "$mod, N, exec, noctalia msg panel-toggle control-center"
+        "$mod, comma, exec, noctalia msg settings-toggle"
+        "ALT, Tab, exec, noctalia msg window-switcher"
         "$mod, E, exec, nautilus"
         "$mod, B, exec, zen-beta"
         "$mod, L, exec, hyprlock"
-        "$mod, Escape, exec, rofi-power-menu"
-        "$mod, X, exec, rofi-power-menu"
+        "$mod, Escape, exec, noctalia msg panel-toggle session"
+        "$mod, X, exec, noctalia msg panel-toggle session"
 
         # Window management
         "$mod, Q, killactive"
@@ -205,14 +207,14 @@
         "$mod SHIFT, Print, exec, grim -g \"$(slurp)\" - | swappy -f -"
 
         # Audio volume & mute
-        ", XF86AudioRaiseVolume, exec, pamixer -i 5"
-        ", XF86AudioLowerVolume, exec, pamixer -d 5"
-        ", XF86AudioMute, exec, pamixer -t"
-        ", XF86AudioMicMute, exec, pamixer --default-source -t"
+        ", XF86AudioRaiseVolume, exec, noctalia msg volume-up"
+        ", XF86AudioLowerVolume, exec, noctalia msg volume-down"
+        ", XF86AudioMute, exec, noctalia msg volume-mute"
+        ", XF86AudioMicMute, exec, noctalia msg mic-mute"
 
         # Brightness
-        ", XF86MonBrightnessUp, exec, brightnessctl set +5%"
-        ", XF86MonBrightnessDown, exec, brightnessctl set 5%-"
+        ", XF86MonBrightnessUp, exec, noctalia msg brightness-up"
+        ", XF86MonBrightnessDown, exec, noctalia msg brightness-down"
 
         # Media player controls
         ", XF86AudioPlay, exec, playerctl play-pause"
@@ -249,6 +251,16 @@
         "float 1, match:title ^(Picture-in-Picture)$"
         "pin 1, match:title ^(Picture-in-Picture)$"
         "idle_inhibit fullscreen, match:class ^(.*)$"
+        "float 1, match:class ^(dev.noctalia.Noctalia)$"
+        "size 1080 920, match:class ^(dev.noctalia.Noctalia)$"
+      ];
+
+      # Layer rules for Noctalia surfaces
+      layerrule = [
+        "noanim, ^(noctalia-.*)$"
+        "blur, ^(noctalia-.*)$"
+        "ignorealpha 0.5, ^(noctalia-.*)$"
+        "blurpopups, ^(noctalia-.*)$"
       ];
     };
   };
