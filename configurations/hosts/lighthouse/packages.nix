@@ -4,18 +4,16 @@
   mod,
   ...
 }: {
-  imports = lib.concatMap mod [
-    # shell
-    "base"
+  imports =
+    lib.concatMap mod [
+      # applications
+      "gaming"
+      "virtualization"
 
-    # applications
-    "gaming"
-    "kdeconnect"
-    "virtualization"
-
-    # gui
-    "hyprland"
-    "gnome"
-    "greeter"
-  ];
+      # gui
+      "gnome"
+    ]
+    ++ [
+      ../base-packages.nix
+    ];
 }
