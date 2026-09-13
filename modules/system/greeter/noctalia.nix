@@ -8,7 +8,7 @@
     inputs.noctalia-greeter.nixosModules.default
   ];
 
-  # Disable GDM so Noctalia Greeter (greetd) handles the display manager session
+  # Disable GDM so Noctalia Greeter handles the display manager session
   services.displayManager.gdm.enable = false;
 
   # Noctalia Greeter configuration
