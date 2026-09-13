@@ -9,6 +9,7 @@
     ./users.nix
     ./boot.nix
     ./packages.nix
+    ./monitors.nix
     ../base-system.nix
   ];
 
