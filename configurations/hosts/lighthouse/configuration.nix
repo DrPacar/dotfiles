@@ -18,6 +18,7 @@
   system.stateVersion = "24.05";
 
   programs.fish.enable = true;
+
   # Users
   users.users.luka = {
     isNormalUser = true;

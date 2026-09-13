@@ -5,12 +5,17 @@
   ...
 }: {
   imports = lib.concatMap mod [
+    # shell
     "base"
+
+    # applications
     "gaming"
-    "gnome"
     "hyprland"
     "kdeconnect"
     "virtualization"
+
+    # gui
+    "gnome"
     "greeter"
   ];
 }
