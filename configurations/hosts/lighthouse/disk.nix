@@ -36,6 +36,7 @@
               type = "filesystem";
               format = "ext4";
               mountpoint = "/";
+              mountOptions = ["defaults" "noatime"];
             };
           };
         };
@@ -54,6 +55,7 @@
               type = "filesystem";
               format = "ext4";
               mountpoint = "/backup";
+              mountOptions = ["defaults" "noatime"];
             };
           };
           vms = {
@@ -62,6 +64,7 @@
               type = "filesystem";
               format = "ext4";
               mountpoint = "/var/lib/libvirt/images";
+              mountOptions = ["defaults" "noatime"];
             };
           };
         };
