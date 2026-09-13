@@ -7,6 +7,10 @@
     withRuby = false;
     withPython3 = false;
 
+    extraPackages = with pkgs; [
+      wl-clipboard # provides wl-copy and wl-paste for Wayland
+    ];
+
     plugins = with pkgs.vimPlugins; [
       tokyonight-nvim
     ];
@@ -17,6 +21,7 @@
       vim.opt.tabstop = 2
       vim.opt.shiftwidth = 2
       vim.opt.expandtab = true
+      vim.opt.clipboard = "unnamedplus";
     '';
   };
 }
