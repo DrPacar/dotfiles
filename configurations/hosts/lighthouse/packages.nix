@@ -11,5 +11,6 @@
     "hyprland"
     "kdeconnect"
     "virtualization"
+    "greeter"
   ];
 }
