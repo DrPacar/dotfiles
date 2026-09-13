@@ -14,6 +14,7 @@
     "kdeconnect"
 
     # gui
+    "hyprland"
     "greeter"
   ];
 }

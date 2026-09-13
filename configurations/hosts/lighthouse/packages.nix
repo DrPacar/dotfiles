@@ -10,11 +10,11 @@
 
     # applications
     "gaming"
-    "hyprland"
     "kdeconnect"
     "virtualization"
 
     # gui
+    "hyprland"
     "gnome"
     "greeter"
   ];
