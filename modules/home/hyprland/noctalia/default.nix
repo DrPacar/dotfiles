@@ -24,9 +24,9 @@
         enabled = true;
         fill_mode = "crop";
         default = {
-          path = "${../wallpapers/nature.png}";
+          path = "${../../../../wallpapers/nature.png}";
         };
-        directory = "${../wallpapers}";
+        directory = "${../../../../wallpapers}";
         automation = {
           enabled = true;
           interval_seconds = 1800;
