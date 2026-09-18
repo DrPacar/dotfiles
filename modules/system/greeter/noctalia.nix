@@ -12,7 +12,7 @@
   services.displayManager.gdm.enable = false;
 
   # Noctalia Greeter configuration
-  programs.noctalia-greeter = {
+  services.displayManager.noctalia-greeter = {
     enable = true;
     passwordless-sync-users = ["luka"];
     settings = {
@@ -21,6 +21,18 @@
       };
       user = {
         default = "luka";
+      };
+      appearance = {
+        scheme = "Eldritch";
+        theme_mode = "dark";
+        font_family = "JetBrainsMono Nerd Font";
+        hide_logo = false;
+        power_buttons_position = "bottom-right";
+        scheme_selector_position = "hidden";
+        wallpaper = {
+          path = "${../../../wallpapers/fall_forest.jpeg}";
+          fill_mode = "crop";
+        };
       };
       cursor = {
         theme = "Bibata-Modern-Classic";
