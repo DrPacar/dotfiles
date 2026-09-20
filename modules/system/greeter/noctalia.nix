@@ -23,12 +23,30 @@
         default = "luka";
       };
       appearance = {
-        scheme = "Eldritch";
+        scheme = "Synced";
         theme_mode = "dark";
         font_family = "JetBrainsMono Nerd Font";
         hide_logo = false;
         power_buttons_position = "bottom-right";
         scheme_selector_position = "hidden";
+        palette = {
+          primary = "#37f499";
+          on_primary = "#171928";
+          secondary = "#04d1f9";
+          on_secondary = "#171928";
+          tertiary = "#a48cf2";
+          on_tertiary = "#171928";
+          error = "#f16c75";
+          on_error = "#171928";
+          surface = "#212337";
+          on_surface = "#ebfafa";
+          surface_variant = "#292e42";
+          on_surface_variant = "#abb4da";
+          outline = "#3b4261";
+          shadow = "#414868";
+          hover = "#a48cf2";
+          on_hover = "#171928";
+        };
         wallpaper = {
           path = "${../../../wallpapers/fall_forest.jpeg}";
           fill_mode = "crop";
