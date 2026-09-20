@@ -18,6 +18,7 @@
     "gimp"
     "gaming"
     "thunderbird"
+    "sweethome3d"
 
     # gui
     "hyprland"
