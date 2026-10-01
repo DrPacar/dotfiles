@@ -24,7 +24,7 @@
         enabled = true;
         fill_mode = "crop";
         default = {
-          path = "${../../../../wallpapers/fall_forest.jpeg}";
+          path = "${../../../../wallpapers/rest.png}";
         };
         directory = "${../../../../wallpapers}";
         automation = {

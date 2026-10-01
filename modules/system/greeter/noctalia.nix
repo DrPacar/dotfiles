@@ -48,7 +48,7 @@
           on_hover = "#171928";
         };
         wallpaper = {
-          path = "${../../../wallpapers/fall_forest.jpeg}";
+          path = "${../../../wallpapers/rest.png}";
           fill_mode = "crop";
         };
       };
