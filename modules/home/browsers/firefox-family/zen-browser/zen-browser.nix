@@ -224,19 +224,26 @@ in {
           workspace = "f6a1b2c3-0123-45ab-cdef-6789012345ab";
           position = 301;
         };
-        "TISS TU Wien" = {
+        "TISS" = {
           id = "c3d4e5f6-7890-12ab-cdef-3456789012ab";
           url = "https://tiss.tuwien.ac.at/";
           container = 3;
           workspace = "f6a1b2c3-0123-45ab-cdef-6789012345ab";
           position = 302;
         };
+        "TUWEL" = {
+          id = "c3d4e5f6-7890-12ab-cdef-3456789012ac";
+          url = "https://tiss.tuwien.ac.at/my";
+          container = 3;
+          workspace = "f6a1b2c3-0123-45ab-cdef-6789012345ab";
+          position = 303;
+        };
         "Gemini (Uni)" = {
           id = "bbbbbmmm-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
           url = "https://gemini.google.com";
           container = 3;
           workspace = "f6a1b2c3-0123-45ab-cdef-6789012345ab";
-          position = 303;
+          position = 304;
         };
 
         # --- Chess Pinned Tabs ---
