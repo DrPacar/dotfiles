@@ -13,20 +13,20 @@
       -Dawt.toolkit.name=XToolkit
     '';
 
-    wrapJetbrains = pkg: executableName: envVar:
+    wrapJetbrains = pkg: envVar:
       symlinkJoin {
         name = "${pkg.pname or pkg.name}-xwayland";
         paths = [pkg];
         buildInputs = [makeWrapper];
         postBuild = ''
-          wrapProgram $out/bin/${executableName} \
+          wrapProgram $out/bin/${pkg.meta.mainProgram} \
             --set ${envVar} "${customVmOpts}"
         '';
       };
   in [
-    (wrapJetbrains jetbrains.idea "idea" "IDEA_VM_OPTIONS")
-    (wrapJetbrains jetbrains.pycharm "pycharm" "PYCHARM_VM_OPTIONS")
-    (wrapJetbrains jetbrains.datagrip "datagrip" "DATAGRIP_VM_OPTIONS")
+    (wrapJetbrains jetbrains.idea "IDEA_VM_OPTIONS")
+    (wrapJetbrains jetbrains.pycharm "PYCHARM_VM_OPTIONS")
+    (wrapJetbrains jetbrains.datagrip "DATAGRIP_VM_OPTIONS")
   ];
 
   home.sessionVariables = {
