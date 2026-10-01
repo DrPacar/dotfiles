@@ -13,8 +13,8 @@
     # applications
     "browsers/firefox-family/zen-browser"
     "media"
-    #"jetbrains"
-    #"onlyoffice"
+    "jetbrains"
+    "onlyoffice"
     "thunderbird"
 
     # gui
