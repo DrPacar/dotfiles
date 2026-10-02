@@ -7,6 +7,7 @@
     enable = true;
     shellAbbrs = {
       d = "cd ~/dotfiles";
+      u = "cd ~/uni";
       ll = "ls -l";
       lla = "ls -la";
       gs = "git status";
