@@ -47,12 +47,12 @@
         pre_action_fade_seconds = 5.0;
         behavior = {
           lock = {
-            timeout = 300;
+            timeout = 600;
             action = "lock";
             enabled = true;
           };
           screen-off = {
-            timeout = 360;
+            timeout = 660;
             action = "screen_off";
             enabled = true;
           };
