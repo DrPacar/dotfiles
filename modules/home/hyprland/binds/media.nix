@@ -2,10 +2,8 @@
   inherit (import ../_lib.nix {inherit lib;}) lua mod;
 in {
   wayland.windowManager.hyprland.settings.bind = [
-    # Screenshots via Noctalia native suite
-    {_args = ["Print" (lua ''hl.dsp.exec_cmd("noctalia msg screenshot-fullscreen")'')];}
+    # Screenshots via Noctalia native suite (no Print key needed)
     {_args = ["${mod} + SHIFT + S" (lua ''hl.dsp.exec_cmd("noctalia msg screenshot-region")'')];}
-    {_args = ["${mod} + SHIFT + Print" (lua ''hl.dsp.exec_cmd("noctalia msg screenshot-annotate")'')];}
 
     # Audio volume & mute
     {
@@ -30,6 +28,8 @@ in {
     }
     {_args = ["XF86AudioMute" (lua ''hl.dsp.exec_cmd("noctalia msg volume-mute")'') {locked = true;}];}
     {_args = ["XF86AudioMicMute" (lua ''hl.dsp.exec_cmd("noctalia msg mic-mute")'') {locked = true;}];}
+    # Hardware-independent mic mute/unmute toggle (locked = works while screen locked)
+    {_args = ["${mod} + SHIFT + M" (lua ''hl.dsp.exec_cmd("noctalia msg mic-mute")'') {locked = true;}];}
 
     # Brightness
     {
