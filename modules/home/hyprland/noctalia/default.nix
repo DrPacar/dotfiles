@@ -1,4 +1,10 @@
-{...}: {
+{
+  lib,
+  osConfig,
+  ...
+}: let
+  hasBattery = osConfig.device.hasBattery or false;
+in {
   programs.noctalia = {
     enable = true;
 
@@ -73,14 +79,18 @@
         position = "top";
         start = ["launcher" "workspaces" "active-window"];
         center = ["clock"];
-        end = [
-          "media"
-          "tray"
-          "notifications"
-          "network"
-          "volume"
-          "session"
-        ];
+        end =
+          [
+            "media"
+            "tray"
+            "notifications"
+            "network"
+            "volume"
+          ]
+          ++ lib.optional hasBattery "battery"
+          ++ [
+            "session"
+          ];
       };
 
       widget.clock = {

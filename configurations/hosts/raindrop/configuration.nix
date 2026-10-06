@@ -15,6 +15,8 @@
 
   networking.hostName = "raindrop";
 
+  device.hasBattery = true;
+
   networking.networkmanager.enable = true;
 
   system.stateVersion = "24.05";
