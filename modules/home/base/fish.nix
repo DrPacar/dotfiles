@@ -11,6 +11,7 @@
       ll = "ls -l";
       lla = "ls -la";
       gs = "git status";
+      wo = "work_on";
     };
     interactiveShellInit = ''
       direnv hook fish | source

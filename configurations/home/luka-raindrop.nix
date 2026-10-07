@@ -16,6 +16,7 @@
     "jetbrains"
     "onlyoffice"
     "thunderbird"
+    "typst"
 
     # gui
     "hyprland"

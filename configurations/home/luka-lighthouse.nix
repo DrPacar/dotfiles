@@ -19,6 +19,7 @@
     "gaming"
     "thunderbird"
     "sweethome3d"
+    "typst"
 
     # gui
     "hyprland"

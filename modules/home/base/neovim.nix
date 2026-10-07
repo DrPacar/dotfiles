@@ -13,6 +13,7 @@
 
     plugins = with pkgs.vimPlugins; [
       tokyonight-nvim
+      typst-vim
     ];
 
     initLua = ''
@@ -22,6 +23,24 @@
       vim.opt.shiftwidth = 2
       vim.opt.expandtab = true
       vim.opt.clipboard = "unnamedplus";
+
+      -- Typst LSP (tinymist) & settings
+      vim.api.nvim_create_autocmd("FileType", {
+        pattern = "typst",
+        callback = function(args)
+          if vim.fn.executable("tinymist") == 1 then
+            vim.lsp.start({
+              name = "tinymist",
+              cmd = { "tinymist" },
+              root_dir = vim.fs.root(args.buf, { ".git", "typst.toml" }) or vim.fs.dirname(vim.api.nvim_buf_get_name(args.buf)),
+              settings = {
+                exportPdf = "never",
+              },
+            })
+          end
+          vim.opt_local.wrap = true
+        end,
+      })
     '';
   };
 }
