@@ -36,7 +36,6 @@
   semester: none,
   date: datetime.today().display("[day].[month].[year]"),
   matrikel: none,   // optional: Matrikelnummer
-  lecturer: none,   // optional: Lehrveranstaltungsleitung
   logo: none,       // optional: z. B. image("tuwien.svg", height: 1.1cm)
   toc: false,       // true = Inhaltsverzeichnis nach dem Titelblock
   body,
@@ -195,7 +194,6 @@
     let meta = (
       ("Autor", author),
       ("Matrikelnr.", matrikel),
-      ("Lehrende", lecturer),
       ("Semester", semester),
       ("Datum", date),
     ).filter(m => m.at(1) != none)
@@ -207,7 +205,7 @@
         inset: (y: 10pt),
         stroke: (top: 1pt + tuw-primary, bottom: 0.5pt + tuw-line),
         grid(
-          columns: meta.map(m => if m.at(0) == "Autor" { 1.6fr } else { 1fr }),
+          columns: meta.map(m => 1fr),
           column-gutter: 14pt,
           ..meta.map(m => stack(
             spacing: 5pt,
@@ -259,8 +257,8 @@
   title-color: rgb("#8A6A1F"),
 )
 
-// Aufgaben-Kopf mit optionaler Punkteangabe
-#let task(nr, points: none, body) = {
+// Aufgaben-Kopf mit optionaler Punkteangabe und optionalem Titel
+#let task(nr: none, title: none, points: none, body) = {
   block(
     width: 100%,
     above: 2em,
@@ -271,7 +269,14 @@
     grid(
       columns: (1fr, auto),
       align: (left + horizon, right + horizon),
-      text(font: tuw-sans, size: 13pt, weight: "semibold", fill: tuw-primary)[Aufgabe #nr],
+      text(font: tuw-sans, size: 13pt, weight: "semibold", fill: tuw-primary)[
+        // Wenn ein Titel angegeben ist, nimm den Titel. Sonst "Aufgabe X"
+        #if title != none [
+          #title
+        ] else if nr != none [
+          Aufgabe #nr
+        ]
+      ],
       if points != none {
         box(
           fill: tuw-tint,
