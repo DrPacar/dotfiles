@@ -12,6 +12,7 @@
       lla = "ls -la";
       gs = "git status";
       wo = "work_on";
+      s = "cd ~/shared";
     };
     interactiveShellInit = ''
       direnv hook fish | source

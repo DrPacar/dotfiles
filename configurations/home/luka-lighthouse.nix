@@ -20,6 +20,8 @@
     "thunderbird"
     "sweethome3d"
     "typst"
+    "latex"
+    "kdeconnect"
 
     # gui
     "hyprland"

@@ -9,6 +9,7 @@
       # applications
       "gaming"
       "virtualization"
+      "kdeconnect"
 
       # gui
       "gnome"

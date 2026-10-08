@@ -2,7 +2,7 @@
   wayland.windowManager.hyprland.settings = {
     window_rule = [
       {
-        match.class = "^(pavucontrol|org.pulseaudio.pavucontrol|nm-connection-editor|blueman-manager)$";
+        match.class = "^(pavucontrol|org.pulseaudio.pavucontrol|nm-connection-editor|blueman-manager|org.kde.kdeconnect.*)$";
         float = true;
         center = true;
       }

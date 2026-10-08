@@ -96,6 +96,10 @@ in {
       widget.clock = {
         anchor = true;
       };
+
+      widget.tray = {
+        hide_passive = false;
+      };
     };
   };
 }

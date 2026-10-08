@@ -17,6 +17,8 @@
     "onlyoffice"
     "thunderbird"
     "typst"
+    "latex"
+    "kdeconnect"
 
     # gui
     "hyprland"
