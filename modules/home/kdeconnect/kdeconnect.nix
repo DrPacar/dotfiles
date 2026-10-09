@@ -86,4 +86,15 @@ in {
       WantedBy = ["graphical-session.target" "default.target"];
     };
   };
+
+  # Nautilus file manager right-click integration
+  xdg.dataFile."nautilus/scripts/Send via KDE Connect" = {
+    executable = true;
+    text = ''
+      #!/usr/bin/env bash
+      for file in "$@"; do
+        kdeconnect-handler "$file" &
+      done
+    '';
+  };
 }
