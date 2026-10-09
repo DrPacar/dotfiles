@@ -22,6 +22,7 @@
     "typst"
     "latex"
     "kdeconnect"
+    "packages"
 
     # gui
     "hyprland"
