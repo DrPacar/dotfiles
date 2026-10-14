@@ -10,6 +10,7 @@
 
     # applications
     "kdeconnect"
+    "ios"
 
     # gui
     "hyprland"
