@@ -1,4 +1,4 @@
-{
+{pkgs, ...}: {
   programs.yazi = {
     enable = true;
     shellWrapperName = "y";
@@ -27,6 +27,11 @@
           on = ["!"];
           run = ''shell "$SHELL" --block --confirm'';
           desc = "open shell here";
+        }
+        {
+          on = ["<C-n>"];
+          run = "shell -- ${pkgs.ripdrag}/bin/ripdrag -x -a %s";
+          desc = "Drag and drop files via ripdrag";
         }
         {
           on = ["g" "d"];
