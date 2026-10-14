@@ -12,6 +12,7 @@
       background-blur-radius = 20;
       cursor-style = "block";
       cursor-style-blink = false;
+      confirm-close-surface = false;
     };
   };
 }
