@@ -5,7 +5,6 @@
     ripgrep
     bat
     eza
-    yazi
     duf
     # network
     nmap
