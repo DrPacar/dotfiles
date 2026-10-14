@@ -4,7 +4,7 @@ in {
   wayland.windowManager.hyprland.settings.bind = [
     # Core Applications
     {_args = ["${mod} + Return" (lua ''hl.dsp.exec_cmd("ghostty")'')];}
-    {_args = ["${mod} + E" (lua ''hl.dsp.exec_cmd("nautilus")'')];}
+    {_args = ["${mod} + E" (lua ''hl.dsp.exec_cmd("ghostty -e yazi")'')];}
     {_args = ["${mod} + B" (lua ''hl.dsp.exec_cmd("zen-beta")'')];}
     {_args = ["${mod} + SHIFT + B" (lua ''hl.dsp.exec_cmd("zen-beta --private-window")'')];}
 
