@@ -36,6 +36,7 @@
   semester: none,
   date: datetime.today().display("[day].[month].[year]"),
   matrikel: none,   // optional: Matrikelnummer
+  lecturer: none,   // optional: Lehrende/r / Vortragende/r
   logo: none,       // optional: z. B. image("tuwien.svg", height: 1.1cm)
   toc: false,       // true = Inhaltsverzeichnis nach dem Titelblock
   body,
@@ -194,6 +195,7 @@
     let meta = (
       ("Autor", author),
       ("Matrikelnr.", matrikel),
+      ("Lehrende/r", lecturer),
       ("Semester", semester),
       ("Datum", date),
     ).filter(m => m.at(1) != none)
