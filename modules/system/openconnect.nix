@@ -14,7 +14,15 @@
           options = ["NOPASSWD"];
         }
         {
+          command = "/run/current-system/sw/bin/openconnect";
+          options = ["NOPASSWD"];
+        }
+        {
           command = "${pkgs.psmisc}/bin/killall openconnect";
+          options = ["NOPASSWD"];
+        }
+        {
+          command = "/run/current-system/sw/bin/killall openconnect";
           options = ["NOPASSWD"];
         }
       ];
