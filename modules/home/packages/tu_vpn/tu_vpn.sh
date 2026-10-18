@@ -6,8 +6,8 @@ SECRET_FILE="/run/secrets/tu_vpn_user"
 if [[ -f $SECRET_FILE ]]; then
   TU_USER=$(cat "$SECRET_FILE")
 else
-  echo "⚠️ Secret '$SECRET_FILE' nicht gefunden."
-  read -rp "Bitte TU-Benutzername / Matrikelnummer eingeben (z.B. e12345678): " TU_USER
+  echo "⚠️ TU_USER not found"
+  read -rp "Please enter the TU-Username (e12345678): " TU_USER
 fi
 
 if [[ -z $TU_USER ]]; then
