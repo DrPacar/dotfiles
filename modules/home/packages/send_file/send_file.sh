@@ -142,7 +142,7 @@ else
     --border=rounded \
     --layout=reverse \
     --info=hidden \
-    --header=" KDE Connect Devices " </dev/tty)
+    --header=" KDE Connect Devices ")
   if [[ -z $SELECTION ]]; then
     echo "No device selected. Aborting."
     exit 1
