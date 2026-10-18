@@ -17,8 +17,45 @@ for cmd in openconnect sudo; do
   fi
 done
 
-# --- Disconnect Logic ---
-if [[ ${1:-} == "stop" || ${1:-} == "down" ]]; then
+# --- Help Function ---
+show_help() {
+  cat <<EOF
+Usage: tu-vpn [COMMAND]
+
+Manage TU Wien VPN connection via OpenConnect.
+
+Commands:
+  start, up       Connect to TU Wien VPN
+  stop, down      Disconnect from TU Wien VPN
+  status          Show current VPN connection status
+  -h, --help      Display this help message
+
+Secrets (managed via SOPS in secrets/secrets.yaml):
+  tu_vpn_user     TU Wien account (e.g. e12345678 or user@student.tuwien.ac.at)
+  tu_vpn_pass     TU Wien account password
+  tu_vpn_totp     (Optional) Base32 secret for automated 2FA (TOTP)
+EOF
+}
+
+# --- Command Parsing ---
+case "${1:-}" in
+-h | --help | help)
+  show_help
+  exit 0
+  ;;
+"")
+  show_help
+  exit 0
+  ;;
+status)
+  if ip link show "$INTERFACE" >/dev/null 2>&1 || pgrep -x "openconnect" >/dev/null; then
+    echo "🟢 TU Wien VPN is active (Interface: $INTERFACE)"
+  else
+    echo "🔴 TU Wien VPN is disconnected"
+  fi
+  exit 0
+  ;;
+stop | down)
   echo "Stopping TU Wien VPN..."
   if pgrep -x "openconnect" >/dev/null; then
     sudo killall openconnect
@@ -30,7 +67,17 @@ if [[ ${1:-} == "stop" || ${1:-} == "down" ]]; then
     echo "VPN is not running."
   fi
   exit 0
-fi
+  ;;
+start | up)
+  # Continue to connection flow below
+  ;;
+*)
+  echo "Error: Unknown command '$1'"
+  echo
+  show_help
+  exit 1
+  ;;
+esac
 
 # --- Check if already running ---
 if ip link show "$INTERFACE" >/dev/null 2>&1 || pgrep -x "openconnect" >/dev/null; then
