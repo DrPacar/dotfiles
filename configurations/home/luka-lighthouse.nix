@@ -23,6 +23,7 @@
     "latex"
     "kdeconnect"
     "packages"
+    "terraform"
 
     # gui
     "hyprland"
