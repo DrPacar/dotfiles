@@ -1,8 +1,4 @@
-{
-  pkgs,
-  meta,
-  ...
-}: {
+{osConfig, ...}: {
   programs.ssh = {
     enable = true;
     enableDefaultConfig = false;
@@ -15,6 +11,10 @@
       ControlMaster = "auto";
       ControlPath = "~/.ssh/cm-%r@%h:%p";
       ControlPersist = "10m";
+      IdentityFile = [
+        "~/.ssh/${osConfig.networking.hostName}"
+        "~/.ssh/id_ed25519"
+      ];
     };
   };
 }
