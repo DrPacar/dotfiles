@@ -11,6 +11,8 @@
     # applications
     "kdeconnect"
     "ios"
+    "sops"
+    "openconnect"
 
     # gui
     "hyprland"
