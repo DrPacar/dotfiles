@@ -1,4 +1,8 @@
-{pkgs, ...}: {
+{
+  osConfig,
+  pkgs,
+  ...
+}: {
   programs.git = {
     enable = true;
     lfs.enable = true;
@@ -13,6 +17,17 @@
       "result"
       "result-*"
     ];
+
+    signing = {
+      format = "ssh";
+      key = "~/.ssh/${osConfig.networking.hostName}.pub";
+      signByDefault = true;
+      allowedSigners = ''
+        lukapacar06@gmail.com namespaces="git" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAII9ahMh0Tcn58e2gANWRpyECO/zGO/At2tk7eD70KGxl luka@lighthouse
+        # Trage hier den Public Key von Raindrop ein, sobald du ihn auf Raindrop generiert hast:
+        # lukapacar06@gmail.com namespaces="git" ssh-ed25519 AAAAC3... luka@raindrop
+      '';
+    };
 
     settings = {
       user.name = "DrPacar";
