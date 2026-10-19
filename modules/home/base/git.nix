@@ -24,8 +24,7 @@
       signByDefault = true;
       allowedSigners = ''
         lukapacar06@gmail.com namespaces="git" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAII9ahMh0Tcn58e2gANWRpyECO/zGO/At2tk7eD70KGxl luka@lighthouse
-        # Trage hier den Public Key von Raindrop ein, sobald du ihn auf Raindrop generiert hast:
-        # lukapacar06@gmail.com namespaces="git" ssh-ed25519 AAAAC3... luka@raindrop
+        lukapacar06@gmail.com namespaces="git" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEK+FcUtXmUuiDkdlye5eDnlWipnPwzQmBFVGogWvUlM luka@raindrop
       '';
     };
 
