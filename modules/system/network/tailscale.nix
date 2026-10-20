@@ -3,10 +3,22 @@
   pkgs,
   ...
 }: {
-  services.tailscale.enable = true;
+  services.tailscale = {
+    enable = true;
+    openFirewall = true;
+
+    extraSetFlags = [
+      "--operator=${config.user.primary}"
+    ];
+
+    useRoutingFeatures = "client";
+  };
 
   networking.firewall = {
     trustedInterfaces = [config.services.tailscale.interfaceName];
-    allowedUDPPorts = [config.services.tailscale.port];
   };
+
+  environment.systemPackages = with pkgs; [
+    trayscale
+  ];
 }

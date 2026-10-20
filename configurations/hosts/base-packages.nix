@@ -8,6 +8,9 @@
     # shell
     "base"
 
+    # network
+    "network"
+
     # applications
     "kdeconnect"
     "ios"

@@ -12,6 +12,7 @@ in {
         (luaFunc ''
           hl.exec_cmd("${pkgs.hyprpolkitagent}/libexec/hyprpolkitagent")
           hl.exec_cmd("noctalia")
+          hl.exec_cmd("${pkgs.trayscale}/bin/trayscale --hide-window")
         '')
       ];
     }
