@@ -24,6 +24,7 @@
     "kdeconnect"
     "packages"
     "terraform"
+    "en-croissant"
 
     # gui
     "hyprland"
