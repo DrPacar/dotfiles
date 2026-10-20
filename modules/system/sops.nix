@@ -26,8 +26,8 @@ in {
     age.keyFile = "/home/luka/.config/sops/age/keys.txt";
 
     secrets = lib.genAttrs secretKeys (_name: {
-      group = "wheel";
-      mode = "0440";
+      group = lib.mkDefault "wheel";
+      mode = lib.mkDefault "0440";
     });
   };
 
