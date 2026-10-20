@@ -3,6 +3,10 @@
   pkgs,
   ...
 }: {
+  imports = [
+    ./custom-values.nix
+  ];
+
   nix.settings = {
     experimental-features = ["nix-command" "flakes"];
     extra-substituters = ["https://noctalia.cachix.org"];
