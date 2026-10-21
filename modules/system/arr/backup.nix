@@ -100,7 +100,7 @@ in {
         {
           Type = "oneshot";
           User = "root";
-          ExecStart = "${backupScript}/bin/arr-backup --dest-dir '${cfg.backup.destDir}' --retention-days ${toString cfg.backup.retentionDays} --services '${lib.concatStringsSep " " activeBackupServices}'";
+          ExecStart = "${backupScript}/bin/arr-backup --dest-dir '${cfg.backup.destDir}' --media-group '${cfg.mediaGroup}' --retention-days ${toString cfg.backup.retentionDays} --services '${lib.concatStringsSep " " activeBackupServices}'";
         }
         // optionalAttrs (cfg.resources.enable) {
           Slice = "arr.slice";

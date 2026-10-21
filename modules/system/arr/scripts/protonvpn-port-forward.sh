@@ -169,9 +169,9 @@ while true; do
     GATEWAY=$(detect_vpn_gateway)
   fi
 
-  # Request UDP and TCP port mappings from gateway via NAT-PMP
-  out=$(natpmpc -a 1 0 udp "$LEASE_DURATION" -g "$GATEWAY" 2>&1) || true
-  tcp_out=$(natpmpc -a 1 0 tcp "$LEASE_DURATION" -g "$GATEWAY" 2>&1) || true
+  # Request UDP and TCP port mappings from gateway via NAT-PMP (RFC 6886: -a 0 0 for dynamic external port)
+  out=$(natpmpc -a 0 0 udp "$LEASE_DURATION" -g "$GATEWAY" 2>&1) || true
+  tcp_out=$(natpmpc -a 0 0 tcp "$LEASE_DURATION" -g "$GATEWAY" 2>&1) || true
   combined="$out"$'\n'"$tcp_out"
 
   # Parse mapped public port

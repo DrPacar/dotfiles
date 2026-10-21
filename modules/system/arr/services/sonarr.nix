@@ -68,6 +68,21 @@ in {
   };
 
   config = mkIf (cfg.enable && cfg.sonarr.enable) {
+    assertions = [
+      {
+        assertion = config.sops.secrets ? arr_sonarr_api_key;
+        message = "arr.sonarr: config.sops.secrets.arr_sonarr_api_key must be defined in your secrets file.";
+      }
+      {
+        assertion = !cfg.sonarr.anime.enable || config.sops.secrets ? arr_sonarr_anime_api_key;
+        message = "arr.sonarr.anime: config.sops.secrets.arr_sonarr_anime_api_key must be defined in your secrets file when Sonarr Anime is enabled.";
+      }
+      {
+        assertion = cfg.adminPasswordFile != null;
+        message = "arr.sonarr: arr.adminPasswordFile must be set to configure Sonarr web authentication.";
+      }
+    ];
+
     nixflix = {
       # Standard Sonarr instance
       sonarr = mkSonarrInstance {

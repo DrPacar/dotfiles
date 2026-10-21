@@ -25,7 +25,7 @@ in {
 
     mediaUser = mkOption {
       type = types.str;
-      default = config.user.primary;
+      default = config.user.primary or "media";
       description = "Primary user account added to the shared media group.";
     };
 
@@ -92,7 +92,7 @@ in {
 
     adminUser = mkOption {
       type = types.str;
-      default = config.user.primary;
+      default = config.user.primary or "admin";
       description = "Master administrator username for Arr applications.";
     };
 
@@ -182,6 +182,55 @@ in {
   };
 
   config = mkIf cfg.enable {
+    assertions = let
+      assignedPorts = [
+        (lib.optionalAttrs cfg.jellyfin.enable {
+          name = "Jellyfin";
+          port = cfg.jellyfin.port;
+        })
+        (lib.optionalAttrs cfg.qbittorrent.enable {
+          name = "qBittorrent WebUI";
+          port = cfg.qbittorrent.webuiPort;
+        })
+        (lib.optionalAttrs cfg.radarr.enable {
+          name = "Radarr";
+          port = cfg.radarr.port;
+        })
+        (lib.optionalAttrs cfg.sonarr.enable {
+          name = "Sonarr";
+          port = cfg.sonarr.port;
+        })
+        (lib.optionalAttrs (cfg.sonarr.enable && cfg.sonarr.anime.enable) {
+          name = "Sonarr Anime";
+          port = cfg.sonarr.anime.port;
+        })
+        (lib.optionalAttrs cfg.prowlarr.enable {
+          name = "Prowlarr";
+          port = cfg.prowlarr.port;
+        })
+        (lib.optionalAttrs cfg.bazarr.enable {
+          name = "Bazarr";
+          port = cfg.bazarr.port;
+        })
+        (lib.optionalAttrs cfg.seerr.enable {
+          name = "Seerr";
+          port = cfg.seerr.port;
+        })
+        (lib.optionalAttrs cfg.flaresolverr.enable {
+          name = "FlareSolverr";
+          port = cfg.flaresolverr.port;
+        })
+      ];
+      activePorts = lib.filter (p: p ? port) assignedPorts;
+      portList = map (p: p.port) activePorts;
+      uniquePortList = lib.unique portList;
+    in [
+      {
+        assertion = builtins.length portList == builtins.length uniquePortList;
+        message = "arr: Port collision detected among enabled Arr services. Ensure all services have distinct ports.";
+      }
+    ];
+
     # -------------------------------------------------------------------------
     # Shared Permissions & Storage Structure
     # -------------------------------------------------------------------------
@@ -205,7 +254,7 @@ in {
           ++ lib.optional cfg.bazarr.enable "arr_bazarr_api_key"
           ++ lib.optional cfg.seerr.enable "arr_seerr_api_key"
           ++ lib.optional cfg.jellyfin.enable "arr_jellyfin_api_key"
-          ++ lib.optional (cfg.jellyfin.enable || cfg.seerr.enable) "arr_jellyfin_admin_password"
+          ++ lib.optional cfg.jellyfin.enable "arr_jellyfin_admin_password"
           ++ lib.optional cfg.qbittorrent.enable "arr_qbittorrent_password"
         ) (_name: {
           group = lib.mkForce cfg.mediaGroup;
@@ -217,28 +266,38 @@ in {
           restartUnits = ["${cfg.vpn.namespace}.service"];
         };
       }
-      // {
+      // lib.optionalAttrs cfg.sonarr.enable {
         arr_sonarr_api_key.restartUnits =
           lib.optional cfg.sonarr.enable "sonarr-config.service"
           ++ lib.optional (cfg.prowlarr.enable && cfg.sonarr.enable) "prowlarr-applications.service"
           ++ lib.optional (cfg.seerr.enable && cfg.sonarr.enable) "seerr-sonarr.service"
           ++ lib.optional (cfg.bazarr.enable && cfg.sonarr.enable) "bazarr.service";
+      }
+      // lib.optionalAttrs (cfg.sonarr.enable && cfg.sonarr.anime.enable) {
         arr_sonarr_anime_api_key.restartUnits =
           lib.optional (cfg.sonarr.enable && cfg.sonarr.anime.enable) "sonarr-anime-config.service"
           ++ lib.optional (cfg.prowlarr.enable && cfg.sonarr.enable && cfg.sonarr.anime.enable) "prowlarr-applications.service"
           ++ lib.optional (cfg.seerr.enable && cfg.sonarr.enable && cfg.sonarr.anime.enable) "seerr-sonarr.service";
+      }
+      // lib.optionalAttrs cfg.radarr.enable {
         arr_radarr_api_key.restartUnits =
           lib.optional cfg.radarr.enable "radarr-config.service"
           ++ lib.optional (cfg.prowlarr.enable && cfg.radarr.enable) "prowlarr-applications.service"
           ++ lib.optional (cfg.seerr.enable && cfg.radarr.enable) "seerr-radarr.service"
           ++ lib.optional (cfg.bazarr.enable && cfg.radarr.enable) "bazarr.service";
+      }
+      // lib.optionalAttrs cfg.prowlarr.enable {
         arr_prowlarr_api_key.restartUnits =
           lib.optional cfg.prowlarr.enable "prowlarr-config.service"
           ++ lib.optional cfg.prowlarr.enable "prowlarr-applications.service";
+      }
+      // lib.optionalAttrs cfg.seerr.enable {
         arr_seerr_api_key.restartUnits =
           lib.optional cfg.seerr.enable "seerr.service"
           ++ lib.optional (cfg.seerr.enable && cfg.sonarr.enable) "seerr-sonarr.service"
           ++ lib.optional (cfg.seerr.enable && cfg.radarr.enable) "seerr-radarr.service";
+      }
+      // lib.optionalAttrs cfg.bazarr.enable {
         arr_bazarr_api_key.restartUnits =
           lib.optional cfg.bazarr.enable "bazarr.service";
       };

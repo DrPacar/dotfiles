@@ -207,11 +207,11 @@ def build_status_dict(config):
     qbittorrent_enabled = services_cfg.get("qbittorrent", {}).get("enable", False)
 
     proxy_active = unit_props.get(vpn_cfg.get("proxyUnit", ""), {}).get("ActiveState", "inactive")
-    if not qbittorrent_enabled:
+    if not (qbittorrent_enabled and vpn_cfg.get("enable", False)):
         proxy_active = "disabled"
 
     forwarder_active = unit_props.get(vpn_cfg.get("forwarderUnit", ""), {}).get("ActiveState", "inactive")
-    if not (qbittorrent_enabled and vpn_cfg.get("enable", False)):
+    if not (qbittorrent_enabled and vpn_cfg.get("enable", False) and vpn_cfg.get("portForwarding", False)):
         forwarder_active = "disabled"
 
     vpn_status = {

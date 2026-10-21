@@ -25,6 +25,17 @@ in {
   };
 
   config = mkIf (cfg.enable && cfg.radarr.enable) {
+    assertions = [
+      {
+        assertion = config.sops.secrets ? arr_radarr_api_key;
+        message = "arr.radarr: config.sops.secrets.arr_radarr_api_key must be defined in your secrets file.";
+      }
+      {
+        assertion = cfg.adminPasswordFile != null;
+        message = "arr.radarr: arr.adminPasswordFile must be set to configure Radarr web authentication.";
+      }
+    ];
+
     nixflix.radarr = {
       enable = true;
       user = radarrUser;

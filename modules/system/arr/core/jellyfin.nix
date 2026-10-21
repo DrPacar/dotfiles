@@ -45,6 +45,17 @@ in {
   };
 
   config = mkIf (cfg.enable && cfg.jellyfin.enable) {
+    assertions = [
+      {
+        assertion = config.sops.secrets ? arr_jellyfin_admin_password;
+        message = "arr.jellyfin: config.sops.secrets.arr_jellyfin_admin_password must be defined in your secrets file.";
+      }
+      {
+        assertion = config.sops.secrets ? arr_jellyfin_api_key;
+        message = "arr.jellyfin: config.sops.secrets.arr_jellyfin_api_key must be defined in your secrets file.";
+      }
+    ];
+
     hardware.graphics = mkIf (cfg.jellyfin.hardwareAcceleration != "none") {
       enable = true;
       extraPackages =

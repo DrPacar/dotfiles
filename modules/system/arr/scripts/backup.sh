@@ -4,11 +4,16 @@ set -euo pipefail
 DEST_DIR=""
 RETENTION_DAYS=14
 SERVICES=""
+MEDIA_GROUP=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
   --dest-dir)
     DEST_DIR="$2"
+    shift 2
+    ;;
+  --media-group)
+    MEDIA_GROUP="$2"
     shift 2
     ;;
   --retention-days)
@@ -122,7 +127,10 @@ ARCHIVE_PATH="$DEST_DIR/$ARCHIVE_NAME"
 echo "Compressing backup archive to $ARCHIVE_PATH with zstd..."
 tar -C "$TEMP_DIR" -cf - "arr-backup" | zstd -T0 -3 >"$ARCHIVE_PATH"
 
-chmod 640 "$ARCHIVE_PATH" || true
+if [[ -n $MEDIA_GROUP ]]; then
+  chgrp "$MEDIA_GROUP" "$ARCHIVE_PATH" 2>/dev/null || true
+fi
+chmod 0640 "$ARCHIVE_PATH" || true
 
 ARCHIVE_SIZE=$(du -h "$ARCHIVE_PATH" | cut -f1)
 echo "Backup completed successfully! Archive size: $ARCHIVE_SIZE"

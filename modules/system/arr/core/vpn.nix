@@ -103,6 +103,7 @@ in {
         assertion =
           cfg.vpn.openVPNPorts
           == []
+          || cfg.vpn.portForwarding.enable
           || any (p: p.port == cfg.qbittorrent.bitTorrentPort && p.protocol == "both") cfg.vpn.openVPNPorts
           || (any (p: p.port == cfg.qbittorrent.bitTorrentPort && p.protocol == "tcp") cfg.vpn.openVPNPorts
             && any (p: p.port == cfg.qbittorrent.bitTorrentPort && p.protocol == "udp") cfg.vpn.openVPNPorts);

@@ -75,6 +75,7 @@
       };
       vpn = {
         enable = cfg.vpn.enable;
+        portForwarding = cfg.vpn.portForwarding.enable;
         namespace = cfg.vpn.namespace;
         unit = "${cfg.vpn.namespace}.service";
         proxyUnit = "qbittorrent-webui-proxy.service";
@@ -113,12 +114,33 @@
           exec arr-status "$@"
           ;;
         backup)
+          ${
+        if cfg.backup.enable
+        then ''
           echo "Triggering arr-backup.service..."
           exec systemctl start arr-backup.service
+        ''
+        else ''
+          echo "Error: arr.backup is disabled in your NixOS configuration."
+          echo "Enable arr.backup.enable = true to use automated backups."
+          exit 1
+        ''
+      }
           ;;
         logs)
           shift || true
           svc="''${1:-sonarr}"
+          svc="''${svc%.service}"
+          case "$svc" in
+            jellyseerr) svc="seerr" ;;
+            qbit) svc="qbittorrent" ;;
+            anime) svc="sonarr-anime" ;;
+            indexer) svc="prowlarr" ;;
+            subtitles) svc="bazarr" ;;
+            vpn) svc="${cfg.vpn.namespace}" ;;
+            proxy) svc="qbittorrent-webui-proxy" ;;
+            forwarder|natpmp) svc="protonvpn-port-forward" ;;
+          esac
           exec journalctl -u "''${svc}.service" -f
           ;;
         restart)
@@ -127,7 +149,18 @@
             echo "Usage: arr restart <service-name>"
             exit 1
           fi
-          exec systemctl restart "''${1}.service"
+          svc="''${1%.service}"
+          case "$svc" in
+            jellyseerr) svc="seerr" ;;
+            qbit) svc="qbittorrent" ;;
+            anime) svc="sonarr-anime" ;;
+            indexer) svc="prowlarr" ;;
+            subtitles) svc="bazarr" ;;
+            vpn) svc="${cfg.vpn.namespace}" ;;
+            proxy) svc="qbittorrent-webui-proxy" ;;
+            forwarder|natpmp) svc="protonvpn-port-forward" ;;
+          esac
+          exec systemctl restart "''${svc}.service"
           ;;
         help|--help|-h)
           echo "Arr Stack Management CLI"

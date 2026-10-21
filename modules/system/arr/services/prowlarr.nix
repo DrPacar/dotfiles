@@ -36,6 +36,10 @@ in {
         assertion = config.sops.secrets ? arr_prowlarr_api_key;
         message = "arr.prowlarr: config.sops.secrets.arr_prowlarr_api_key must be defined in your secrets file.";
       }
+      {
+        assertion = cfg.adminPasswordFile != null;
+        message = "arr.prowlarr: arr.adminPasswordFile must be set to configure Prowlarr web authentication.";
+      }
     ];
 
     nixflix.prowlarr = {

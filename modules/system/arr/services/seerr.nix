@@ -24,6 +24,29 @@ in {
   config = mkIf (cfg.enable && cfg.seerr.enable) {
     warnings = lib.optional (!cfg.jellyfin.enable) "arr.seerr: Jellyseerr uses Jellyfin as its authentication backend. If local Jellyfin is disabled, ensure you connect an external Jellyfin server in the Seerr setup wizard.";
 
+    assertions = [
+      {
+        assertion = config.sops.secrets ? arr_seerr_api_key;
+        message = "arr.seerr: config.sops.secrets.arr_seerr_api_key must be defined in your secrets file.";
+      }
+      {
+        assertion = !cfg.jellyfin.enable || cfg.adminPasswordFile != null;
+        message = "arr.seerr: arr.adminPasswordFile must be set to connect Seerr with Jellyfin.";
+      }
+      {
+        assertion = !cfg.radarr.enable || config.sops.secrets ? arr_radarr_api_key;
+        message = "arr.seerr: config.sops.secrets.arr_radarr_api_key must be defined when Radarr is enabled.";
+      }
+      {
+        assertion = !cfg.sonarr.enable || config.sops.secrets ? arr_sonarr_api_key;
+        message = "arr.seerr: config.sops.secrets.arr_sonarr_api_key must be defined when Sonarr is enabled.";
+      }
+      {
+        assertion = !(cfg.sonarr.enable && cfg.sonarr.anime.enable) || config.sops.secrets ? arr_sonarr_anime_api_key;
+        message = "arr.seerr: config.sops.secrets.arr_sonarr_anime_api_key must be defined when Sonarr Anime is enabled.";
+      }
+    ];
+
     nixflix.seerr = {
       enable = true;
       port = cfg.seerr.port;
