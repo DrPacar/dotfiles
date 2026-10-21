@@ -95,7 +95,8 @@ in {
       enable = mkOption {
         type = types.bool;
         default = true;
-        description = "Enable cgroup resource management slice (arr.slice) for media stack services.";
+        example = false;
+        description = "Whether to enable cgroup resource management slice (arr.slice) for media stack services.";
       };
 
       cpuWeight = mkOption {
