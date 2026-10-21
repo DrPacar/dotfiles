@@ -58,7 +58,8 @@ in {
     portForwarding = {
       enable = mkOption {
         type = types.bool;
-        default = true;
+        default = false;
+        example = true;
         description = "Enable automatic NAT-PMP port forwarding with ProtonVPN for qBittorrent.";
       };
 

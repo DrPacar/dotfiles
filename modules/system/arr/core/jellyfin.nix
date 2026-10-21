@@ -38,7 +38,8 @@ in {
 
     device = mkOption {
       type = types.str;
-      default = "/dev/dri/by-path/pci-0000:00:02.0-render";
+      default = "/dev/dri/renderD128";
+      example = "/dev/dri/by-path/pci-0000:00:02.0-render";
       description = "Path to the DRM render node for hardware acceleration.";
     };
   };

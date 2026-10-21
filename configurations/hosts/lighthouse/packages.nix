@@ -21,8 +21,30 @@
   # Media automation stack (Arr Stack)
   arr = {
     enable = true;
-    jellyfin.hardwareAcceleration = "qsv"; # Enable Intel QuickSync hardware transcoding
-    vpn.enable = true;
+    dataDir = "/arr_data";
+    mediaGid = 169;
+    tailscaleDomain = "gute-court.ts.net";
+
+    jellyfin = {
+      hardwareAcceleration = "qsv"; # Enable Intel QuickSync hardware transcoding
+      device = "/dev/dri/by-path/pci-0000:00:02.0-render";
+    };
+
+    qbittorrent = {
+      downloadRateLimitKiB = 25000;
+      uploadRateLimitKiB = 3000;
+      maxConnections = 100;
+      maxConnectionsPerTorrent = 25;
+      maxActiveDownloads = 2;
+      maxActiveTorrents = 4;
+      seedRatioLimit = 0.0;
+    };
+
+    vpn = {
+      enable = true;
+      portForwarding.enable = true;
+    };
+
     backup.enable = false;
   };
 }

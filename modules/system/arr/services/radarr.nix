@@ -5,10 +5,10 @@
 }: let
   inherit (lib) mkOption mkIf types;
   cfg = config.arr;
-  inherit (import ../_lib.nix) secretRef bindAddress mkAllowedHosts;
+  inherit (import ../_lib.nix) secretRef;
 
   radarrUser = "radarr";
-  allowedHosts = mkAllowedHosts config.networking.hostName cfg.tailscaleDomain;
+  allowedHosts = lib.concatStringsSep "," cfg.network.allowedHosts;
 in {
   options.arr.radarr = {
     enable = mkOption {
@@ -33,13 +33,13 @@ in {
       mediaDirs = [cfg.paths.movies];
 
       settings = {
-        server.bindaddress = bindAddress;
+        server.bindaddress = cfg.network.bindAddress;
         server.allowedhosts = allowedHosts;
       };
 
       config = {
         hostConfig = {
-          inherit bindAddress;
+          bindAddress = cfg.network.bindAddress;
           port = cfg.radarr.port;
           authenticationMethod = "forms";
           authenticationRequired = "disabledForLocalAddresses";

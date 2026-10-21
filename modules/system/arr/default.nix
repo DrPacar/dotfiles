@@ -16,7 +16,7 @@ in {
 
     dataDir = mkOption {
       type = types.str;
-      default = "/arr_data";
+      default = "/data";
       description = ''
         Root directory for all media and downloads.
         Must be on a single filesystem to guarantee instant hardlink imports.
@@ -36,15 +36,58 @@ in {
     };
 
     mediaGid = mkOption {
-      type = types.int;
-      default = 169;
-      description = "GID of the shared media group.";
+      type = types.nullOr types.int;
+      default = null;
+      example = 169;
+      description = "GID of the shared media group (null for automatic system allocation).";
     };
 
     tailscaleDomain = mkOption {
-      type = types.str;
-      default = "gute-court.ts.net";
-      description = "Tailscale tailnet domain suffix for authorized host access.";
+      type = types.nullOr types.str;
+      default = null;
+      example = "my-tailnet.ts.net";
+      description = "Tailscale tailnet domain suffix for authorized host access (null to disable Tailscale hostnames).";
+    };
+
+    network = {
+      bindAddress = mkOption {
+        type = types.str;
+        default = "0.0.0.0";
+        description = "IP address on which Arr service web interfaces listen.";
+      };
+
+      localAddress = mkOption {
+        type = types.str;
+        default = "127.0.0.1";
+        description = "Loopback IP address used for local inter-service communication.";
+      };
+
+      extraAllowedHosts = mkOption {
+        type = types.listOf types.str;
+        default = [];
+        example = ["*.home.arpa" "media.mydomain.com"];
+        description = "Additional hostnames permitted by .NET host header validation (Sonarr, Radarr, Prowlarr).";
+      };
+
+      allowedHosts = mkOption {
+        type = types.listOf types.str;
+        default =
+          [
+            "localhost"
+            "127.0.0.1"
+            "0.0.0.0"
+            config.networking.hostName
+            "*.${config.networking.hostName}"
+          ]
+          ++ lib.optionals (cfg.tailscaleDomain != null) [
+            "${config.networking.hostName}.${cfg.tailscaleDomain}"
+            "*.${config.networking.hostName}.${cfg.tailscaleDomain}"
+            "*.${cfg.tailscaleDomain}"
+            "*.ts.net"
+          ]
+          ++ cfg.network.extraAllowedHosts;
+        description = "List of host patterns permitted by .NET host header validation.";
+      };
     };
 
     adminUser = mkOption {
@@ -142,10 +185,13 @@ in {
     # -------------------------------------------------------------------------
     # Shared Permissions & Storage Structure
     # -------------------------------------------------------------------------
-    users.groups.${cfg.mediaGroup} = {
-      gid = mkDefault cfg.mediaGid;
-      members = [cfg.mediaUser] ++ lib.optional cfg.bazarr.enable "bazarr";
-    };
+    users.groups.${cfg.mediaGroup} =
+      {
+        members = [cfg.mediaUser] ++ lib.optional cfg.bazarr.enable "bazarr";
+      }
+      // lib.optionalAttrs (cfg.mediaGid != null) {
+        gid = mkDefault cfg.mediaGid;
+      };
 
     # -------------------------------------------------------------------------
     # Secrets Permissions & Automatic Service Synchronization

@@ -8,7 +8,10 @@
   cfg = config.arr;
 
   hostName = config.networking.hostName;
-  tailscaleFqdn = "${hostName}.${cfg.tailscaleDomain}";
+  tailscaleFqdn =
+    if cfg.tailscaleDomain != null
+    then "${hostName}.${cfg.tailscaleDomain}"
+    else null;
 
   # Subdomain definitions: [ { name, subdomain, port, icon, category, desc, color } ]
   # Dynamically filtered to only include services that are currently enabled
@@ -457,8 +460,7 @@
 
   # Helper to generate virtual host definitions for Caddy (strictly plain HTTP to avoid ACME / TLS handshake errors)
   mkSubdomainVhost = s: {
-    # Match both local subdomain and tailscale FQDN subdomain
-    "http://${s.subdomain}.${hostName}, http://${s.subdomain}.${tailscaleFqdn}" = {
+    "http://${s.subdomain}.${hostName}${lib.optionalString (tailscaleFqdn != null) ", http://${s.subdomain}.${tailscaleFqdn}"}" = {
       extraConfig = ''
         reverse_proxy 127.0.0.1:${toString s.port} {
           header_up Host {host}
@@ -476,14 +478,14 @@
   # Additional aliases (e.g. anime.lighthouse -> sonarr-anime)
   extraAliasVhosts =
     lib.optionalAttrs (cfg.sonarr.enable && cfg.sonarr.anime.enable) {
-      "http://sonarr-anime.${hostName}, http://sonarr-anime.${tailscaleFqdn}" = {
+      "http://sonarr-anime.${hostName}${lib.optionalString (tailscaleFqdn != null) ", http://sonarr-anime.${tailscaleFqdn}"}" = {
         extraConfig = ''
           reverse_proxy 127.0.0.1:${toString cfg.sonarr.anime.port}
         '';
       };
     }
     // lib.optionalAttrs cfg.qbittorrent.enable {
-      "http://qbittorrent.${hostName}, http://qbittorrent.${tailscaleFqdn}" = {
+      "http://qbittorrent.${hostName}${lib.optionalString (tailscaleFqdn != null) ", http://qbittorrent.${tailscaleFqdn}"}" = {
         extraConfig = ''
           reverse_proxy 127.0.0.1:${toString cfg.qbittorrent.webuiPort}
         '';
@@ -492,7 +494,7 @@
 
   # Main Landing Page Virtual Host
   mainDashboardVhost = {
-    "http://${tailscaleFqdn}, http://${hostName}, http://localhost, http://127.0.0.1" = {
+    "${lib.optionalString (tailscaleFqdn != null) "http://${tailscaleFqdn}, "}http://${hostName}, http://localhost, http://127.0.0.1" = {
       extraConfig = ''
         root * ${dashboardHtml}
         file_server
@@ -503,15 +505,15 @@
   # Generate /etc/hosts entries for all subdomains
   allSubdomainNames =
     (map (s: "${s.subdomain}.${hostName}") servicesList)
-    ++ (map (s: "${s.subdomain}.${tailscaleFqdn}") servicesList)
-    ++ lib.optionals (cfg.sonarr.enable && cfg.sonarr.anime.enable) [
-      "sonarr-anime.${hostName}"
-      "sonarr-anime.${tailscaleFqdn}"
-    ]
-    ++ lib.optionals cfg.qbittorrent.enable [
-      "qbittorrent.${hostName}"
-      "qbittorrent.${tailscaleFqdn}"
-    ];
+    ++ lib.optionals (tailscaleFqdn != null) (map (s: "${s.subdomain}.${tailscaleFqdn}") servicesList)
+    ++ lib.optionals (cfg.sonarr.enable && cfg.sonarr.anime.enable) (
+      ["sonarr-anime.${hostName}"]
+      ++ lib.optional (tailscaleFqdn != null) "sonarr-anime.${tailscaleFqdn}"
+    )
+    ++ lib.optionals cfg.qbittorrent.enable (
+      ["qbittorrent.${hostName}"]
+      ++ lib.optional (tailscaleFqdn != null) "qbittorrent.${tailscaleFqdn}"
+    );
 in {
   options.arr.dashboard = {
     enable = mkOption {

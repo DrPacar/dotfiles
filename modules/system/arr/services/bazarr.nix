@@ -5,7 +5,7 @@
 }: let
   inherit (lib) mkOption mkIf types;
   cfg = config.arr;
-  inherit (import ../_lib.nix) secretRef bindAddress localAddress;
+  inherit (import ../_lib.nix) secretRef;
 
   bazarrUser = "bazarr";
 in {
@@ -50,7 +50,7 @@ in {
 
       settings = {
         general = {
-          ip = bindAddress;
+          ip = cfg.network.bindAddress;
           port = cfg.bazarr.port;
           use_sonarr = cfg.sonarr.enable;
           use_radarr = cfg.radarr.enable;
@@ -59,14 +59,14 @@ in {
           apikey = secretRef config.sops.secrets.arr_bazarr_api_key.path;
         };
         sonarr = mkIf cfg.sonarr.enable {
-          ip = localAddress;
+          ip = cfg.network.localAddress;
           port = cfg.sonarr.port;
           apikey = secretRef config.sops.secrets.arr_sonarr_api_key.path;
           ssl = false;
           base_url = "";
         };
         radarr = mkIf cfg.radarr.enable {
-          ip = localAddress;
+          ip = cfg.network.localAddress;
           port = cfg.radarr.port;
           apikey = secretRef config.sops.secrets.arr_radarr_api_key.path;
           ssl = false;

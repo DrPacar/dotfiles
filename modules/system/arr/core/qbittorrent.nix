@@ -23,47 +23,47 @@ in {
 
     maxActiveDownloads = mkOption {
       type = types.ints.unsigned;
-      default = 2;
+      default = 3;
       description = "Maximum number of simultaneous active downloads (prevents network and disk queue congestion).";
     };
 
     maxActiveTorrents = mkOption {
       type = types.ints.unsigned;
-      default = 4;
+      default = 5;
       description = "Maximum number of active torrents including downloads and uploads.";
     };
 
     maxConnections = mkOption {
       type = types.ints.unsigned;
-      default = 100;
+      default = 200;
       description = "Global maximum number of simultaneous peer connections (prevents Wi-Fi and router NAT table exhaustion).";
     };
 
     maxConnectionsPerTorrent = mkOption {
       type = types.ints.unsigned;
-      default = 25;
+      default = 50;
       description = "Maximum number of simultaneous connections per torrent.";
     };
 
     downloadRateLimitKiB = mkOption {
       type = types.ints.unsigned;
-      default = 25000;
-      description = "Global maximum download rate limit in KiB/s (default 25 MB/s ~ 200 Mbps). 0 for unlimited.";
+      default = 0;
+      description = "Global maximum download rate limit in KiB/s (0 for unlimited).";
     };
 
     uploadRateLimitKiB = mkOption {
       type = types.ints.unsigned;
-      default = 3000;
-      description = "Global maximum upload rate limit in KiB/s (default 3 MB/s ~ 24 Mbps; critical to prevent bufferbloat).";
+      default = 0;
+      description = "Global maximum upload rate limit in KiB/s (0 for unlimited).";
     };
 
     seedRatioLimit = mkOption {
       type = types.nullOr types.numbers.nonnegative;
-      default = 0.0;
+      default = null;
+      example = 0.0;
       description = ''
         Maximum share ratio before stopping seeding.
-        Defaults to 0.0 (stops seeding immediately on completion, ideal for public trackers).
-        Set to a higher value (e.g. 1.0) or null (unlimited) if using private trackers to avoid hit-and-run penalties.
+        Defaults to null (unlimited seeding). Set to 0.0 to stop seeding immediately on completion.
       '';
     };
 
