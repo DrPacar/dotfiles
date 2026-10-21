@@ -163,47 +163,13 @@ in {
     };
 
     # Automatically derive and inject the PBKDF2 HMAC-SHA512 password hash into qBittorrent.conf on service start.
-    # This ensures qBittorrent uses the exact password configured in sops (arr_qbittorrent_password) without generating
-    # temporary random passwords, while keeping the plaintext secret out of the world-readable nix store.
+    # Keeps plaintext secrets strictly out of the world-readable nix store.
     systemd.services.qbittorrent = {
       serviceConfig.ExecStartPre = lib.mkAfter [
         (pkgs.writeShellScript "qbittorrent-inject-password" ''
-                    set -eu
-                    PASS_FILE="${config.sops.secrets.arr_qbittorrent_password.path}"
-                    CONF_FILE="/var/lib/qBittorrent/qBittorrent/config/qBittorrent.conf"
-                    if [ -f "$PASS_FILE" ] && [ -f "$CONF_FILE" ]; then
-                      ${pkgs.python3}/bin/python3 -c "
-          import hashlib, os, base64
-
-          with open('$PASS_FILE', 'r') as f:
-              password = f.read().strip().encode('utf-8')
-
-          salt = os.urandom(16)
-          hashed = hashlib.pbkdf2_hmac('sha512', password, salt, 100000)
-          b64_salt = base64.b64encode(salt).decode()
-          b64_hash = base64.b64encode(hashed).decode()
-          val = f'@ByteArray({b64_salt}:{b64_hash})'
-
-          with open('$CONF_FILE', 'r') as f:
-              lines = f.readlines()
-
-          new_lines = []
-          found = False
-          for line in lines:
-              if line.startswith(r'WebUI\Password_PBKDF2='):
-                  new_lines.append(r'WebUI\Password_PBKDF2=' + val + '\n')
-                  found = True
-              elif line.strip() == '[Preferences]' and not found:
-                  new_lines.append(line)
-                  new_lines.append(r'WebUI\Password_PBKDF2=' + val + '\n')
-                  found = True
-              else:
-                  new_lines.append(line)
-
-          with open('$CONF_FILE', 'w') as f:
-              f.writelines(new_lines)
-          "
-                    fi
+          exec ${pkgs.python3}/bin/python3 ${./sync-scripts/qbittorrent-sync.py} \
+            --pass-file "${config.sops.secrets.arr_qbittorrent_password.path}" \
+            --group "${cfg.mediaGroup}"
         '')
       ];
     };
