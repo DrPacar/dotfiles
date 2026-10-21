@@ -65,6 +65,14 @@ in {
 
     # Automatically wait for network & DNS at boot, preventing failures when Wi-Fi connects after systemd startup
     systemd.services.recyclarr = {
+      after =
+        ["network-online.target"]
+        ++ lib.optional cfg.sonarr.enable "sonarr.service"
+        ++ lib.optional cfg.radarr.enable "radarr.service";
+      wants =
+        lib.optional cfg.sonarr.enable "sonarr.service"
+        ++ lib.optional cfg.radarr.enable "radarr.service";
+
       path = with pkgs; [
         bash
         curl

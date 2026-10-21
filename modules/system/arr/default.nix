@@ -214,37 +214,31 @@ in {
       // {
         arr_wireguard_conf = {
           mode = lib.mkForce "0400";
-          restartUnits = ["${cfg.vpn.namespace}.service"];
+          restartUnits = lib.optional cfg.vpn.enable "${cfg.vpn.namespace}.service";
         };
-        arr_sonarr_api_key.restartUnits = [
-          "sonarr-config.service"
-          "prowlarr-applications.service"
-          "seerr-sonarr.service"
-          "bazarr.service"
-        ];
-        arr_sonarr_anime_api_key.restartUnits = [
-          "sonarr-anime-config.service"
-          "prowlarr-applications.service"
-          "seerr-sonarr.service"
-        ];
-        arr_radarr_api_key.restartUnits = [
-          "radarr-config.service"
-          "prowlarr-applications.service"
-          "seerr-radarr.service"
-          "bazarr.service"
-        ];
-        arr_prowlarr_api_key.restartUnits = [
-          "prowlarr-config.service"
-          "prowlarr-applications.service"
-        ];
-        arr_seerr_api_key.restartUnits = [
-          "seerr.service"
-          "seerr-sonarr.service"
-          "seerr-radarr.service"
-        ];
-        arr_bazarr_api_key.restartUnits = [
-          "bazarr.service"
-        ];
+        arr_sonarr_api_key.restartUnits =
+          lib.optional cfg.sonarr.enable "sonarr-config.service"
+          ++ lib.optional (cfg.prowlarr.enable && cfg.sonarr.enable) "prowlarr-applications.service"
+          ++ lib.optional (cfg.seerr.enable && cfg.sonarr.enable) "seerr-sonarr.service"
+          ++ lib.optional (cfg.bazarr.enable && cfg.sonarr.enable) "bazarr.service";
+        arr_sonarr_anime_api_key.restartUnits =
+          lib.optional (cfg.sonarr.enable && cfg.sonarr.anime.enable) "sonarr-anime-config.service"
+          ++ lib.optional (cfg.prowlarr.enable && cfg.sonarr.enable && cfg.sonarr.anime.enable) "prowlarr-applications.service"
+          ++ lib.optional (cfg.seerr.enable && cfg.sonarr.enable && cfg.sonarr.anime.enable) "seerr-sonarr.service";
+        arr_radarr_api_key.restartUnits =
+          lib.optional cfg.radarr.enable "radarr-config.service"
+          ++ lib.optional (cfg.prowlarr.enable && cfg.radarr.enable) "prowlarr-applications.service"
+          ++ lib.optional (cfg.seerr.enable && cfg.radarr.enable) "seerr-radarr.service"
+          ++ lib.optional (cfg.bazarr.enable && cfg.radarr.enable) "bazarr.service";
+        arr_prowlarr_api_key.restartUnits =
+          lib.optional cfg.prowlarr.enable "prowlarr-config.service"
+          ++ lib.optional cfg.prowlarr.enable "prowlarr-applications.service";
+        arr_seerr_api_key.restartUnits =
+          lib.optional cfg.seerr.enable "seerr.service"
+          ++ lib.optional (cfg.seerr.enable && cfg.sonarr.enable) "seerr-sonarr.service"
+          ++ lib.optional (cfg.seerr.enable && cfg.radarr.enable) "seerr-radarr.service";
+        arr_bazarr_api_key.restartUnits =
+          lib.optional cfg.bazarr.enable "bazarr.service";
       };
 
     # Configure directory hierarchy with setgid (2775)

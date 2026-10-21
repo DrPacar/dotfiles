@@ -149,6 +149,7 @@ login_qbittorrent() {
   if [[ -f $PASS_FILE ]]; then
     local pass
     pass=$(cat "$PASS_FILE" | tr -d '\r\n')
+    rm -f "$COOKIE_FILE"
     curl -s -c "$COOKIE_FILE" -X POST "$WEBUI_URL/api/v2/auth/login" \
       --data-urlencode "username=admin" \
       --data-urlencode "password=$pass" >/dev/null 2>&1 || true

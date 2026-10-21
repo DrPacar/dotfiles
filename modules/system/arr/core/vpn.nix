@@ -144,7 +144,7 @@ in {
             exec ${pkgs.bash}/bin/bash ${../scripts/cleanup-stale-nat.sh} "${namespaceAddress}" "${toString cfg.qbittorrent.webuiPort}"
           ''}"
         ];
-        ExecStart = "${pkgs.socat}/bin/socat TCP-LISTEN:${toString cfg.qbittorrent.webuiPort},fork,reuseaddr TCP:${namespaceAddress}:${toString cfg.qbittorrent.webuiPort}";
+        ExecStart = "${pkgs.socat}/bin/socat TCP-LISTEN:${toString cfg.qbittorrent.webuiPort},bind=${cfg.network.bindAddress},fork,reuseaddr TCP:${namespaceAddress}:${toString cfg.qbittorrent.webuiPort}";
         Restart = "always";
         RestartSec = 3;
         User = "nobody";

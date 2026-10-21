@@ -30,7 +30,7 @@ in {
       openFirewall = false;
       apiKey = secretRef config.sops.secrets.arr_seerr_api_key.path;
 
-      jellyfin = {
+      jellyfin = mkIf cfg.jellyfin.enable {
         adminUsername = cfg.adminUser;
         adminPassword = secretRef cfg.adminPasswordFile;
       };

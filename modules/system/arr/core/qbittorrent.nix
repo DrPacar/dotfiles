@@ -132,9 +132,15 @@ in {
             if cfg.qbittorrent.seedRatioLimit != null
             then cfg.qbittorrent.seedRatioLimit
             else -1;
-          ShareLimitAction = "Stop";
+          ShareLimitAction =
+            if cfg.qbittorrent.seedRatioLimit != null
+            then "Stop"
+            else "Default";
           # Legacy fallback for older qBittorrent versions
-          MaxRatioAction = 0;
+          MaxRatioAction =
+            if cfg.qbittorrent.seedRatioLimit != null
+            then 0 # Stop
+            else -1; # Disabled
           Port = cfg.qbittorrent.bitTorrentPort;
         };
 

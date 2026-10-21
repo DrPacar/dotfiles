@@ -73,9 +73,12 @@ in {
           --media-group "${cfg.mediaGroup}"
       '';
     in {
-      serviceConfig.ExecStartPre = [
-        "+${jellyfinSyncScript}"
-      ];
+      serviceConfig = {
+        UMask = "0002";
+        ExecStartPre = [
+          "+${jellyfinSyncScript}"
+        ];
+      };
     };
 
     nixflix.jellyfin = {
