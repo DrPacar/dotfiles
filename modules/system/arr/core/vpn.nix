@@ -10,7 +10,7 @@ in {
   options.arr.vpn = {
     enable = mkOption {
       type = types.bool;
-      default = false; # Disabled by default; enable once a valid WireGuard configuration file is provisioned
+      default = true;
       description = "Confine qBittorrent to a dedicated WireGuard network namespace.";
     };
 
