@@ -5,7 +5,7 @@
 }: let
   inherit (lib) mkOption mkIf types;
   cfg = config.arr;
-  inherit (import ./_lib.nix) secretRef bindAddress mkAllowedHosts;
+  inherit (import ../_lib.nix) secretRef bindAddress mkAllowedHosts;
 
   radarrUser = "radarr";
   allowedHosts = mkAllowedHosts config.networking.hostName cfg.tailscaleDomain;
@@ -30,7 +30,7 @@ in {
       user = radarrUser;
       group = cfg.mediaGroup;
       openFirewall = false;
-      mediaDirs = ["${cfg.dataDir}/media/movies"];
+      mediaDirs = [cfg.paths.movies];
 
       settings = {
         server.bindaddress = bindAddress;
@@ -43,8 +43,8 @@ in {
           port = cfg.radarr.port;
           authenticationMethod = "forms";
           authenticationRequired = "disabledForLocalAddresses";
-          username = config.user.primary;
-          password = secretRef config.sops.secrets.arr_jellyfin_admin_password.path;
+          username = cfg.adminUser;
+          password = secretRef cfg.adminPasswordFile;
         };
         apiKey = secretRef config.sops.secrets.arr_radarr_api_key.path;
       };

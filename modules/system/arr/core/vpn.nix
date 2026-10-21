@@ -87,16 +87,18 @@ in {
   in {
     warnings = optional (cfg.vpn.openVPNPorts == [] && !cfg.vpn.portForwarding.enable) "arr.vpn: arr.vpn.openVPNPorts is empty and arr.vpn.portForwarding is disabled. qBittorrent can download via outgoing connections, but cannot receive incoming peer connections without port forwarding.";
 
-    assertions = [
-      {
-        assertion = cfg.vpn.wgConfFile != null;
-        message = "arr.vpn: arr.vpn.wgConfFile must be set to the path of your WireGuard configuration file (e.g., config.sops.secrets.arr_wireguard_conf.path) when arr.vpn.enable is true.";
-      }
-      {
-        assertion = builtins.stringLength cfg.vpn.namespace < 8;
-        message = "arr.vpn: arr.vpn.namespace must be shorter than 8 characters (current: '${cfg.vpn.namespace}') due to Linux network interface name limits (IFNAMSIZ).";
-      }
-      {
+    assertions =
+      [
+        {
+          assertion = cfg.vpn.wgConfFile != null;
+          message = "arr.vpn: arr.vpn.wgConfFile must be set to the path of your WireGuard configuration file (e.g., config.sops.secrets.arr_wireguard_conf.path) when arr.vpn.enable is true.";
+        }
+        {
+          assertion = builtins.stringLength cfg.vpn.namespace < 8;
+          message = "arr.vpn: arr.vpn.namespace must be shorter than 8 characters (current: '${cfg.vpn.namespace}') due to Linux network interface name limits (IFNAMSIZ).";
+        }
+      ]
+      ++ lib.optional cfg.qbittorrent.enable {
         assertion =
           cfg.vpn.openVPNPorts
           == []
@@ -104,8 +106,7 @@ in {
           || (any (p: p.port == cfg.qbittorrent.bitTorrentPort && p.protocol == "tcp") cfg.vpn.openVPNPorts
             && any (p: p.port == cfg.qbittorrent.bitTorrentPort && p.protocol == "udp") cfg.vpn.openVPNPorts);
         message = "arr.vpn: arr.vpn.openVPNPorts must forward both TCP and UDP for arr.qbittorrent.bitTorrentPort (${toString cfg.qbittorrent.bitTorrentPort}) (set protocol = \"both\").";
-      }
-    ];
+      };
 
     environment.systemPackages = [pkgs.wireguard-tools];
 
@@ -123,7 +124,7 @@ in {
       };
     };
 
-    systemd.services.qbittorrent-webui-proxy = {
+    systemd.services.qbittorrent-webui-proxy = mkIf cfg.qbittorrent.enable {
       description = "qBittorrent WebUI host proxy for VPN confinement";
       after = [
         "${cfg.vpn.namespace}.service"
@@ -139,7 +140,7 @@ in {
         ExecStartPre = [
           "+${pkgs.writeShellScript "cleanup-stale-nat" ''
             export PATH="${lib.makeBinPath [pkgs.iptables pkgs.coreutils]}:$PATH"
-            exec ${pkgs.bash}/bin/bash ${./sync-scripts/cleanup-stale-nat.sh} "${namespaceAddress}" "${toString cfg.qbittorrent.webuiPort}"
+            exec ${pkgs.bash}/bin/bash ${../scripts/cleanup-stale-nat.sh} "${namespaceAddress}" "${toString cfg.qbittorrent.webuiPort}"
           ''}"
         ];
         ExecStart = "${pkgs.socat}/bin/socat TCP-LISTEN:${toString cfg.qbittorrent.webuiPort},fork,reuseaddr TCP:${namespaceAddress}:${toString cfg.qbittorrent.webuiPort}";
@@ -149,7 +150,7 @@ in {
       };
     };
 
-    systemd.services.protonvpn-port-forward = mkIf cfg.vpn.portForwarding.enable {
+    systemd.services.protonvpn-port-forward = mkIf (cfg.vpn.portForwarding.enable && cfg.qbittorrent.enable) {
       description = "ProtonVPN NAT-PMP dynamic port forwarder for qBittorrent";
       after = [
         "${cfg.vpn.namespace}.service"
@@ -179,7 +180,7 @@ in {
         NetworkNamespacePath = "/run/netns/${cfg.vpn.namespace}";
         User = "root";
         ExecStart = ''
-          ${pkgs.bash}/bin/bash ${./sync-scripts/protonvpn-port-forward.sh} \
+          ${pkgs.bash}/bin/bash ${../scripts/protonvpn-port-forward.sh} \
             --webui-host "${namespaceAddress}" \
             --webui-port "${toString cfg.qbittorrent.webuiPort}" \
             --pass-file "${config.sops.secrets.arr_qbittorrent_password.path}" \

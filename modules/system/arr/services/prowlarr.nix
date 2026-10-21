@@ -5,7 +5,7 @@
 }: let
   inherit (lib) mkOption mkIf types;
   cfg = config.arr;
-  inherit (import ./_lib.nix) secretRef bindAddress mkAllowedHosts;
+  inherit (import ../_lib.nix) secretRef bindAddress mkAllowedHosts;
 
   prowlarrUser = "prowlarr";
   allowedHosts = mkAllowedHosts config.networking.hostName cfg.tailscaleDomain;
@@ -55,8 +55,8 @@ in {
           port = cfg.prowlarr.port;
           authenticationMethod = "forms";
           authenticationRequired = "disabledForLocalAddresses";
-          username = config.user.primary;
-          password = secretRef config.sops.secrets.arr_jellyfin_admin_password.path;
+          username = cfg.adminUser;
+          password = secretRef cfg.adminPasswordFile;
         };
         apiKey = secretRef config.sops.secrets.arr_prowlarr_api_key.path;
         indexers = cfg.prowlarr.indexers;

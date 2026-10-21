@@ -5,13 +5,13 @@
 }: let
   inherit (lib) mkOption mkIf types;
   cfg = config.arr;
-  inherit (import ./_lib.nix) secretRef bindAddress mkAllowedHosts;
+  inherit (import ../_lib.nix) secretRef bindAddress mkAllowedHosts;
 
   allowedHosts = mkAllowedHosts config.networking.hostName cfg.tailscaleDomain;
 
   mkSonarrInstance = {
     user,
-    mediaSubdir,
+    mediaDir,
     port,
     apiKeySecret,
   }: {
@@ -19,7 +19,7 @@
     inherit user;
     group = cfg.mediaGroup;
     openFirewall = false;
-    mediaDirs = ["${cfg.dataDir}/media/${mediaSubdir}"];
+    mediaDirs = [mediaDir];
 
     settings = {
       server.bindaddress = bindAddress;
@@ -31,8 +31,8 @@
         inherit bindAddress port;
         authenticationMethod = "forms";
         authenticationRequired = "disabledForLocalAddresses";
-        username = config.user.primary;
-        password = secretRef config.sops.secrets.arr_jellyfin_admin_password.path;
+        username = cfg.adminUser;
+        password = secretRef cfg.adminPasswordFile;
       };
       apiKey = secretRef apiKeySecret.path;
     };
@@ -71,7 +71,7 @@ in {
       # Standard Sonarr instance
       sonarr = mkSonarrInstance {
         user = "sonarr";
-        mediaSubdir = "tv";
+        mediaDir = cfg.paths.tv;
         port = cfg.sonarr.port;
         apiKeySecret = config.sops.secrets.arr_sonarr_api_key;
       };
@@ -79,7 +79,7 @@ in {
       # Sonarr Anime instance
       sonarr-anime = mkIf cfg.sonarr.anime.enable (mkSonarrInstance {
         user = "sonarr-anime";
-        mediaSubdir = "anime";
+        mediaDir = cfg.paths.anime;
         port = cfg.sonarr.anime.port;
         apiKeySecret = config.sops.secrets.arr_sonarr_anime_api_key;
       });

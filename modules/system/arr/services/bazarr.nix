@@ -5,7 +5,7 @@
 }: let
   inherit (lib) mkOption mkIf types;
   cfg = config.arr;
-  inherit (import ./_lib.nix) secretRef bindAddress localAddress;
+  inherit (import ../_lib.nix) secretRef bindAddress localAddress;
 
   bazarrUser = "bazarr";
 in {

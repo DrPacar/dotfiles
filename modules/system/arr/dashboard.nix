@@ -11,8 +11,9 @@
   tailscaleFqdn = "${hostName}.${cfg.tailscaleDomain}";
 
   # Subdomain definitions: [ { name, subdomain, port, icon, category, desc, color } ]
-  servicesList = [
-    {
+  # Dynamically filtered to only include services that are currently enabled
+  servicesList =
+    (lib.optional cfg.seerr.enable {
       name = "Seerr";
       subdomain = "seerr";
       port = cfg.seerr.port;
@@ -21,8 +22,8 @@
       color = "#cba6f7";
       tag = "Requests";
       icon = ''<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19.82 2H4.18C2.97 2 2 2.97 2 4.18v15.64C2 21.03 2.97 22 4.18 22h15.64c1.21 0 2.18-.97 2.18-2.18V4.18C22 2.97 21.03 2 19.82 2zM7 2v20M17 2v20M2 12h20M2 7h5M2 17h5M17 17h5M17 7h5"/></svg>'';
-    }
-    {
+    })
+    ++ (lib.optional cfg.jellyfin.enable {
       name = "Jellyfin";
       subdomain = "jellyfin";
       port = cfg.jellyfin.port;
@@ -31,8 +32,8 @@
       color = "#89b4fa";
       tag = "Streaming";
       icon = ''<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.25a.75.75 0 0 1 .65.375l8.25 14.25a.75.75 0 0 1-.65 1.125h-4.5a.75.75 0 0 1-.65-.375L12 12.375l-3.1 5.25a.75.75 0 0 1-.65.375h-4.5a.75.75 0 0 1-.65-1.125l8.25-14.25A.75.75 0 0 1 12 2.25z"/></svg>'';
-    }
-    {
+    })
+    ++ (lib.optional cfg.radarr.enable {
       name = "Radarr";
       subdomain = "radarr";
       port = cfg.radarr.port;
@@ -41,8 +42,8 @@
       color = "#f9e2af";
       tag = "Movies";
       icon = ''<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg>'';
-    }
-    {
+    })
+    ++ (lib.optional cfg.sonarr.enable {
       name = "Sonarr";
       subdomain = "sonarr";
       port = cfg.sonarr.port;
@@ -51,8 +52,8 @@
       color = "#94e2d5";
       tag = "TV Shows";
       icon = ''<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="15" rx="2" ry="2"/><polyline points="17 2 12 7 7 2"/></svg>'';
-    }
-    {
+    })
+    ++ (lib.optional (cfg.sonarr.enable && cfg.sonarr.anime.enable) {
       name = "Sonarr Anime";
       subdomain = "anime";
       aliases = ["sonarr-anime"];
@@ -62,8 +63,8 @@
       color = "#f38ba8";
       tag = "Anime";
       icon = ''<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16M2 8h20M6 8v12M18 8v12M10 12h4"/></svg>'';
-    }
-    {
+    })
+    ++ (lib.optional cfg.prowlarr.enable {
       name = "Prowlarr";
       subdomain = "prowlarr";
       port = cfg.prowlarr.port;
@@ -72,8 +73,8 @@
       color = "#fab387";
       tag = "Indexers";
       icon = ''<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>'';
-    }
-    {
+    })
+    ++ (lib.optional cfg.qbittorrent.enable {
       name = "qBittorrent";
       subdomain = "qbit";
       aliases = ["qbittorrent"];
@@ -83,8 +84,8 @@
       color = "#89dceb";
       tag = "VPN Protected";
       icon = ''<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>'';
-    }
-    {
+    })
+    ++ (lib.optional cfg.bazarr.enable {
       name = "Bazarr";
       subdomain = "bazarr";
       port = cfg.bazarr.port;
@@ -93,8 +94,7 @@
       color = "#a6e3a1";
       tag = "Subtitles";
       icon = ''<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="8" y1="9" x2="16" y2="9"/><line x1="8" y1="13" x2="13" y2="13"/></svg>'';
-    }
-  ];
+    });
 
   # Generate static HTML/CSS/JS dashboard
   dashboardHtml = pkgs.writeTextDir "index.html" ''
@@ -474,18 +474,21 @@
   allSubdomainVhosts = lib.foldl' lib.mergeAttrs {} (map mkSubdomainVhost servicesList);
 
   # Additional aliases (e.g. anime.lighthouse -> sonarr-anime)
-  extraAliasVhosts = {
-    "http://sonarr-anime.${hostName}, http://sonarr-anime.${tailscaleFqdn}" = {
-      extraConfig = ''
-        reverse_proxy 127.0.0.1:${toString cfg.sonarr.anime.port}
-      '';
+  extraAliasVhosts =
+    lib.optionalAttrs (cfg.sonarr.enable && cfg.sonarr.anime.enable) {
+      "http://sonarr-anime.${hostName}, http://sonarr-anime.${tailscaleFqdn}" = {
+        extraConfig = ''
+          reverse_proxy 127.0.0.1:${toString cfg.sonarr.anime.port}
+        '';
+      };
+    }
+    // lib.optionalAttrs cfg.qbittorrent.enable {
+      "http://qbittorrent.${hostName}, http://qbittorrent.${tailscaleFqdn}" = {
+        extraConfig = ''
+          reverse_proxy 127.0.0.1:${toString cfg.qbittorrent.webuiPort}
+        '';
+      };
     };
-    "http://qbittorrent.${hostName}, http://qbittorrent.${tailscaleFqdn}" = {
-      extraConfig = ''
-        reverse_proxy 127.0.0.1:${toString cfg.qbittorrent.webuiPort}
-      '';
-    };
-  };
 
   # Main Landing Page Virtual Host
   mainDashboardVhost = {
@@ -501,9 +504,11 @@
   allSubdomainNames =
     (map (s: "${s.subdomain}.${hostName}") servicesList)
     ++ (map (s: "${s.subdomain}.${tailscaleFqdn}") servicesList)
-    ++ [
+    ++ lib.optionals (cfg.sonarr.enable && cfg.sonarr.anime.enable) [
       "sonarr-anime.${hostName}"
       "sonarr-anime.${tailscaleFqdn}"
+    ]
+    ++ lib.optionals cfg.qbittorrent.enable [
       "qbittorrent.${hostName}"
       "qbittorrent.${tailscaleFqdn}"
     ];

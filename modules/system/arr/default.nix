@@ -46,6 +46,50 @@ in {
       default = "gute-court.ts.net";
       description = "Tailscale tailnet domain suffix for authorized host access.";
     };
+
+    adminUser = mkOption {
+      type = types.str;
+      default = config.user.primary;
+      description = "Master administrator username for Arr applications.";
+    };
+
+    adminPasswordFile = mkOption {
+      type = types.path;
+      default = config.sops.secrets.arr_jellyfin_admin_password.path;
+      description = "Master administrator password file path for Arr applications.";
+    };
+
+    paths = {
+      torrents = mkOption {
+        type = types.str;
+        default = "${cfg.dataDir}/torrents";
+        description = "Root directory for torrent downloads (incoming and completed).";
+      };
+
+      media = mkOption {
+        type = types.str;
+        default = "${cfg.dataDir}/media";
+        description = "Root directory for organized media libraries.";
+      };
+
+      movies = mkOption {
+        type = types.str;
+        default = "${cfg.paths.media}/movies";
+        description = "Target directory for imported movie libraries (used by Radarr and Jellyfin).";
+      };
+
+      tv = mkOption {
+        type = types.str;
+        default = "${cfg.paths.media}/tv";
+        description = "Target directory for imported TV series libraries (used by Sonarr and Jellyfin).";
+      };
+
+      anime = mkOption {
+        type = types.str;
+        default = "${cfg.paths.media}/anime";
+        description = "Target directory for imported anime series libraries (used by Sonarr Anime and Jellyfin).";
+      };
+    };
   };
 
   config = mkIf cfg.enable {
@@ -54,7 +98,7 @@ in {
     # -------------------------------------------------------------------------
     users.groups.${cfg.mediaGroup} = {
       gid = mkDefault cfg.mediaGid;
-      members = [cfg.mediaUser "bazarr"];
+      members = [cfg.mediaUser] ++ lib.optional cfg.bazarr.enable "bazarr";
     };
 
     # -------------------------------------------------------------------------
@@ -111,7 +155,7 @@ in {
         ];
       };
 
-    # Configure /arr_data directory hierarchy with setgid (2775)
+    # Configure directory hierarchy with setgid (2775)
     # Using systemd.tmpfiles.settings."10-nixflix" directly to avoid conflicting duplicate tmpfiles rules
     systemd.tmpfiles.settings."10-nixflix" =
       {
@@ -120,53 +164,53 @@ in {
           user = "root";
           group = cfg.mediaGroup;
         };
-        "${cfg.dataDir}/torrents".d = {
+        "${cfg.paths.torrents}".d = {
           mode = mkForce "2775";
           user = "root";
           group = cfg.mediaGroup;
         };
-        "${cfg.dataDir}/torrents/default".d = {
+        "${cfg.paths.torrents}/default".d = {
           mode = "2775";
           user = "root";
           group = cfg.mediaGroup;
         };
-        "${cfg.dataDir}/media".d = {
+        "${cfg.paths.media}".d = {
           mode = mkForce "2775";
           user = "root";
           group = cfg.mediaGroup;
         };
       }
       // optionalAttrs cfg.radarr.enable {
-        "${cfg.dataDir}/torrents/radarr".d = {
+        "${cfg.paths.torrents}/radarr".d = {
           mode = "2775";
           user = "root";
           group = cfg.mediaGroup;
         };
-        "${cfg.dataDir}/media/movies".d = {
+        "${cfg.paths.movies}".d = {
           mode = "2775";
           user = "root";
           group = cfg.mediaGroup;
         };
       }
       // optionalAttrs cfg.sonarr.enable {
-        "${cfg.dataDir}/torrents/sonarr".d = {
+        "${cfg.paths.torrents}/sonarr".d = {
           mode = "2775";
           user = "root";
           group = cfg.mediaGroup;
         };
-        "${cfg.dataDir}/media/tv".d = {
+        "${cfg.paths.tv}".d = {
           mode = "2775";
           user = "root";
           group = cfg.mediaGroup;
         };
       }
       // optionalAttrs (cfg.sonarr.enable && cfg.sonarr.anime.enable) {
-        "${cfg.dataDir}/torrents/sonarr-anime".d = {
+        "${cfg.paths.torrents}/sonarr-anime".d = {
           mode = "2775";
           user = "root";
           group = cfg.mediaGroup;
         };
-        "${cfg.dataDir}/media/anime".d = {
+        "${cfg.paths.anime}".d = {
           mode = "2775";
           user = "root";
           group = cfg.mediaGroup;
@@ -179,8 +223,8 @@ in {
     nixflix = {
       enable = true;
 
-      mediaDir = "${cfg.dataDir}/media";
-      downloadsDir = "${cfg.dataDir}/torrents";
+      mediaDir = cfg.paths.media;
+      downloadsDir = cfg.paths.torrents;
       mediaUsers = [cfg.mediaUser];
 
       # Disable public reverse proxies; services are accessed securely via Tailscale and localhost

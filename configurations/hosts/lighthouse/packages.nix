@@ -21,7 +21,7 @@
   # Media automation stack (Arr Stack)
   arr = {
     enable = true;
-    jellyfin.hardwareAcceleration = "qsv"; # optional: Intel QuickSync aktivieren
+    jellyfin.hardwareAcceleration = "qsv"; # Enable Intel QuickSync hardware transcoding
     vpn.enable = true;
   };
 }

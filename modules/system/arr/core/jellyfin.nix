@@ -6,7 +6,7 @@
 }: let
   inherit (lib) mkOption mkIf types optionals;
   cfg = config.arr;
-  inherit (import ./_lib.nix) secretRef;
+  inherit (import ../_lib.nix) secretRef;
 
   jellyfinUser = "jellyfin";
 in {
@@ -26,7 +26,7 @@ in {
 
     adminUser = mkOption {
       type = types.str;
-      default = config.user.primary;
+      default = cfg.adminUser;
       description = "Initial Jellyfin administrator username created by the setup wizard.";
     };
 
@@ -65,7 +65,7 @@ in {
     # add configuration to jellyfin via python script.
     systemd.services.jellyfin = let
       jellyfinSyncScript = pkgs.writeShellScript "jellyfin-sync-credentials" ''
-        exec ${pkgs.python3}/bin/python3 ${./sync-scripts/jellyfin-sync.py} \
+        exec ${pkgs.python3}/bin/python3 ${../scripts/jellyfin-sync.py} \
           --pass-file "${config.sops.secrets.arr_jellyfin_admin_password.path}" \
           --key-file "${config.sops.secrets.arr_jellyfin_api_key.path}" \
           --admin-user "${cfg.jellyfin.adminUser}" \
@@ -93,15 +93,15 @@ in {
       libraries = {
         Movies = {
           collectionType = "movies";
-          paths = ["${cfg.dataDir}/media/movies"];
+          paths = [cfg.paths.movies];
         };
         Series = {
           collectionType = "tvshows";
-          paths = ["${cfg.dataDir}/media/tv"];
+          paths = [cfg.paths.tv];
         };
         Anime = {
           collectionType = "tvshows";
-          paths = ["${cfg.dataDir}/media/anime"];
+          paths = [cfg.paths.anime];
         };
       };
 

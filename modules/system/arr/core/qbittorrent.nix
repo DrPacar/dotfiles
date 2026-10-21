@@ -6,7 +6,7 @@
 }: let
   inherit (lib) mkOption mkIf mkForce types;
   cfg = config.arr;
-  inherit (import ./_lib.nix) secretRef;
+  inherit (import ../_lib.nix) secretRef;
 in {
   options.arr.qbittorrent = {
     enable = mkOption {
@@ -115,7 +115,7 @@ in {
           Interface = mkIf cfg.vpn.enable "wg0";
           InterfaceName = mkIf cfg.vpn.enable "wg0";
           # Fallback path for manually added torrents without a category
-          DefaultSavePath = "${cfg.dataDir}/torrents/default";
+          DefaultSavePath = "${cfg.paths.torrents}/default";
           # Enable Automatic Torrent Management (TMM) so categories use their explicit save paths
           DisableAutoTMMByDefault = false;
           QueueingSystemEnabled = true;
@@ -167,7 +167,7 @@ in {
     systemd.services.qbittorrent = {
       serviceConfig.ExecStartPre = lib.mkAfter [
         (pkgs.writeShellScript "qbittorrent-inject-password" ''
-          exec ${pkgs.python3}/bin/python3 ${./sync-scripts/qbittorrent-sync.py} \
+          exec ${pkgs.python3}/bin/python3 ${../scripts/qbittorrent-sync.py} \
             --pass-file "${config.sops.secrets.arr_qbittorrent_password.path}" \
             --group "${cfg.mediaGroup}"
         '')
