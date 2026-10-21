@@ -19,6 +19,12 @@ in {
       default = 5055;
       description = "Port for Seerr web interface.";
     };
+
+    subdomain = mkOption {
+      type = types.str;
+      default = "seerr";
+      description = "Subdomain name for Seerr reverse proxy routing.";
+    };
   };
 
   config = mkIf (cfg.enable && cfg.seerr.enable) {

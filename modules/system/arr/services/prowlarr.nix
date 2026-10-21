@@ -23,6 +23,12 @@ in {
       description = "Port for Prowlarr web interface.";
     };
 
+    subdomain = mkOption {
+      type = types.str;
+      default = "prowlarr";
+      description = "Subdomain name for Prowlarr reverse proxy routing.";
+    };
+
     indexers = mkOption {
       type = types.listOf types.attrs;
       default = [];

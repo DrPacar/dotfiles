@@ -21,6 +21,12 @@ in {
       description = "Port for qBittorrent WebUI.";
     };
 
+    subdomain = mkOption {
+      type = types.str;
+      default = "qbit";
+      description = "Subdomain name for qBittorrent WebUI reverse proxy routing.";
+    };
+
     maxActiveDownloads = mkOption {
       type = types.ints.unsigned;
       default = 3;

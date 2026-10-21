@@ -49,6 +49,17 @@ in {
       description = "Tailscale tailnet domain suffix for authorized host access (null to disable Tailscale hostnames).";
     };
 
+    domain = mkOption {
+      type = types.nullOr types.str;
+      default = null;
+      example = "media.domain.at";
+      description = ''
+        Primary base domain for web interface reverse proxy routing.
+        When configured, services are routed via `<subdomain>.<domain>`
+        and the central landing page dashboard is served directly on `<domain>`.
+      '';
+    };
+
     network = {
       bindAddress = mkOption {
         type = types.str;
@@ -84,6 +95,10 @@ in {
             "*.${config.networking.hostName}.${cfg.tailscaleDomain}"
             "*.${cfg.tailscaleDomain}"
             "*.ts.net"
+          ]
+          ++ lib.optionals (cfg.domain != null) [
+            cfg.domain
+            "*.${cfg.domain}"
           ]
           ++ cfg.network.extraAllowedHosts;
         description = "List of host patterns permitted by .NET host header validation.";

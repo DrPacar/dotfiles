@@ -13,12 +13,26 @@
     then "${hostName}.${cfg.tailscaleDomain}"
     else null;
 
-  # Subdomain definitions: [ { name, subdomain, port, icon, category, desc, color } ]
+  # Base domains across which Caddy will route requests
+  baseDomains =
+    [hostName]
+    ++ lib.optional (tailscaleFqdn != null) tailscaleFqdn
+    ++ lib.optional (cfg.domain != null) cfg.domain;
+
+  portSuffix =
+    if cfg.dashboard.port == 80
+    then ""
+    else ":${toString cfg.dashboard.port}";
+
+  mkHttpHost = host: "http://${host}${portSuffix}";
+
+  # Subdomain definitions: [ { name, subdomain, port, icon, category, desc, color, aliases } ]
   # Dynamically filtered to only include services that are currently enabled
   servicesList =
     (lib.optional cfg.seerr.enable {
       name = "Seerr";
-      subdomain = "seerr";
+      subdomain = cfg.seerr.subdomain;
+      aliases = ["jellyseerr"];
       port = cfg.seerr.port;
       category = "Entdecken & Anfragen";
       desc = "Filme und Serien suchen, anfragen und verwalten.";
@@ -28,7 +42,7 @@
     })
     ++ (lib.optional cfg.jellyfin.enable {
       name = "Jellyfin";
-      subdomain = "jellyfin";
+      subdomain = cfg.jellyfin.subdomain;
       port = cfg.jellyfin.port;
       category = "Streaming & Mediathek";
       desc = "Medienplayer mit Intel QuickSync Hardware-Transcoding.";
@@ -38,7 +52,7 @@
     })
     ++ (lib.optional cfg.radarr.enable {
       name = "Radarr";
-      subdomain = "radarr";
+      subdomain = cfg.radarr.subdomain;
       port = cfg.radarr.port;
       category = "Filme";
       desc = "Automatische Suche und Qualitätsverwaltung für Spielfilme.";
@@ -48,7 +62,7 @@
     })
     ++ (lib.optional cfg.sonarr.enable {
       name = "Sonarr";
-      subdomain = "sonarr";
+      subdomain = cfg.sonarr.subdomain;
       port = cfg.sonarr.port;
       category = "Serien";
       desc = "Tracking und automatische Downloads für TV-Serien.";
@@ -58,7 +72,7 @@
     })
     ++ (lib.optional (cfg.sonarr.enable && cfg.sonarr.anime.enable) {
       name = "Sonarr Anime";
-      subdomain = "anime";
+      subdomain = cfg.sonarr.anime.subdomain;
       aliases = ["sonarr-anime"];
       port = cfg.sonarr.anime.port;
       category = "Anime";
@@ -69,7 +83,7 @@
     })
     ++ (lib.optional cfg.prowlarr.enable {
       name = "Prowlarr";
-      subdomain = "prowlarr";
+      subdomain = cfg.prowlarr.subdomain;
       port = cfg.prowlarr.port;
       category = "Indexer & Tracker";
       desc = "Zentrale Verwaltung aller Torrent-Tracker und FlareSolverr.";
@@ -79,7 +93,7 @@
     })
     ++ (lib.optional cfg.qbittorrent.enable {
       name = "qBittorrent";
-      subdomain = "qbit";
+      subdomain = cfg.qbittorrent.subdomain;
       aliases = ["qbittorrent"];
       port = cfg.qbittorrent.webuiPort;
       category = "Download-Client";
@@ -90,14 +104,29 @@
     })
     ++ (lib.optional cfg.bazarr.enable {
       name = "Bazarr";
-      subdomain = "bazarr";
+      subdomain = cfg.bazarr.subdomain;
       port = cfg.bazarr.port;
       category = "Untertitel";
       desc = "Automatischer Abgleich und Download passender Untertitel.";
       color = "#a6e3a1";
       tag = "Subtitles";
       icon = ''<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="8" y1="9" x2="16" y2="9"/><line x1="8" y1="13" x2="13" y2="13"/></svg>'';
+    })
+    ++ (lib.optional cfg.flaresolverr.enable {
+      name = "FlareSolverr";
+      subdomain = cfg.flaresolverr.subdomain;
+      port = cfg.flaresolverr.port;
+      category = "Indexer Proxy";
+      desc = "Bypass-Proxy für Cloudflare-geschützte Indexer.";
+      color = "#f2cdcd";
+      tag = "Proxy";
+      icon = ''<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>'';
     });
+
+  displayTitle =
+    if cfg.domain != null
+    then cfg.domain
+    else hostName;
 
   # Generate static HTML/CSS/JS dashboard
   dashboardHtml = pkgs.writeTextDir "index.html" ''
@@ -106,7 +135,7 @@
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>${hostName} &bull; Media Hub</title>
+      <title>${displayTitle} &bull; Media Hub</title>
       <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23cba6f7'><path d='M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5'/></svg>">
       <style>
         :root {
@@ -201,26 +230,36 @@
         }
         .search-input {
           width: 100%;
-          background: var(--ctp-mantle);
-          border: 1px solid var(--ctp-surface0);
-          border-radius: 12px;
-          padding: 0.9rem 1.25rem;
-          font-size: 1rem;
+          padding: 1rem 1.25rem 1rem 3rem;
+          border-radius: 14px;
+          border: 1px solid var(--ctp-surface1);
+          background: rgba(30, 30, 46, 0.7);
+          backdrop-filter: blur(12px);
           color: var(--ctp-text);
-          transition: all 0.2s ease;
+          font-size: 1.05rem;
           outline: none;
+          transition: all 0.2s ease;
         }
         .search-input:focus {
           border-color: var(--ctp-mauve);
           box-shadow: 0 0 0 3px rgba(203, 166, 247, 0.2);
         }
+        .search-container::before {
+          content: '🔍';
+          position: absolute;
+          left: 1.1rem;
+          top: 50%;
+          transform: translateY(-50%);
+          font-size: 1.1rem;
+          opacity: 0.6;
+        }
         .grid {
           display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+          grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
           gap: 1.5rem;
         }
         .card {
-          background: rgba(24, 24, 37, 0.7);
+          background: rgba(30, 30, 46, 0.5);
           backdrop-filter: blur(12px);
           border: 1px solid var(--ctp-surface0);
           border-radius: 16px;
@@ -345,18 +384,38 @@
               <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
                 <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
               </svg>
-              ${hostName}
+              ${displayTitle}
             </h1>
-            <p>Dein zentraler Arr- & Medienserver</p>
+            <p>${
+      if cfg.domain != null
+      then "Zentraler Arr- & Medienserver • ${hostName}"
+      else "Dein zentraler Arr- & Medienserver"
+    }</p>
           </div>
           <div class="header-meta">
+            ${
+      if cfg.vpn.enable
+      then ''
+        <div class="badge">
+          <span class="badge-dot"></span>
+          <span>ProtonVPN Aktiv</span>
+        </div>
+      ''
+      else ''
+        <div class="badge">
+          <span class="badge-dot" style="background: var(--ctp-subtext0); box-shadow: none;"></span>
+          <span>Host-Netzwerk</span>
+        </div>
+      ''
+    }
             <div class="badge">
-              <span class="badge-dot"></span>
-              <span>ProtonVPN Aktiv</span>
+              <span>Speicher: ${cfg.dataDir}</span>
             </div>
-            <div class="badge">
-              <span>Speicher: /arr_data</span>
-            </div>
+            ${lib.optionalString (cfg.domain != null) ''
+      <div class="badge">
+        <span>Domain: ${cfg.domain}</span>
+      </div>
+    ''}
             <div class="clock" id="clock">00:00:00</div>
           </div>
         </header>
@@ -385,7 +444,7 @@
               Öffnen &rarr;
             </a>
             <div class="links-row">
-              <a href="http://${s.subdomain}.${hostName}" class="pill-link" title="Subdomain">
+              <a href="http://${s.subdomain}.${hostName}" class="pill-link" data-subdomain-pill="${s.subdomain}" data-port="${toString s.port}" title="Subdomain">
                 ${s.subdomain}.${hostName}
               </a>
               <a href="http://${hostName}:${toString s.port}" class="pill-link" data-port-link="${toString s.port}" title="Direkter Port">
@@ -399,7 +458,7 @@
         </div>
 
         <footer>
-          <p>${hostName} &bull; Verwaltet über NixOS Flake &bull; 100% WireGuard VPN isoliert</p>
+          <p>${displayTitle} &bull; Verwaltet über NixOS Flake &bull; Caddy Reverse Proxy</p>
         </footer>
       </div>
 
@@ -412,23 +471,48 @@
         setInterval(updateClock, 1000);
         updateClock();
 
-        // Smart link resolution: adjust links depending on how user reached the dashboard
+        // Smart link resolution: adjust links dynamically depending on current host in browser
         const currentHost = window.location.hostname;
+        const currentPort = window.location.port;
+        const protocol = window.location.protocol;
+        const portSuffix = (currentPort && currentPort !== "80" && currentPort !== "443") ? (":" + currentPort) : "";
         const isTailscale = currentHost.includes('.ts.net') || currentHost.startsWith('100.');
 
+        // Update main action buttons
         document.querySelectorAll('[data-subdomain]').forEach(el => {
           const sub = el.getAttribute('data-subdomain');
           const port = el.getAttribute('data-port');
 
           if (isTailscale) {
-            // Over Tailscale MagicDNS, link directly to the port on the Tailscale hostname
+            // Over Tailscale MagicDNS without split-DNS, route to direct port
             el.href = 'http://' + currentHost + ':' + port;
+          } else if (currentHost === 'localhost' || currentHost === '127.0.0.1') {
+            // On localhost, modern browsers resolve *.localhost automatically
+            el.href = protocol + '//' + sub + '.localhost' + portSuffix;
           } else {
-            // Locally, link to the subdomain
-            el.href = 'http://' + sub + '.' + currentHost.replace(/:\d+$/, "");
+            // Over custom domain (e.g. media.domain.at) or LAN hostname
+            el.href = protocol + '//' + sub + '.' + currentHost + portSuffix;
           }
         });
 
+        // Update subdomain pill labels and links
+        document.querySelectorAll('[data-subdomain-pill]').forEach(el => {
+          const sub = el.getAttribute('data-subdomain-pill');
+          const port = el.getAttribute('data-port');
+
+          if (isTailscale) {
+            el.textContent = sub + '.' + currentHost;
+            el.href = 'http://' + currentHost + ':' + port;
+          } else if (currentHost === 'localhost' || currentHost === '127.0.0.1') {
+            el.textContent = sub + '.localhost';
+            el.href = protocol + '//' + sub + '.localhost' + portSuffix;
+          } else {
+            el.textContent = sub + '.' + currentHost;
+            el.href = protocol + '//' + sub + '.' + currentHost + portSuffix;
+          }
+        });
+
+        // Direct port link
         document.querySelectorAll('[data-port-link]').forEach(el => {
           const port = el.getAttribute('data-port-link');
           el.href = 'http://' + currentHost + ':' + port;
@@ -458,9 +542,14 @@
     </html>
   '';
 
-  # Helper to generate virtual host definitions for Caddy (strictly plain HTTP to avoid ACME / TLS handshake errors)
-  mkSubdomainVhost = s: {
-    "http://${s.subdomain}.${hostName}${lib.optionalString (tailscaleFqdn != null) ", http://${s.subdomain}.${tailscaleFqdn}"}" = {
+  # Helper to generate virtual host definitions for Caddy
+  # Strictly plain HTTP for now to avoid premature ACME / TLS handshake errors
+  mkSubdomainVhost = s: let
+    allSubNames = [s.subdomain] ++ (s.aliases or []);
+    hostsList = lib.flatten (map (sub: map (d: mkHttpHost "${sub}.${d}") baseDomains) allSubNames);
+    vhostKey = lib.concatStringsSep ", " hostsList;
+  in {
+    "${vhostKey}" = {
       extraConfig = ''
         reverse_proxy 127.0.0.1:${toString s.port} {
           header_up Host {host}
@@ -475,26 +564,12 @@
   # Flatten all subdomain vhosts
   allSubdomainVhosts = lib.foldl' lib.mergeAttrs {} (map mkSubdomainVhost servicesList);
 
-  # Additional aliases (e.g. anime.lighthouse -> sonarr-anime)
-  extraAliasVhosts =
-    lib.optionalAttrs (cfg.sonarr.enable && cfg.sonarr.anime.enable) {
-      "http://sonarr-anime.${hostName}${lib.optionalString (tailscaleFqdn != null) ", http://sonarr-anime.${tailscaleFqdn}"}" = {
-        extraConfig = ''
-          reverse_proxy 127.0.0.1:${toString cfg.sonarr.anime.port}
-        '';
-      };
-    }
-    // lib.optionalAttrs cfg.qbittorrent.enable {
-      "http://qbittorrent.${hostName}${lib.optionalString (tailscaleFqdn != null) ", http://qbittorrent.${tailscaleFqdn}"}" = {
-        extraConfig = ''
-          reverse_proxy 127.0.0.1:${toString cfg.qbittorrent.webuiPort}
-        '';
-      };
-    };
-
   # Main Landing Page Virtual Host
-  mainDashboardVhost = {
-    "${lib.optionalString (tailscaleFqdn != null) "http://${tailscaleFqdn}, "}http://${hostName}, http://localhost, http://127.0.0.1" = {
+  mainDashboardVhost = let
+    dashboardHostsList = [(mkHttpHost "localhost") (mkHttpHost "127.0.0.1")] ++ (map mkHttpHost baseDomains);
+    vhostKey = lib.concatStringsSep ", " dashboardHostsList;
+  in {
+    "${vhostKey}" = {
       extraConfig = ''
         root * ${dashboardHtml}
         file_server
@@ -502,18 +577,19 @@
     };
   };
 
-  # Generate /etc/hosts entries for all subdomains
-  allSubdomainNames =
-    (map (s: "${s.subdomain}.${hostName}") servicesList)
-    ++ lib.optionals (tailscaleFqdn != null) (map (s: "${s.subdomain}.${tailscaleFqdn}") servicesList)
-    ++ lib.optionals (cfg.sonarr.enable && cfg.sonarr.anime.enable) (
-      ["sonarr-anime.${hostName}"]
-      ++ lib.optional (tailscaleFqdn != null) "sonarr-anime.${tailscaleFqdn}"
+  # Generate /etc/hosts entries for all subdomains and domains
+  allSubdomainNames = lib.unique (
+    lib.flatten (
+      map (
+        s: let
+          allSubNames = [s.subdomain] ++ (s.aliases or []);
+        in
+          map (sub: map (d: "${sub}.${d}") baseDomains) allSubNames
+      )
+      servicesList
     )
-    ++ lib.optionals cfg.qbittorrent.enable (
-      ["qbittorrent.${hostName}"]
-      ++ lib.optional (tailscaleFqdn != null) "qbittorrent.${tailscaleFqdn}"
-    );
+    ++ (lib.optional (cfg.domain != null) cfg.domain)
+  );
 in {
   options.arr.dashboard = {
     enable = mkOption {
@@ -521,14 +597,26 @@ in {
       default = true;
       description = "Enable Caddy reverse proxy with subdomains and a unified landing page dashboard.";
     };
+
+    port = mkOption {
+      type = types.port;
+      default = 80;
+      description = "HTTP port on which the Caddy reverse proxy listens for the dashboard and subdomains.";
+    };
+
+    addHostsEntries = mkOption {
+      type = types.bool;
+      default = true;
+      description = "Whether to automatically add /etc/hosts entries mapping all subdomains to 127.0.0.1.";
+    };
   };
 
   config = mkIf (cfg.enable && cfg.dashboard.enable) {
-    # Open HTTP (80) in firewall
-    networking.firewall.allowedTCPPorts = [80];
+    # Open dashboard HTTP port in firewall
+    networking.firewall.allowedTCPPorts = [cfg.dashboard.port];
 
-    # Map all subdomains to localhost in /etc/hosts
-    networking.hosts."127.0.0.1" = allSubdomainNames;
+    # Map all subdomains to localhost in /etc/hosts for instant local resolution
+    networking.hosts."127.0.0.1" = mkIf cfg.dashboard.addHostsEntries allSubdomainNames;
 
     # Caddy Reverse Proxy
     services.caddy = {
@@ -539,7 +627,6 @@ in {
       virtualHosts = lib.mkMerge [
         mainDashboardVhost
         allSubdomainVhosts
-        extraAliasVhosts
       ];
     };
   };

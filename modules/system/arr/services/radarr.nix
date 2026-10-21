@@ -22,6 +22,12 @@ in {
       default = 7878;
       description = "Port for Radarr web interface.";
     };
+
+    subdomain = mkOption {
+      type = types.str;
+      default = "radarr";
+      description = "Subdomain name for Radarr reverse proxy routing.";
+    };
   };
 
   config = mkIf (cfg.enable && cfg.radarr.enable) {

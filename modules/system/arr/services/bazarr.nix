@@ -21,6 +21,12 @@ in {
       default = 6767;
       description = "Port for Bazarr web interface.";
     };
+
+    subdomain = mkOption {
+      type = types.str;
+      default = "bazarr";
+      description = "Subdomain name for Bazarr reverse proxy routing.";
+    };
   };
 
   config = mkIf (cfg.enable && cfg.bazarr.enable) {

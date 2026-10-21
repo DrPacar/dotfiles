@@ -18,6 +18,12 @@ in {
       default = 8191;
       description = "Port for FlareSolverr service.";
     };
+
+    subdomain = mkOption {
+      type = types.str;
+      default = "flaresolverr";
+      description = "Subdomain name for FlareSolverr reverse proxy routing.";
+    };
   };
 
   config = mkIf (cfg.enable && cfg.flaresolverr.enable) {

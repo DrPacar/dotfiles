@@ -8,6 +8,7 @@
   cfg = config.arr;
 
   arrConfigJson = pkgs.writeText "arr-config.json" (builtins.toJSON {
+    domain = cfg.domain;
     dataDir = cfg.dataDir;
     tailscaleDomain = cfg.tailscaleDomain;
     paths = cfg.paths;
@@ -27,46 +28,55 @@
       jellyfin = {
         enable = cfg.jellyfin.enable;
         port = cfg.jellyfin.port;
+        subdomain = cfg.jellyfin.subdomain;
         unit = "jellyfin.service";
       };
       qbittorrent = {
         enable = cfg.qbittorrent.enable;
         port = cfg.qbittorrent.webuiPort;
+        subdomain = cfg.qbittorrent.subdomain;
         unit = "qbittorrent.service";
       };
       radarr = {
         enable = cfg.radarr.enable;
         port = cfg.radarr.port;
+        subdomain = cfg.radarr.subdomain;
         unit = "radarr.service";
       };
       sonarr = {
         enable = cfg.sonarr.enable;
         port = cfg.sonarr.port;
+        subdomain = cfg.sonarr.subdomain;
         unit = "sonarr.service";
       };
       sonarr-anime = {
         enable = cfg.sonarr.enable && cfg.sonarr.anime.enable;
         port = cfg.sonarr.anime.port;
+        subdomain = cfg.sonarr.anime.subdomain;
         unit = "sonarr-anime.service";
       };
       prowlarr = {
         enable = cfg.prowlarr.enable;
         port = cfg.prowlarr.port;
+        subdomain = cfg.prowlarr.subdomain;
         unit = "prowlarr.service";
       };
       bazarr = {
         enable = cfg.bazarr.enable;
         port = cfg.bazarr.port;
+        subdomain = cfg.bazarr.subdomain;
         unit = "bazarr.service";
       };
       seerr = {
         enable = cfg.seerr.enable;
         port = cfg.seerr.port;
+        subdomain = cfg.seerr.subdomain;
         unit = "seerr.service";
       };
       flaresolverr = {
         enable = cfg.flaresolverr.enable;
         port = cfg.flaresolverr.port;
+        subdomain = cfg.flaresolverr.subdomain;
         unit = "flaresolverr.service";
       };
       recyclarr = {

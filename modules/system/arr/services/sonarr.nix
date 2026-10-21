@@ -52,6 +52,12 @@ in {
       description = "Port for Sonarr web interface.";
     };
 
+    subdomain = mkOption {
+      type = types.str;
+      default = "sonarr";
+      description = "Subdomain name for Sonarr reverse proxy routing.";
+    };
+
     anime = {
       enable = mkOption {
         type = types.bool;
@@ -63,6 +69,12 @@ in {
         type = types.port;
         default = 8990;
         description = "Port for Sonarr Anime web interface.";
+      };
+
+      subdomain = mkOption {
+        type = types.str;
+        default = "anime";
+        description = "Subdomain name for Sonarr Anime reverse proxy routing.";
       };
     };
   };

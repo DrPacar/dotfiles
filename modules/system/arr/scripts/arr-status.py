@@ -178,6 +178,7 @@ def build_status_dict(config):
             "enabled": enabled,
             "unit": unit_name,
             "port": s_data.get("port"),
+            "subdomain": s_data.get("subdomain"),
             "active_state": props.get("ActiveState", "inactive" if enabled else "disabled"),
             "sub_state": props.get("SubState", "dead"),
             "memory_bytes": mem_bytes,
@@ -253,10 +254,13 @@ def render_rich_ui(console, data):
     host = data["host"]
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     data_dir = data["config"].get("dataDir", "/arr_data")
+    domain = data["config"].get("domain")
 
     header_text = Text()
     header_text.append(" 🎬 Arr Stack Status Monitor", style="bold cyan")
     header_text.append(f"  •  Host: [bold white]{host}[/bold white]")
+    if domain:
+        header_text.append(f"  •  Domain: [bold magenta]{domain}[/bold magenta]")
     header_text.append(f"  •  Time: [dim]{now_str}[/dim]")
     header_text.append(f"  •  Root: [bold yellow]{data_dir}[/bold yellow]")
     console.print(Panel(header_text, border_style="cyan", box=box.ROUNDED))
@@ -306,7 +310,14 @@ def render_rich_ui(console, data):
         elif active == "active":
             status_badge = Text("● Active", style="bold green")
             sub_badge = Text(sub, style="green")
-            url = f"http://localhost:{svc['port']}" if svc["port"] else "systemd-timer"
+            if svc["port"]:
+                domain = data["config"].get("domain")
+                if domain and svc.get("subdomain"):
+                    url = f"http://{svc['subdomain']}.{domain}"
+                else:
+                    url = f"http://localhost:{svc['port']}"
+            else:
+                url = "systemd-timer"
         elif active == "failed":
             status_badge = Text("✖ Failed", style="bold red")
             sub_badge = Text(sub, style="red")

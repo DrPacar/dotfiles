@@ -24,6 +24,12 @@ in {
       description = "Port for Jellyfin web interface.";
     };
 
+    subdomain = mkOption {
+      type = types.str;
+      default = "jellyfin";
+      description = "Subdomain name for Jellyfin reverse proxy routing.";
+    };
+
     adminUser = mkOption {
       type = types.str;
       default = cfg.adminUser;
