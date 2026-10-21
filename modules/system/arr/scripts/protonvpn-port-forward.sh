@@ -95,9 +95,9 @@ detect_vpn_gateway() {
     gw=$(ip -4 route show dev wg0 2>/dev/null | awk '{print $1}' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$' | head -n 1 || true)
   fi
 
-  # 3. Check DNS server in /etc/resolv.conf (VPN DNS usually matches gateway)
+  # 3. Check DNS server in /etc/resolv.conf (VPN DNS usually matches gateway, ignore local loopback 127.x stubs)
   if [[ -z $gw && -f /etc/resolv.conf ]]; then
-    gw=$(awk '/nameserver/ {print $2}' /etc/resolv.conf | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$' | head -n 1 || true)
+    gw=$(awk '/nameserver/ {print $2}' /etc/resolv.conf | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$' | grep -vE '^127\.' | head -n 1 || true)
   fi
 
   # 4. Fallback to standard Proton / WireGuard internal gateway
