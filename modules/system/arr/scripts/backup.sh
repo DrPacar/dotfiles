@@ -129,7 +129,7 @@ echo "Backup completed successfully! Archive size: $ARCHIVE_SIZE"
 
 # Retention management: prune archives older than RETENTION_DAYS, keeping at least 3 newest archives
 echo "Pruning backups older than $RETENTION_DAYS days in $DEST_DIR..."
-mapfile -t ALL_BACKUPS < <(find "$DEST_DIR" -maxdepth 1 -name "arr-backup-*.tar.zst" -printf "%T@ %p\n" | sort -n | awk '{print $2}')
+mapfile -t ALL_BACKUPS < <(find "$DEST_DIR" -maxdepth 1 -name "arr-backup-*.tar.zst" -printf "%T@ %p\n" | sort -n | cut -d' ' -f2-)
 TOTAL_COUNT="${#ALL_BACKUPS[@]}"
 MIN_KEEP=3
 

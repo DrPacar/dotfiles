@@ -97,8 +97,8 @@ in {
     };
 
     adminPasswordFile = mkOption {
-      type = types.path;
-      default = config.sops.secrets.arr_jellyfin_admin_password.path;
+      type = types.nullOr types.path;
+      default = config.sops.secrets.arr_jellyfin_admin_password.path or null;
       description = "Master administrator password file path for Arr applications.";
     };
 
@@ -197,25 +197,27 @@ in {
     # Secrets Permissions & Automatic Service Synchronization
     # -------------------------------------------------------------------------
     sops.secrets =
-      (lib.genAttrs [
-          "arr_sonarr_api_key"
-          "arr_sonarr_anime_api_key"
-          "arr_radarr_api_key"
-          "arr_prowlarr_api_key"
-          "arr_bazarr_api_key"
-          "arr_seerr_api_key"
-          "arr_jellyfin_api_key"
-          "arr_jellyfin_admin_password"
-          "arr_qbittorrent_password"
-        ] (_name: {
+      (lib.genAttrs (
+          lib.optional cfg.sonarr.enable "arr_sonarr_api_key"
+          ++ lib.optional (cfg.sonarr.enable && cfg.sonarr.anime.enable) "arr_sonarr_anime_api_key"
+          ++ lib.optional cfg.radarr.enable "arr_radarr_api_key"
+          ++ lib.optional cfg.prowlarr.enable "arr_prowlarr_api_key"
+          ++ lib.optional cfg.bazarr.enable "arr_bazarr_api_key"
+          ++ lib.optional cfg.seerr.enable "arr_seerr_api_key"
+          ++ lib.optional cfg.jellyfin.enable "arr_jellyfin_api_key"
+          ++ lib.optional (cfg.jellyfin.enable || cfg.seerr.enable) "arr_jellyfin_admin_password"
+          ++ lib.optional cfg.qbittorrent.enable "arr_qbittorrent_password"
+        ) (_name: {
           group = lib.mkForce cfg.mediaGroup;
           mode = lib.mkForce "0440";
         }))
-      // {
+      // lib.optionalAttrs cfg.vpn.enable {
         arr_wireguard_conf = {
           mode = lib.mkForce "0400";
-          restartUnits = lib.optional cfg.vpn.enable "${cfg.vpn.namespace}.service";
+          restartUnits = ["${cfg.vpn.namespace}.service"];
         };
+      }
+      // {
         arr_sonarr_api_key.restartUnits =
           lib.optional cfg.sonarr.enable "sonarr-config.service"
           ++ lib.optional (cfg.prowlarr.enable && cfg.sonarr.enable) "prowlarr-applications.service"

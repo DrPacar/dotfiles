@@ -204,14 +204,24 @@ def build_status_dict(config):
     }
 
     vpn_cfg = services_cfg.get("vpn", {})
+    qbittorrent_enabled = services_cfg.get("qbittorrent", {}).get("enable", False)
+
+    proxy_active = unit_props.get(vpn_cfg.get("proxyUnit", ""), {}).get("ActiveState", "inactive")
+    if not qbittorrent_enabled:
+        proxy_active = "disabled"
+
+    forwarder_active = unit_props.get(vpn_cfg.get("forwarderUnit", ""), {}).get("ActiveState", "inactive")
+    if not (qbittorrent_enabled and vpn_cfg.get("enable", False)):
+        forwarder_active = "disabled"
+
     vpn_status = {
         "enabled": vpn_cfg.get("enable", False),
         "tunnel_unit": vpn_cfg.get("unit", "wg.service"),
         "tunnel_state": unit_props.get(vpn_cfg.get("unit", "wg.service"), {}).get("ActiveState", "inactive"),
         "proxy_unit": vpn_cfg.get("proxyUnit", ""),
-        "proxy_state": unit_props.get(vpn_cfg.get("proxyUnit", ""), {}).get("ActiveState", "inactive"),
+        "proxy_state": proxy_active,
         "forwarder_unit": vpn_cfg.get("forwarderUnit", ""),
-        "forwarder_state": unit_props.get(vpn_cfg.get("forwarderUnit", ""), {}).get("ActiveState", "inactive"),
+        "forwarder_state": forwarder_active,
     }
 
     disk_info = get_disk_info(config.get("dataDir", "/arr_data"))
@@ -318,13 +328,17 @@ def render_rich_ui(console, data):
     vpn = data["vpn"]
     vpn_text = Text()
     if vpn["enabled"]:
-        t_color = "green" if vpn["tunnel_state"] == "active" else "red"
-        p_color = "green" if vpn["proxy_state"] == "active" else "red"
-        f_color = "green" if vpn["forwarder_state"] == "active" else "yellow"
+        def fmt_vpn(state):
+            if state == "active":
+                return "[green]● ACTIVE[/green]"
+            elif state == "disabled":
+                return "[dim]DISABLED[/dim]"
+            else:
+                return f"[red]● {state.upper()}[/red]"
 
-        vpn_text.append(f"WireGuard Tunnel:  [{t_color}]● {vpn['tunnel_state'].upper()}[/{t_color}] ({vpn['tunnel_unit']})\n")
-        vpn_text.append(f"WebUI Proxy:       [{p_color}]● {vpn['proxy_state'].upper()}[/{p_color}]\n")
-        vpn_text.append(f"Port Forwarder:    [{f_color}]● {vpn['forwarder_state'].upper()}[/{f_color}]")
+        vpn_text.append(f"WireGuard Tunnel:  {fmt_vpn(vpn['tunnel_state'])} ({vpn['tunnel_unit']})\n")
+        vpn_text.append(f"WebUI Proxy:       {fmt_vpn(vpn['proxy_state'])}\n")
+        vpn_text.append(f"Port Forwarder:    {fmt_vpn(vpn['forwarder_state'])}")
     else:
         vpn_text.append("VPN Isolation: [dim]Disabled[/dim] (qBittorrent running on host network)")
 
