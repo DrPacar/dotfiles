@@ -23,5 +23,6 @@
     enable = true;
     jellyfin.hardwareAcceleration = "qsv"; # Enable Intel QuickSync hardware transcoding
     vpn.enable = true;
+    backup.enable = false;
   };
 }
