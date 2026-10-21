@@ -90,6 +90,51 @@ in {
         description = "Target directory for imported anime series libraries (used by Sonarr Anime and Jellyfin).";
       };
     };
+
+    resources = {
+      enable = mkOption {
+        type = types.bool;
+        default = true;
+        description = "Enable cgroup resource management slice (arr.slice) for media stack services.";
+      };
+
+      cpuWeight = mkOption {
+        type = types.ints.between 1 10000;
+        default = 50;
+        description = ''
+          Relative CPU weight (1 to 10000, default 100).
+          Values below 100 ensure the interactive desktop environment takes priority during resource contention.
+        '';
+      };
+
+      ioWeight = mkOption {
+        type = types.ints.between 1 10000;
+        default = 50;
+        description = ''
+          Relative block I/O weight (1 to 10000, default 100).
+          Values below 100 reduce disk starvation for interactive applications during heavy torrenting or unpack operations.
+        '';
+      };
+
+      memoryHigh = mkOption {
+        type = types.nullOr types.str;
+        default = "75%";
+        description = ''
+          Soft memory threshold (e.g., "75%" or "8G").
+          When exceeded, systemd aggressively reclaims page cache and throttles allocation without invoking the OOM killer.
+        '';
+      };
+
+      memoryMax = mkOption {
+        type = types.nullOr types.str;
+        default = null;
+        description = ''
+          Hard memory ceiling (e.g., "90%" or "16G").
+          If exceeded and memory cannot be reclaimed, processes in the slice will be terminated by the kernel OOM killer.
+          Default is null (unrestricted ceiling).
+        '';
+      };
+    };
   };
 
   config = mkIf cfg.enable {
@@ -231,5 +276,64 @@ in {
       nginx.enable = false;
       caddy.enable = false;
     };
+
+    # -------------------------------------------------------------------------
+    # Resource Management (cgroups v2 arr.slice)
+    # -------------------------------------------------------------------------
+    systemd.slices.arr = mkIf cfg.resources.enable {
+      description = "Media and Automation Stack Slice";
+      sliceConfig =
+        {
+          CPUWeight = cfg.resources.cpuWeight;
+          IOWeight = cfg.resources.ioWeight;
+        }
+        // optionalAttrs (cfg.resources.memoryHigh != null) {
+          MemoryHigh = cfg.resources.memoryHigh;
+        }
+        // optionalAttrs (cfg.resources.memoryMax != null) {
+          MemoryMax = cfg.resources.memoryMax;
+        };
+    };
+
+    systemd.services = mkIf cfg.resources.enable (
+      lib.mkMerge [
+        (mkIf cfg.jellyfin.enable {
+          jellyfin.serviceConfig.Slice = "arr.slice";
+        })
+        (mkIf cfg.qbittorrent.enable {
+          qbittorrent.serviceConfig.Slice = "arr.slice";
+        })
+        (mkIf (cfg.qbittorrent.enable && cfg.vpn.enable) {
+          qbittorrent-webui-proxy.serviceConfig.Slice = "arr.slice";
+        })
+        (mkIf (cfg.qbittorrent.enable && cfg.vpn.enable && cfg.vpn.portForwarding.enable) {
+          protonvpn-port-forward.serviceConfig.Slice = "arr.slice";
+        })
+        (mkIf cfg.radarr.enable {
+          radarr.serviceConfig.Slice = "arr.slice";
+        })
+        (mkIf cfg.sonarr.enable {
+          sonarr.serviceConfig.Slice = "arr.slice";
+        })
+        (mkIf (cfg.sonarr.enable && cfg.sonarr.anime.enable) {
+          sonarr-anime.serviceConfig.Slice = "arr.slice";
+        })
+        (mkIf cfg.prowlarr.enable {
+          prowlarr.serviceConfig.Slice = "arr.slice";
+        })
+        (mkIf cfg.bazarr.enable {
+          bazarr.serviceConfig.Slice = "arr.slice";
+        })
+        (mkIf cfg.seerr.enable {
+          seerr.serviceConfig.Slice = "arr.slice";
+        })
+        (mkIf (cfg.recyclarr.enable && (cfg.radarr.enable || cfg.sonarr.enable)) {
+          recyclarr.serviceConfig.Slice = "arr.slice";
+        })
+        (mkIf cfg.flaresolverr.enable {
+          flaresolverr.serviceConfig.Slice = "arr.slice";
+        })
+      ]
+    );
   };
 }
