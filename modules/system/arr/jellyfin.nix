@@ -10,6 +10,7 @@
 
   jellyfinUser = "jellyfin";
 in {
+  # Options associated with jellyfin
   options.arr.jellyfin = {
     enable = mkOption {
       type = types.bool;
@@ -61,80 +62,14 @@ in {
     sops.secrets.arr_jellyfin_admin_password.restartUnits = ["jellyfin.service"];
     sops.secrets.arr_jellyfin_api_key.restartUnits = ["jellyfin.service"];
 
+    # add configuration to jellyfin via python script.
     systemd.services.jellyfin = let
       jellyfinSyncScript = pkgs.writeShellScript "jellyfin-sync-credentials" ''
-                set -eu
-
-                DB_PATH="/var/lib/jellyfin/data/jellyfin.db"
-                PASS_FILE="${config.sops.secrets.arr_jellyfin_admin_password.path}"
-                KEY_FILE="${config.sops.secrets.arr_jellyfin_api_key.path}"
-                ADMIN_USER="${cfg.jellyfin.adminUser}"
-
-                if [ ! -f "$DB_PATH" ] || [ ! -f "$PASS_FILE" ] || [ ! -f "$KEY_FILE" ]; then
-                  exit 0
-                fi
-
-                ${pkgs.python3}/bin/python3 - "$DB_PATH" "$ADMIN_USER" "$PASS_FILE" "$KEY_FILE" <<'EOF'
-        import sys, os, sqlite3, hashlib
-
-        db_path = sys.argv[1]
-        admin_user = sys.argv[2]
-        pass_file = sys.argv[3]
-        key_file = sys.argv[4]
-
-        with open(pass_file, "r") as f:
-            password = f.read().strip()
-
-        with open(key_file, "r") as f:
-            api_key = f.read().strip()
-
-        conn = sqlite3.connect(db_path)
-        cur = conn.cursor()
-
-        # 1. Synchronize Admin User Password
-        cur.execute("SELECT Id, Password, InvalidLoginAttemptCount FROM Users WHERE Username = ?", (admin_user,))
-        row = cur.fetchone()
-        if row:
-            user_id, current_hash, invalid_attempts = row
-            match = False
-            if current_hash and current_hash.startswith("$PBKDF2-SHA512$iterations="):
-                try:
-                    parts = current_hash.split("$")
-                    iterations = int(parts[2].split("=")[1])
-                    salt = bytes.fromhex(parts[3])
-                    expected_hash = parts[4].upper()
-                    computed = hashlib.pbkdf2_hmac("sha512", password.encode("utf-8"), salt, iterations, dklen=64).hex().upper()
-                    if computed == expected_hash:
-                        match = True
-                except Exception as e:
-                    print(f"Error checking password hash: {e}", file=sys.stderr)
-
-            if not match:
-                salt = os.urandom(16)
-                salt_hex = salt.hex().upper()
-                new_hash_hex = hashlib.pbkdf2_hmac("sha512", password.encode("utf-8"), salt, 210000, dklen=64).hex().upper()
-                new_formatted_hash = "$PBKDF2-SHA512$iterations=210000$" + salt_hex + "$" + new_hash_hex
-                cur.execute("UPDATE Users SET Password = ?, InvalidLoginAttemptCount = 0 WHERE Username = ?", (new_formatted_hash, admin_user))
-                print(f"Synchronized Jellyfin password for user {admin_user}")
-            elif invalid_attempts > 0:
-                cur.execute("UPDATE Users SET InvalidLoginAttemptCount = 0 WHERE Username = ?", (admin_user,))
-                print(f"Reset InvalidLoginAttemptCount for user {admin_user}")
-
-        # 2. Synchronize nixflix ApiKey
-        if api_key:
-            cur.execute("SELECT AccessToken FROM ApiKeys WHERE Name = 'nixflix'")
-            key_row = cur.fetchone()
-            if not key_row or key_row[0] != api_key:
-                cur.execute("DELETE FROM ApiKeys WHERE Name = 'nixflix' OR AccessToken = ?", (api_key,))
-                cur.execute("INSERT INTO ApiKeys (AccessToken, Name, DateCreated, DateLastActivity) VALUES (?, 'nixflix', datetime('now'), datetime('now'))", (api_key,))
-                print("Synchronized nixflix API key in Jellyfin DB")
-
-        conn.commit()
-        conn.close()
-        EOF
-
-                chown jellyfin:${cfg.mediaGroup} "$DB_PATH"* 2>/dev/null || true
-                chmod 644 "$DB_PATH"* 2>/dev/null || true
+        exec ${pkgs.python3}/bin/python3 ${./sync-scripts/jellyfin-sync.py} \
+          --pass-file "${config.sops.secrets.arr_jellyfin_admin_password.path}" \
+          --key-file "${config.sops.secrets.arr_jellyfin_api_key.path}" \
+          --admin-user "${cfg.jellyfin.adminUser}" \
+          --media-group "${cfg.mediaGroup}"
       '';
     in {
       serviceConfig.ExecStartPre = [
