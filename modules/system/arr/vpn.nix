@@ -29,8 +29,10 @@ in {
     accessibleFrom = mkOption {
       type = types.listOf types.str;
       default = [
-        "192.168.0.0/16"
-        "100.64.0.0/10" # Tailscale CGNAT subnet
+        "10.0.0.0/8" # RFC 1918 Class A
+        "172.16.0.0/12" # RFC 1918 Class B
+        "192.168.0.0/16" # RFC 1918 Class C (Home LANs)
+        "100.64.0.0/10" # RFC 6598 Carrier-Grade NAT (Tailscale CGNAT)
       ];
       description = "Subnets or IP ranges in the host namespace that can reach VPN-confined services across the bridge.";
     };
@@ -61,9 +63,9 @@ in {
       };
 
       gateway = mkOption {
-        type = types.str;
-        default = "10.2.0.1";
-        description = "Internal VPN gateway IP for NAT-PMP requests.";
+        type = types.nullOr types.str;
+        default = null;
+        description = "Internal VPN gateway IP for NAT-PMP requests. If null, automatically detected dynamically from the routing table.";
       };
 
       leaseDuration = mkOption {
@@ -80,7 +82,9 @@ in {
     };
   };
 
-  config = mkIf (cfg.enable && cfg.vpn.enable) {
+  config = mkIf (cfg.enable && cfg.vpn.enable) (let
+    namespaceAddress = config.vpnNamespaces.${cfg.vpn.namespace}.namespaceAddress;
+  in {
     warnings = optional (cfg.vpn.openVPNPorts == [] && !cfg.vpn.portForwarding.enable) "arr.vpn: arr.vpn.openVPNPorts is empty and arr.vpn.portForwarding is disabled. qBittorrent can download via outgoing connections, but cannot receive incoming peer connections without port forwarding.";
 
     assertions = [
@@ -105,6 +109,20 @@ in {
 
     environment.systemPackages = [pkgs.wireguard-tools];
 
+    # Automatically retry WireGuard on boot if Wi-Fi / network connection is still establishing
+    systemd.services.${cfg.vpn.namespace} = {
+      wants = ["network-online.target"];
+      after = ["network-online.target"];
+      serviceConfig = {
+        Restart = "on-failure";
+        RestartSec = 5;
+      };
+      unitConfig = {
+        StartLimitIntervalSec = 300;
+        StartLimitBurst = 10;
+      };
+    };
+
     systemd.services.qbittorrent-webui-proxy = {
       description = "qBittorrent WebUI host proxy for VPN confinement";
       after = [
@@ -118,15 +136,13 @@ in {
       wantedBy = ["multi-user.target"];
 
       serviceConfig = {
-        ExecStartPre = let
-          cleanupScript = pkgs.writeShellScript "cleanup-stale-nat" ''
-            while ${pkgs.iptables}/bin/iptables -t nat -D OUTPUT -p tcp -d 127.0.0.1 --dport ${toString cfg.qbittorrent.webuiPort} -j DNAT --to-destination 192.168.15.1:${toString cfg.qbittorrent.webuiPort} 2>/dev/null; do :; done
-            while ${pkgs.iptables}/bin/iptables -t nat -D OUTPUT -p tcp -m addrtype --dst-type LOCAL --dport ${toString cfg.qbittorrent.webuiPort} -j DNAT --to-destination 192.168.15.1:${toString cfg.qbittorrent.webuiPort} 2>/dev/null; do :; done
-          '';
-        in [
-          "+${cleanupScript}"
+        ExecStartPre = [
+          "+${pkgs.writeShellScript "cleanup-stale-nat" ''
+            export PATH="${lib.makeBinPath [pkgs.iptables pkgs.coreutils]}:$PATH"
+            exec ${pkgs.bash}/bin/bash ${./sync-scripts/cleanup-stale-nat.sh} "${namespaceAddress}" "${toString cfg.qbittorrent.webuiPort}"
+          ''}"
         ];
-        ExecStart = "${pkgs.socat}/bin/socat TCP-LISTEN:${toString cfg.qbittorrent.webuiPort},fork,reuseaddr TCP:192.168.15.1:${toString cfg.qbittorrent.webuiPort}";
+        ExecStart = "${pkgs.socat}/bin/socat TCP-LISTEN:${toString cfg.qbittorrent.webuiPort},fork,reuseaddr TCP:${namespaceAddress}:${toString cfg.qbittorrent.webuiPort}";
         Restart = "always";
         RestartSec = 3;
         User = "nobody";
@@ -145,12 +161,15 @@ in {
       ];
       wantedBy = ["multi-user.target"];
 
-      path = [
-        pkgs.libnatpmp
-        pkgs.curl
-        pkgs.iptables
-        pkgs.coreutils
-        pkgs.gnugrep
+      path = with pkgs; [
+        bash
+        libnatpmp
+        curl
+        iptables
+        coreutils
+        gnugrep
+        gawk
+        iproute2
       ];
 
       serviceConfig = {
@@ -159,78 +178,22 @@ in {
         RestartSec = 5;
         NetworkNamespacePath = "/run/netns/${cfg.vpn.namespace}";
         User = "root";
+        ExecStart = ''
+          ${pkgs.bash}/bin/bash ${./sync-scripts/protonvpn-port-forward.sh} \
+            --webui-host "${namespaceAddress}" \
+            --webui-port "${toString cfg.qbittorrent.webuiPort}" \
+            --pass-file "${config.sops.secrets.arr_qbittorrent_password.path}" \
+            ${lib.optionalString (cfg.vpn.portForwarding.gateway != null) "--gateway \"${cfg.vpn.portForwarding.gateway}\""} \
+            --lease-duration "${toString cfg.vpn.portForwarding.leaseDuration}" \
+            --refresh-interval "${toString cfg.vpn.portForwarding.refreshInterval}" \
+            --max-connections "${toString cfg.qbittorrent.maxConnections}" \
+            --max-connections-per-torrent "${toString cfg.qbittorrent.maxConnectionsPerTorrent}" \
+            --max-active-downloads "${toString cfg.qbittorrent.maxActiveDownloads}" \
+            --max-active-torrents "${toString cfg.qbittorrent.maxActiveTorrents}" \
+            --download-limit-kib "${toString cfg.qbittorrent.downloadRateLimitKiB}" \
+            --upload-limit-kib "${toString cfg.qbittorrent.uploadRateLimitKiB}"
+        '';
       };
-
-      script = ''
-        set -u
-
-        GATEWAY="${cfg.vpn.portForwarding.gateway}"
-        LEASE="${toString cfg.vpn.portForwarding.leaseDuration}"
-        INTERVAL="${toString cfg.vpn.portForwarding.refreshInterval}"
-        WEBUI_URL="http://192.168.15.1:${toString cfg.qbittorrent.webuiPort}"
-        PASS_FILE="${config.sops.secrets.arr_qbittorrent_password.path}"
-
-        echo "[protonvpn-port-forward] Starting port forwarding daemon..."
-        echo "[protonvpn-port-forward] Waiting for qBittorrent WebUI at $WEBUI_URL..."
-        until curl -s -I "$WEBUI_URL/" >/dev/null 2>&1; do
-          sleep 1
-        done
-        echo "[protonvpn-port-forward] qBittorrent WebUI is ready."
-
-        OLD_PORT=""
-        COOKIE_FILE=$(mktemp)
-        trap 'rm -f "$COOKIE_FILE"' EXIT
-
-        login_qbittorrent() {
-          if [ -f "$PASS_FILE" ]; then
-            PASS=$(cat "$PASS_FILE")
-            curl -s -c "$COOKIE_FILE" -X POST "$WEBUI_URL/api/v2/auth/login" \
-              --data-urlencode "username=admin" \
-              --data-urlencode "password=$PASS" >/dev/null 2>&1
-          fi
-        }
-
-        login_qbittorrent
-
-        while true; do
-          out=$(natpmpc -a 1 0 udp "$LEASE" -g "$GATEWAY" 2>&1) || true
-          tcp_out=$(natpmpc -a 1 0 tcp "$LEASE" -g "$GATEWAY" 2>&1) || true
-          out="$out"$'\n'"$tcp_out"
-
-          PORT=$(echo "$out" | grep -oP 'Mapped public port \K[0-9]+' | head -n 1 || true)
-
-          if [ -n "$PORT" ] && [ "$PORT" != "0" ]; then
-            if [ "$PORT" != "$OLD_PORT" ]; then
-              echo "[protonvpn-port-forward] Assigned public port: $PORT (was: ''${OLD_PORT:-none})"
-
-              # Update namespace iptables
-              if [ -n "$OLD_PORT" ]; then
-                iptables -D INPUT -p tcp --dport "$OLD_PORT" -j ACCEPT 2>/dev/null || true
-                iptables -D INPUT -p udp --dport "$OLD_PORT" -j ACCEPT 2>/dev/null || true
-              fi
-              iptables -C INPUT -p tcp --dport "$PORT" -j ACCEPT 2>/dev/null || iptables -I INPUT -p tcp --dport "$PORT" -j ACCEPT
-              iptables -C INPUT -p udp --dport "$PORT" -j ACCEPT 2>/dev/null || iptables -I INPUT -p udp --dport "$PORT" -j ACCEPT
-
-              # Update qBittorrent listen_port, bind to wg0, and enforce safe connection/rate limits
-              PAYLOAD="json={\"listen_port\": $PORT, \"upnp\": false, \"current_network_interface\": \"wg0\", \"max_connec\": ${toString cfg.qbittorrent.maxConnections}, \"max_connec_per_torrent\": ${toString cfg.qbittorrent.maxConnectionsPerTorrent}, \"max_active_downloads\": ${toString cfg.qbittorrent.maxActiveDownloads}, \"max_active_torrents\": ${toString cfg.qbittorrent.maxActiveTorrents}, \"dl_limit\": ${toString (cfg.qbittorrent.downloadRateLimitKiB * 1024)}, \"up_limit\": ${toString (cfg.qbittorrent.uploadRateLimitKiB * 1024)}}"
-              STATUS=$(curl -s -o /dev/null -w "%{http_code}" -b "$COOKIE_FILE" -X POST "$WEBUI_URL/api/v2/app/setPreferences" --data-urlencode "$PAYLOAD")
-              if [ "$STATUS" != "200" ]; then
-                login_qbittorrent
-                STATUS=$(curl -s -o /dev/null -w "%{http_code}" -b "$COOKIE_FILE" -X POST "$WEBUI_URL/api/v2/app/setPreferences" --data-urlencode "$PAYLOAD")
-              fi
-              echo "[protonvpn-port-forward] Updated qBittorrent listen_port to $PORT (HTTP $STATUS)"
-              OLD_PORT="$PORT"
-            fi
-          else
-            echo "[protonvpn-port-forward] Warning: Failed to obtain port from NAT-PMP gateway $GATEWAY. Output:"
-            echo "$out"
-            sleep 10
-            continue
-          fi
-
-          sleep "$INTERVAL"
-        done
-      '';
     };
 
     nixflix.vpn = {
@@ -242,5 +205,5 @@ in {
         then cfg.vpn.wgConfFile
         else "/dev/null";
     };
-  };
+  });
 }
