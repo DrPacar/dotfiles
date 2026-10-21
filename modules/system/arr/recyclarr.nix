@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  pkgs,
   ...
 }: let
   inherit (lib) mkOption mkIf mkForce optional types;
@@ -60,6 +61,27 @@ in {
           "WEB-2160p (Alternative)"
         ]
         ++ optional cfg.sonarr.anime.enable "[Anime] Remux-1080p";
+    };
+
+    # Automatically wait for network & DNS at boot, preventing failures when Wi-Fi connects after systemd startup
+    systemd.services.recyclarr = {
+      path = with pkgs; [
+        bash
+        curl
+        coreutils
+      ];
+
+      serviceConfig = {
+        ExecStartPre = lib.mkBefore [
+          "${pkgs.bash}/bin/bash ${./sync-scripts/wait-for-internet.sh} --service-name recyclarr --url https://github.com --timeout 60"
+        ];
+        Restart = "on-failure";
+        RestartSec = 15;
+      };
+      unitConfig = {
+        StartLimitIntervalSec = 300;
+        StartLimitBurst = 5;
+      };
     };
   };
 }
