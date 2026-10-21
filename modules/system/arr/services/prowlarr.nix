@@ -32,7 +32,12 @@ in {
     indexers = mkOption {
       type = types.listOf types.attrs;
       default = [];
-      description = "Declarative list of Prowlarr indexers.";
+      example = [
+        {name = "Nyaa.si";}
+        {name = "YTS";}
+        {name = "The Pirate Bay";}
+      ];
+      description = "Declarative list of Prowlarr indexers managed by Nixflix. Note: Any indexer not listed here will be removed on rebuild.";
     };
   };
 

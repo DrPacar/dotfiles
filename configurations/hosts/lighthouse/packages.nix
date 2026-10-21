@@ -45,6 +45,20 @@
       portForwarding.enable = true;
     };
 
+    prowlarr = {
+      indexers = [
+        # Anime
+        {name = "Nyaa.si";}
+        {name = "SubsPlease";}
+
+        # Movies & TV Shows
+        {name = "YTS";}
+        {name = "The Pirate Bay";}
+        {name = "LimeTorrents";}
+        {name = "TorrentDownload";}
+      ];
+    };
+
     backup.enable = false;
   };
 }
