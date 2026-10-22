@@ -114,11 +114,23 @@ in {
 
     # Automatically retry WireGuard on boot if Wi-Fi / network connection is still establishing
     systemd.services.${cfg.vpn.namespace} = {
-      wants = ["network-online.target"];
+      wants = ["network-online.target"] ++ lib.optional cfg.qbittorrent.enable "qbittorrent.service";
       after = ["network-online.target"];
+      before = lib.optional cfg.qbittorrent.enable "qbittorrent.service";
       serviceConfig = {
         Restart = "on-failure";
         RestartSec = 5;
+        ExecStartPre = [
+          "+${pkgs.writeShellScript "wait-for-default-route" ''
+            for i in $(seq 1 30); do
+              if ${pkgs.iproute2}/bin/ip route show default | grep -q default; then
+                exit 0
+              fi
+              sleep 1
+            done
+            echo "No default route detected after 30s, continuing anyway..."
+          ''}"
+        ];
       };
       unitConfig = {
         StartLimitIntervalSec = 300;

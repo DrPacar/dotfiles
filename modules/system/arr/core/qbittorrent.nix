@@ -189,13 +189,17 @@ in {
     # Automatically derive and inject the PBKDF2 HMAC-SHA512 password hash into qBittorrent.conf on service start.
     # Keeps plaintext secrets strictly out of the world-readable nix store.
     systemd.services.qbittorrent = {
-      serviceConfig.ExecStartPre = lib.mkAfter [
-        (pkgs.writeShellScript "qbittorrent-inject-password" ''
-          exec ${pkgs.python3}/bin/python3 ${../scripts/qbittorrent-sync.py} \
-            --pass-file "${config.sops.secrets.arr_qbittorrent_password.path}" \
-            --group "${cfg.mediaGroup}"
-        '')
-      ];
+      serviceConfig = {
+        Restart = "on-failure";
+        RestartSec = 5;
+        ExecStartPre = lib.mkAfter [
+          (pkgs.writeShellScript "qbittorrent-inject-password" ''
+            exec ${pkgs.python3}/bin/python3 ${../scripts/qbittorrent-sync.py} \
+              --pass-file "${config.sops.secrets.arr_qbittorrent_password.path}" \
+              --group "${cfg.mediaGroup}"
+          '')
+        ];
+      };
     };
   };
 }
