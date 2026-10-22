@@ -6,6 +6,7 @@
   services.tailscale = {
     enable = true;
     openFirewall = true;
+    permitCertUid = "caddy";
 
     extraSetFlags = [
       "--operator=${config.user.primary}"

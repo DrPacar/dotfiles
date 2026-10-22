@@ -101,6 +101,9 @@
   };
 in {
   config = mkIf (cfg.enable && cfg.dashboard.enable) {
+    # Allow Caddy to fetch TLS certificates from Tailscale LocalAPI
+    services.tailscale.permitCertUid = lib.mkDefault "caddy";
+
     # Ensure Caddy starts after tailscaled so the LocalAPI socket is ready
     systemd.services.caddy = {
       after = ["tailscaled.service"];
