@@ -48,6 +48,12 @@ in {
       example = "/dev/dri/by-path/pci-0000:00:02.0-render";
       description = "Path to the DRM render node for hardware acceleration.";
     };
+
+    realtimeMonitor = mkOption {
+      type = types.bool;
+      default = true;
+      description = "Enable real-time filesystem monitoring (inotify) on Jellyfin media libraries so new downloads are detected immediately.";
+    };
   };
 
   config = mkIf (cfg.enable && cfg.jellyfin.enable) {
@@ -115,14 +121,20 @@ in {
         Movies = {
           collectionType = "movies";
           paths = [cfg.paths.movies];
+          enableRealtimeMonitor = cfg.jellyfin.realtimeMonitor;
+        };
+        Shows = {
+          enableRealtimeMonitor = cfg.jellyfin.realtimeMonitor;
         };
         Series = {
           collectionType = "tvshows";
           paths = [cfg.paths.tv];
+          enableRealtimeMonitor = cfg.jellyfin.realtimeMonitor;
         };
         Anime = {
           collectionType = "tvshows";
           paths = [cfg.paths.anime];
+          enableRealtimeMonitor = cfg.jellyfin.realtimeMonitor;
         };
       };
 
