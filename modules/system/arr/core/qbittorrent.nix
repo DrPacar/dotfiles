@@ -27,6 +27,12 @@ in {
       description = "Subdomain name for qBittorrent WebUI reverse proxy routing.";
     };
 
+    username = mkOption {
+      type = types.str;
+      default = cfg.adminUser;
+      description = "Username for qBittorrent WebUI authentication.";
+    };
+
     maxActiveDownloads = mkOption {
       type = types.ints.unsigned;
       default = 3;
@@ -104,7 +110,13 @@ in {
       allowedUDPPorts = [cfg.qbittorrent.bitTorrentPort];
     };
 
-    sops.secrets.arr_qbittorrent_password.restartUnits = ["qbittorrent.service"];
+    sops.secrets.arr_qbittorrent_password.restartUnits = [
+      "qbittorrent.service"
+      "sonarr-downloadclients.service"
+      "sonarr-anime-downloadclients.service"
+      "radarr-downloadclients.service"
+      "prowlarr-downloadclients.service"
+    ];
 
     nixflix.torrentClients.qbittorrent = {
       enable = true;
@@ -164,7 +176,7 @@ in {
             LocalHostAuth = false;
             AuthSubnetWhitelistEnabled = true;
             AuthSubnetWhitelist = "127.0.0.1/32";
-            Username = "admin";
+            Username = cfg.qbittorrent.username;
           };
           # Legacy fallback for pre-4.6 qBittorrent
           Connection = {

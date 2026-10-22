@@ -185,6 +185,7 @@ in {
           ${pkgs.bash}/bin/bash ${../scripts/protonvpn-port-forward.sh} \
             --webui-host "${namespaceAddress}" \
             --webui-port "${toString cfg.qbittorrent.webuiPort}" \
+            --webui-user "${cfg.qbittorrent.username}" \
             --pass-file "${config.sops.secrets.arr_qbittorrent_password.path}" \
             ${lib.optionalString (cfg.vpn.portForwarding.gateway != null) "--gateway \"${cfg.vpn.portForwarding.gateway}\""} \
             --lease-duration "${toString cfg.vpn.portForwarding.leaseDuration}" \

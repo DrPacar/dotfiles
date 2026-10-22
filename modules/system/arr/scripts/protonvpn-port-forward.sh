@@ -14,6 +14,7 @@ log_err() { echo "[protonvpn-port-forward] ERROR: $*" >&2; }
 # --- Default Parameters ---
 WEBUI_HOST=""
 WEBUI_PORT=8080
+WEBUI_USER="admin"
 PASS_FILE=""
 GATEWAY=""
 LEASE_DURATION=60
@@ -34,6 +35,10 @@ while [[ $# -gt 0 ]]; do
     ;;
   --webui-port)
     WEBUI_PORT="${2:-8080}"
+    shift 2
+    ;;
+  --webui-user | --username)
+    WEBUI_USER="${2:-admin}"
     shift 2
     ;;
   --pass-file)
@@ -151,7 +156,7 @@ login_qbittorrent() {
     pass=$(cat "$PASS_FILE" | tr -d '\r\n')
     rm -f "$COOKIE_FILE"
     curl -s -c "$COOKIE_FILE" -X POST "$WEBUI_URL/api/v2/auth/login" \
-      --data-urlencode "username=admin" \
+      --data-urlencode "username=$WEBUI_USER" \
       --data-urlencode "password=$pass" >/dev/null 2>&1 || true
   fi
 }

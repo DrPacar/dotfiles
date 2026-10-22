@@ -21,6 +21,7 @@
   # Media automation stack (Arr Stack)
   arr = {
     enable = true;
+    adminUser = "luka";
     dataDir = "/arr_data";
     mediaGid = 169;
     tailscaleDomain = "gute-court.ts.net";
