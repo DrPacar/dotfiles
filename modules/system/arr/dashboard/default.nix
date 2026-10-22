@@ -12,10 +12,11 @@
     then "${hostName}.${cfg.tailscaleDomain}"
     else null;
 
-  baseDomains =
+  # Only local hostnames should be mapped to 127.0.0.1 in /etc/hosts
+  # Public registered domains (like lukpac.dev) must resolve via real DNS so ACME/Lego can query NS records
+  localBaseDomains =
     [hostName]
-    ++ lib.optional (tailscaleFqdn != null) tailscaleFqdn
-    ++ lib.optional (cfg.domain != null) cfg.domain;
+    ++ lib.optional (tailscaleFqdn != null) tailscaleFqdn;
 
   servicesList = import ./_services.nix {inherit lib cfg;};
 
@@ -25,11 +26,10 @@
         s: let
           allSubNames = [s.subdomain] ++ (s.aliases or []);
         in
-          map (sub: map (d: "${sub}.${d}") baseDomains) allSubNames
+          map (sub: map (d: "${sub}.${d}") localBaseDomains) allSubNames
       )
       servicesList
     )
-    ++ (lib.optional (cfg.domain != null) cfg.domain)
   );
 in {
   options.arr.dashboard = {

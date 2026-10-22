@@ -158,6 +158,7 @@ in {
         domain = customDomain;
         extraDomainNames = ["*.${customDomain}"];
         dnsProvider = "namedotcom";
+        dnsResolver = "1.1.1.1:53";
         environmentFile = config.sops.secrets.namecom_env.path;
         group = "caddy";
         reloadServices = ["caddy.service"];
