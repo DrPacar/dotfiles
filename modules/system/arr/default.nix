@@ -315,6 +315,14 @@ in {
       // lib.optionalAttrs cfg.bazarr.enable {
         arr_bazarr_api_key.restartUnits =
           lib.optional cfg.bazarr.enable "bazarr.service";
+      }
+      // lib.optionalAttrs cfg.jellyfin.enable {
+        arr_jellyfin_admin_password.restartUnits =
+          lib.optional cfg.jellyfin.enable "jellyfin.service"
+          ++ lib.optional cfg.sonarr.enable "sonarr-config.service"
+          ++ lib.optional (cfg.sonarr.enable && cfg.sonarr.anime.enable) "sonarr-anime-config.service"
+          ++ lib.optional cfg.radarr.enable "radarr-config.service"
+          ++ lib.optional cfg.prowlarr.enable "prowlarr-config.service";
       };
 
     # Configure directory hierarchy with setgid (2775)
