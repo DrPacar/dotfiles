@@ -54,6 +54,14 @@ in {
       default = true;
       description = "Enable real-time filesystem monitoring (inotify) on Jellyfin media libraries so new downloads are detected immediately.";
     };
+
+    introSkipper = {
+      enable = mkOption {
+        type = types.bool;
+        default = true;
+        description = "Enable Intro Skipper plugin for automatic intro/outro detection and skip button in Jellyfin.";
+      };
+    };
   };
 
   config = mkIf (cfg.enable && cfg.jellyfin.enable) {
@@ -115,6 +123,10 @@ in {
       users.${cfg.jellyfin.adminUser} = {
         policy.isAdministrator = true;
         password = secretRef config.sops.secrets.arr_jellyfin_admin_password.path;
+      };
+
+      plugins = {
+        "Intro Skipper".enable = cfg.jellyfin.introSkipper.enable;
       };
 
       libraries = {
