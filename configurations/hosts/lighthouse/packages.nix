@@ -24,6 +24,7 @@
     dataDir = "/arr_data";
     mediaGid = 169;
     tailscaleDomain = "gute-court.ts.net";
+    domain = "lukpac.dev";
 
     jellyfin = {
       hardwareAcceleration = "qsv"; # Enable Intel QuickSync hardware transcoding
