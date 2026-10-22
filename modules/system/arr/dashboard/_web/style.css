@@ -318,6 +318,14 @@ header {
   font-size: 0.75rem;
   font-family: monospace;
   white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pill-info:hover {
+  background: var(--ctp-surface1);
+  color: var(--ctp-text);
 }
 
 footer {

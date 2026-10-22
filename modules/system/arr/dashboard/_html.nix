@@ -89,21 +89,21 @@
               </div>
             </div>
             <div class="card-body">
-              <h3><a href="http://${s.subdomain}.${hostName}" class="card-title-link" data-subdomain="${s.subdomain}">${s.name}</a></h3>
+              <h3><a href="http://${s.subdomain}.${hostName}" class="card-title-link" data-subdomain="${s.subdomain}" data-port="${toString s.port}">${s.name}</a></h3>
               <p>${s.desc}</p>
             </div>
           </div>
           <div class="card-actions">
-            <a href="http://${s.subdomain}.${hostName}" class="btn-primary" data-subdomain="${s.subdomain}">
+            <a href="http://${s.subdomain}.${hostName}" class="btn-primary" data-subdomain="${s.subdomain}" data-port="${toString s.port}">
               Öffnen &rarr;
             </a>
             <div class="links-row">
               <a href="http://${s.subdomain}.${hostName}" class="pill-link" data-subdomain-pill="${s.subdomain}" title="Subdomain aufrufen">
                 ${s.subdomain}.${hostName}
               </a>
-              <span class="pill-info" title="Interner Dienst-Port">
+              <a href="http://${hostName}:${toString s.port}" class="pill-info" data-port-pill="${toString s.port}" title="Direkt über Port aufrufen">
                 Port ${toString s.port}
-              </span>
+              </a>
             </div>
           </div>
         </div>

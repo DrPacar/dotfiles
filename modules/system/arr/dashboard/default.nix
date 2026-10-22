@@ -53,8 +53,11 @@ in {
   };
 
   config = mkIf (cfg.enable && cfg.dashboard.enable) {
-    # Open dashboard HTTP port in firewall
-    networking.firewall.allowedTCPPorts = [cfg.dashboard.port];
+    # Open dashboard HTTP and HTTPS ports in firewall
+    networking.firewall.allowedTCPPorts = [
+      cfg.dashboard.port
+      443
+    ];
 
     # Map all subdomains to localhost in /etc/hosts for instant local resolution
     networking.hosts."127.0.0.1" = mkIf cfg.dashboard.addHostsEntries allSubdomainNames;

@@ -9,16 +9,24 @@ function updateClock() {
 setInterval(updateClock, 1000);
 updateClock();
 
-// Smart link resolution: strictly resolve all links to subdomains
+// Smart link resolution: resolve links to subdomains or direct ports on Tailscale
 const currentHost = window.location.hostname;
 const currentPort = window.location.port;
 const protocol = window.location.protocol;
 const portSuffix = (currentPort && currentPort !== "80" && currentPort !== "443") ? (":" + currentPort) : "";
 
+const isTailscale = currentHost.endsWith('.ts.net') || currentHost.startsWith('100.');
+
 // Update primary action buttons and title links
 document.querySelectorAll('[data-subdomain]').forEach(el => {
   const sub = el.getAttribute('data-subdomain');
-  if (currentHost === 'localhost' || currentHost === '127.0.0.1') {
+  const port = el.getAttribute('data-port');
+
+  if (isTailscale && port) {
+    // Over Tailscale, MagicDNS does not resolve wildcard subdomains (*.ts.net)
+    // Direct port access connects securely over the encrypted Tailscale mesh
+    el.href = 'http://' + currentHost + ':' + port;
+  } else if (currentHost === 'localhost' || currentHost === '127.0.0.1') {
     el.href = protocol + '//' + sub + '.localhost' + portSuffix;
   } else {
     el.href = protocol + '//' + sub + '.' + currentHost + portSuffix;
@@ -34,6 +42,14 @@ document.querySelectorAll('[data-subdomain-pill]').forEach(el => {
   } else {
     el.textContent = sub + '.' + currentHost;
     el.href = protocol + '//' + sub + '.' + currentHost + portSuffix;
+  }
+});
+
+// Update port pill badges
+document.querySelectorAll('[data-port-pill]').forEach(el => {
+  const port = el.getAttribute('data-port-pill');
+  if (port) {
+    el.href = 'http://' + currentHost + ':' + port;
   }
 });
 
