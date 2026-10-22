@@ -2,6 +2,14 @@ keys:
   - &lighthouse age10prhv52mfvww59k39pus4kg32p483d0tc5dra9uwmc6un726deeqxufltw
   - &raindrop age1wky882jhc8ufek7ukrysznqg3fpadf22lzkgmq67le9d9t25sc2qd524lp
 creation_rules:
+  - path_regex: secrets/lighthouse\.yaml$
+    key_groups:
+      - age:
+          - *lighthouse
+  - path_regex: secrets/raindrop\.yaml$
+    key_groups:
+      - age:
+          - *raindrop
   - path_regex: secrets/.*\.yaml$
     key_groups:
       - age:

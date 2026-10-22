@@ -30,7 +30,7 @@ Commands:
   status          Show current VPN connection status
   -h, --help      Display this help message
 
-Secrets (managed via SOPS in secrets/secrets.yaml):
+Secrets (managed via SOPS in secrets/common.yaml):
   tu_vpn_user     TU Wien account (e.g. e12345678 or user@student.tuwien.ac.at)
   tu_vpn_pass     TU Wien account password
   tu_vpn_totp     (Optional) Base32 secret for automated 2FA (TOTP)
