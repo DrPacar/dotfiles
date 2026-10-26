@@ -4,7 +4,7 @@
   ...
 }: let
   inherit (lib) mkIf mkOption types;
-  cfg = config.arr;
+  cfg = config.server;
 
   hostName = config.networking.hostName;
   tailscaleFqdn =
@@ -18,7 +18,7 @@
     [hostName]
     ++ lib.optional (tailscaleFqdn != null) tailscaleFqdn;
 
-  servicesList = import ./_services.nix {inherit lib cfg;};
+  servicesList = import ./_services.nix {inherit lib config;};
 
   allSubdomainNames = lib.unique (
     lib.flatten (
@@ -32,17 +32,17 @@
     )
   );
 in {
-  options.arr.dashboard = {
+  options.server.dashboard = {
     enable = mkOption {
       type = types.bool;
       default = true;
-      description = "Enable Caddy reverse proxy with subdomains and a unified landing page dashboard.";
+      description = "Enable centralized landing page dashboard.";
     };
 
     port = mkOption {
       type = types.port;
       default = 80;
-      description = "HTTP port on which the Caddy reverse proxy listens for the dashboard and subdomains.";
+      description = "HTTP port on which Caddy listens for the dashboard.";
     };
 
     addHostsEntries = mkOption {

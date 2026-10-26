@@ -5,7 +5,7 @@
   ...
 }: let
   inherit (lib) mkIf mkMerge;
-  cfg = config.arr;
+  cfg = config.server;
 
   hostName = config.networking.hostName;
   tailscaleFqdn =
@@ -22,10 +22,10 @@
 
   mkHttpHost = host: "http://${host}${portSuffix}";
 
-  servicesList = import ./_services.nix {inherit lib cfg;};
+  servicesList = import ./dashboard/_services.nix {inherit lib config;};
 
-  dashboardWeb = import ./_html.nix {
-    inherit pkgs lib cfg hostName servicesList;
+  dashboardWeb = import ./dashboard/_html.nix {
+    inherit pkgs lib config hostName servicesList;
   };
 
   # Local and Tailscale domains for plaintext / HTTP reverse proxying
@@ -33,7 +33,7 @@
     [hostName]
     ++ lib.optional (tailscaleFqdn != null) tailscaleFqdn;
 
-  # 1. Plaintext Subdomain Virtual Hosts (e.g. jellyfin.lighthouse, jellyfin.lighthouse.gute-court.ts.net)
+  # 1. Plaintext Subdomain Virtual Hosts (e.g. adguard.lighthouse, jellyfin.lighthouse, etc.)
   mkPlainSubdomainVhost = s: let
     allSubNames = [s.subdomain] ++ (s.aliases or []);
     hostsList = lib.flatten (map (sub: map (d: mkHttpHost "${sub}.${d}") plainSubdomainDomains) allSubNames);
@@ -96,7 +96,7 @@
     };
   };
 
-  # 4. Custom Public Domain Dashboard (e.g. https://lukpac.dev) with Let's Encrypt Wildcard ACME Cert
+  # 4. Custom Public Domain Dashboard (e.g. https://media.lukpac.dev) with Let's Encrypt Wildcard ACME Cert
   customDomainHttpsVhost = mkIf (customDomain != null) {
     "https://${customDomain}" = {
       extraConfig = ''
@@ -112,7 +112,7 @@
     };
   };
 
-  # Custom Domain HTTP -> HTTPS redirect (e.g. http://lukpac.dev -> https://lukpac.dev)
+  # Custom Domain HTTP -> HTTPS redirect (e.g. http://media.lukpac.dev -> https://media.lukpac.dev)
   customDomainHttpRedirectVhost = mkIf (customDomain != null) {
     "http://${customDomain}${portSuffix}" = {
       extraConfig = ''
@@ -121,7 +121,7 @@
     };
   };
 
-  # 5. Custom Domain Subdomains HTTPS (e.g. https://jellyfin.lukpac.dev) with Wildcard ACME Cert
+  # 5. Custom Domain Subdomains HTTPS (e.g. https://adguard.media.lukpac.dev, https://jellyfin.media.lukpac.dev) with Wildcard ACME Cert
   mkCustomDomainSubVhost = s: let
     allSubNames = [s.subdomain] ++ (s.aliases or []);
     httpsHosts = map (sub: "https://${sub}.${customDomain}") allSubNames;
@@ -140,7 +140,7 @@
     };
     "${httpKey}" = {
       extraConfig = ''
-        redir https://{host}{uri} permanent
+        redir https://${lib.head allSubNames}.${customDomain}{uri} permanent
       '';
     };
   };
@@ -149,7 +149,7 @@
     lib.foldl' lib.mergeAttrs {} (map mkCustomDomainSubVhost servicesList)
   );
 in {
-  config = mkIf (cfg.enable && cfg.dashboard.enable) {
+  config = mkIf cfg.enable {
     # ACME automated wildcard certificate generation via Name.com DNS-01 API
     security.acme = mkIf (customDomain != null) {
       acceptTerms = true;

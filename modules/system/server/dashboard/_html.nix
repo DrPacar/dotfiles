@@ -1,13 +1,16 @@
 {
   pkgs,
   lib,
-  cfg,
+  config,
   hostName,
   servicesList,
 }: let
+  serverCfg = config.server;
+  arrCfg = config.arr or {};
+
   displayTitle =
-    if cfg.domain != null
-    then cfg.domain
+    if serverCfg.domain != null
+    then serverCfg.domain
     else hostName;
 
   indexHtml = pkgs.writeTextDir "index.html" ''
@@ -16,7 +19,7 @@
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>${displayTitle} &bull; Media Hub</title>
+      <title>${displayTitle} &bull; Dashboard</title>
       <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23cba6f7'><path d='M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5'/></svg>">
       <link rel="stylesheet" href="style.css">
     </head>
@@ -31,9 +34,9 @@
               ${displayTitle}
             </h1>
             <p>${
-      if cfg.domain != null
-      then "Zentraler Arr- & Medienserver • ${hostName}"
-      else "Dein zentraler Arr- & Medienserver"
+      if serverCfg.domain != null
+      then "Zentraler Home Server &bull; ${hostName}"
+      else "Zentrales Dashboard &bull; ${hostName}"
     }</p>
           </div>
           <div class="header-meta">
@@ -45,26 +48,37 @@
               <span id="netSpeed" style="font-family: monospace; font-weight: 700;">↓ ... &bull; ↑ ...</span>
             </div>
             ${
-      if cfg.vpn.enable
+      if (serverCfg.adguard.enable or false)
       then ''
-        <div class="badge">
+        <div class="badge" title="AdGuard Home DNS aktiv">
+          <span class="badge-dot" style="background: #68bc71; box-shadow: 0 0 8px #68bc71;"></span>
+          <span>AdGuard DNS</span>
+        </div>
+      ''
+      else ""
+    }
+            ${
+      if (arrCfg.enable or false && arrCfg.vpn.enable or false)
+      then ''
+        <div class="badge" title="ProtonVPN aktiv">
           <span class="badge-dot"></span>
           <span>ProtonVPN</span>
         </div>
       ''
-      else ''
+      else ""
+    }
+            ${
+      if (arrCfg.enable or false)
+      then ''
         <div class="badge">
-          <span class="badge-dot" style="background: var(--ctp-subtext0); box-shadow: none;"></span>
-          <span>Host-Netzwerk</span>
+          <span>${arrCfg.dataDir}</span>
         </div>
       ''
+      else ""
     }
-            <div class="badge">
-              <span>${cfg.dataDir}</span>
-            </div>
-            ${lib.optionalString (cfg.domain != null) ''
+            ${lib.optionalString (serverCfg.domain != null) ''
       <div class="badge">
-        <span>${cfg.domain}</span>
+        <span>${serverCfg.domain}</span>
       </div>
     ''}
             <div class="clock" id="clock">00:00:00</div>
@@ -122,7 +136,7 @@
   '';
 in
   pkgs.symlinkJoin {
-    name = "arr-dashboard-web";
+    name = "server-dashboard-web";
     paths = [
       indexHtml
       ./_web

@@ -44,14 +44,14 @@ in {
 
     tailscaleDomain = mkOption {
       type = types.nullOr types.str;
-      default = null;
+      default = config.server.tailscaleDomain or null;
       example = "my-tailnet.ts.net";
       description = "Tailscale tailnet domain suffix for authorized host access (null to disable Tailscale hostnames).";
     };
 
     domain = mkOption {
       type = types.nullOr types.str;
-      default = null;
+      default = config.server.domain or null;
       example = "media.domain.at";
       description = ''
         Primary base domain for web interface reverse proxy routing.

@@ -10,7 +10,7 @@
       "gaming"
       "virtualization"
       "kdeconnect"
-      "arr"
+      "server"
 
       # gui
       "gnome"
@@ -18,6 +18,15 @@
     ++ [
       ../base-packages.nix
     ];
+
+  # Central Server Infrastructure & Services
+  server = {
+    enable = true;
+    domain = "media.lukpac.dev";
+    tailscaleDomain = "gute-court.ts.net";
+    adguard.enable = true;
+  };
+
   # Media automation stack (Arr Stack)
   arr = {
     enable = true;
