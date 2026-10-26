@@ -46,7 +46,7 @@ in {
     createHomeSymlink = mkOption {
       type = types.bool;
       default = true;
-      description = "Create a convenient symlink ~/Data pointing to the data share.";
+      description = "Create a convenient symlink ~/data pointing to the data share.";
     };
 
     user = mkOption {
@@ -102,9 +102,9 @@ in {
       };
     };
 
-    # Convenient home directory symlink ~/Data -> target directory
+    # Convenient home directory symlink ~/data -> target directory
     systemd.tmpfiles.rules = mkIf cfg.createHomeSymlink [
-      "L+ /home/${cfg.user}/Data - - - - ${targetPath}"
+      "L+ /home/${cfg.user}/data - - - - ${targetPath}"
     ];
   };
 }
