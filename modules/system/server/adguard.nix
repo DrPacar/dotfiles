@@ -27,7 +27,8 @@ in {
 
     lanIp = mkOption {
       type = types.nullOr types.str;
-      default = "192.168.0.73";
+      default = null;
+      example = "192.168.0.73";
       description = "Local LAN IP of the server for split-brain DNS rewrites (*.domain -> lanIp). Set to null to disable.";
     };
   };

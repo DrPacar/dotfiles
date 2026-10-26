@@ -25,7 +25,10 @@
     domain = "media.lukpac.dev";
     tailscaleDomain = "gute-court.ts.net";
 
-    adguard.enable = true;
+    adguard = {
+      enable = true;
+      lanIp = "192.168.0.73";
+    };
 
     # Media automation stack (Arr Stack)
     arr = {
