@@ -8,7 +8,7 @@ in {
   options.server = {
     enable = mkOption {
       type = types.bool;
-      default = true;
+      default = false;
       description = "Enable centralized server infrastructure (Caddy reverse proxy, ACME wildcard SSL, unified dashboard).";
     };
 

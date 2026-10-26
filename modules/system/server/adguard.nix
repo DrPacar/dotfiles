@@ -9,7 +9,7 @@ in {
   options.server.adguard = {
     enable = mkOption {
       type = types.bool;
-      default = true;
+      default = false;
       description = "Enable AdGuard Home network-wide ad blocker and encrypted DNS resolver.";
     };
 
