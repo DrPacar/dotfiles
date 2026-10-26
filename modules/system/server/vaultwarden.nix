@@ -52,6 +52,8 @@ in {
         ROCKET_ADDRESS = "127.0.0.1";
         ROCKET_PORT = cfg.vaultwarden.port;
         SIGNUPS_ALLOWED = cfg.vaultwarden.signupsAllowed;
+        SHOW_PASSWORD_HINT = false;
+        TRASH_AUTO_DELETE_DAYS = 30;
       };
     };
   };
