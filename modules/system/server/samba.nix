@@ -101,7 +101,7 @@ in {
 
           forceGroup = mkOption {
             type = types.nullOr types.str;
-            default = "media";
+            default = "users";
             description = "Force created/modified files to be owned by this group (set to null to disable).";
           };
 
@@ -119,13 +119,13 @@ in {
         };
       }));
       default = {
-        media = {
-          path = "/arr_data";
-          comment = "Central media & downloads storage";
+        data = {
+          path = "/data";
+          comment = "Zentraler Datenspeicher";
           readOnly = false;
           guestOk = true;
           forceUser = cfg.adminUser;
-          forceGroup = "media";
+          forceGroup = "users";
         };
       };
       description = "Declarative specification of Samba shares.";
@@ -133,6 +133,21 @@ in {
   };
 
   config = mkIf (cfg.enable && cfg.samba.enable) {
+    # Ensure shared directories exist with proper ownership and permissions
+    systemd.tmpfiles.rules =
+      lib.mapAttrsToList (
+        _name: share: "d ${share.path} 0775 ${
+          if share.forceUser != null
+          then share.forceUser
+          else "root"
+        } ${
+          if share.forceGroup != null
+          then share.forceGroup
+          else "users"
+        } -"
+      )
+      cfg.samba.shares;
+
     # Install cifs-utils for mounting and troubleshooting
     environment.systemPackages = [pkgs.cifs-utils];
 
