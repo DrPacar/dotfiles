@@ -29,6 +29,18 @@ in
     color = "#175ddc";
     icon = ''<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><rect x="9" y="11" width="6" height="5" rx="1"/><path d="M10 11V9a2 2 0 1 1 4 0v2"/></svg>'';
   })
+  # Immich (Fotos & Videos)
+  ++ (lib.optional (serverCfg.enable && (serverCfg.immich.enable or false)) {
+    name = "Immich";
+    serviceKey = "immich";
+    subdomain = serverCfg.immich.subdomain;
+    aliases = ["photos"];
+    port = serverCfg.immich.port;
+    category = "Fotos & Medien";
+    desc = "Selbst gehostetes Backup und Verwaltung von Fotos und Videos.";
+    color = "#4285F4";
+    icon = ''<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>'';
+  })
   # Arr Stack (Medien)
   ++ (lib.optional (arrEnabled && arrCfg.seerr.enable) {
     name = "Seerr";
