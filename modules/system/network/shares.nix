@@ -77,28 +77,32 @@ in {
       "${cfg.mountPoint}" = {
         device = "//${cfg.serverHost}/${cfg.shareName}";
         fsType = "cifs";
-        options = [
-          # 1. On-demand mounting: never blocks boot, even when offline
-          "x-systemd.automount"
-          "noauto"
-          # 2. Idle timeout: unmounts after 60s of inactivity (battery saving & sleep/resume safe)
-          "x-systemd.idle-timeout=60"
-          # 3. Fast failure: 5s timeout if server is unreachable
-          "x-systemd.mount-timeout=5"
-          # 4. Network device flag
-          "_netdev"
-          # 5. Local user and permission mapping
-          "uid=${userUid}"
-          "gid=100"
-          "file_mode=0664"
-          "dir_mode=0775"
-          # 6. Authentication
-          (
-            if cfg.credentialsFile != null
-            then "credentials=${toString cfg.credentialsFile}"
-            else "guest"
-          )
-        ];
+        options =
+          [
+            # 1. On-demand mounting: never blocks boot, even when offline
+            "x-systemd.automount"
+            "noauto"
+            # 2. Idle timeout: unmounts after 60s of inactivity (battery saving & sleep/resume safe)
+            "x-systemd.idle-timeout=60"
+            # 3. Fast failure: 5s timeout if server is unreachable
+            "x-systemd.mount-timeout=5"
+            # 4. Network device flag
+            "_netdev"
+            # 5. Local user and permission mapping
+            "uid=${userUid}"
+            "gid=100"
+            "file_mode=0664"
+            "dir_mode=0775"
+            # 6. Authentication
+            (
+              if cfg.credentialsFile != null
+              then "credentials=${toString cfg.credentialsFile}"
+              else "guest"
+            )
+          ]
+          ++ lib.optionals (isLocalServer && cfg.forceNetworkMount) [
+            "x-systemd.after=samba-smbd.service"
+          ];
       };
     };
 

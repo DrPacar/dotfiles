@@ -25,7 +25,7 @@
       "create mask" = "0664";
       "directory mask" = "0775";
     }
-    // lib.optionalAttrs (shareCfg.validUsers != []) {
+    // lib.optionalAttrs (!(cfg.samba.guestAccess && shareCfg.guestOk) && shareCfg.validUsers != []) {
       "valid users" = lib.concatStringsSep " " shareCfg.validUsers;
     }
     // lib.optionalAttrs (shareCfg.forceUser != null) {
