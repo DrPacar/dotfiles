@@ -34,6 +34,10 @@
       enable = true;
     };
 
+    openssh = {
+      enable = true;
+    };
+
     # Media automation stack (Arr Stack)
     arr = {
       enable = true;
