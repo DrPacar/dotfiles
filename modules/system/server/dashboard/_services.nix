@@ -17,6 +17,18 @@ in
     color = "#68bc71";
     icon = ''<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>'';
   })
+  # Vaultwarden (Passwort-Manager)
+  ++ (lib.optional (serverCfg.enable && (serverCfg.vaultwarden.enable or false)) {
+    name = "Vaultwarden";
+    serviceKey = "vaultwarden";
+    subdomain = serverCfg.vaultwarden.subdomain;
+    aliases = ["vaultwarden" "bitwarden"];
+    port = serverCfg.vaultwarden.port;
+    category = "Sicherheit & Passwörter";
+    desc = "Sicherer, selbst gehosteter Passwort-Manager (Bitwarden-kompatibel).";
+    color = "#175ddc";
+    icon = ''<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><rect x="9" y="11" width="6" height="5" rx="1"/><path d="M10 11V9a2 2 0 1 1 4 0v2"/></svg>'';
+  })
   # Arr Stack (Medien)
   ++ (lib.optional (arrEnabled && arrCfg.seerr.enable) {
     name = "Seerr";

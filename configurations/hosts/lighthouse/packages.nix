@@ -30,6 +30,10 @@
       lanIp = "192.168.0.73";
     };
 
+    vaultwarden = {
+      enable = true;
+    };
+
     # Media automation stack (Arr Stack)
     arr = {
       enable = true;
