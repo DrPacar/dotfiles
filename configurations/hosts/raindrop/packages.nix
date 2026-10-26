@@ -12,4 +12,7 @@
     ++ [
       ../base-packages.nix
     ];
+
+  # Declarative CIFS automount of /data from lighthouse
+  client.shares.data.enable = true;
 }

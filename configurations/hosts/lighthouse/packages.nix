@@ -87,9 +87,6 @@
     };
   };
 
-  # Testing CIFS network automount on lighthouse
-  client.shares.data = {
-    enable = true;
-    forceNetworkMount = true;
-  };
+  # Declarative share access on lighthouse (direct local symlink ~/data -> /data)
+  client.shares.data.enable = true;
 }
