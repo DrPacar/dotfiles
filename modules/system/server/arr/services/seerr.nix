@@ -4,10 +4,10 @@
   ...
 }: let
   inherit (lib) mkOption mkIf mkDefault types;
-  cfg = config.arr;
+  cfg = config.server.arr;
   inherit (import ../_lib.nix) secretRef;
 in {
-  options.arr.seerr = {
+  options.server.arr.seerr = {
     enable = mkOption {
       type = types.bool;
       default = true;

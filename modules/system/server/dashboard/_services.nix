@@ -3,7 +3,7 @@
   config,
 }: let
   serverCfg = config.server;
-  arrCfg = config.arr or {};
+  arrCfg = config.server.arr or {};
   arrEnabled = arrCfg.enable or false;
 in
   # AdGuard Home (Netzwerk & Sicherheit)

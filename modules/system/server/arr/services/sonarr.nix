@@ -4,7 +4,7 @@
   ...
 }: let
   inherit (lib) mkOption mkIf types;
-  cfg = config.arr;
+  cfg = config.server.arr;
   inherit (import ../_lib.nix) secretRef;
 
   allowedHosts = lib.concatStringsSep "," cfg.network.allowedHosts;
@@ -39,7 +39,7 @@
     };
   };
 in {
-  options.arr.sonarr = {
+  options.server.arr.sonarr = {
     enable = mkOption {
       type = types.bool;
       default = true;

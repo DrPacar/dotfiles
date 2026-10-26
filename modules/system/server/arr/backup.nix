@@ -5,7 +5,7 @@
   ...
 }: let
   inherit (lib) mkOption mkIf types optionalAttrs;
-  cfg = config.arr;
+  cfg = config.server.arr;
 
   allSupportedServices = [
     "jellyfin"
@@ -46,7 +46,7 @@
     text = builtins.readFile ./scripts/backup.sh;
   };
 in {
-  options.arr.backup = {
+  options.server.arr.backup = {
     enable = mkOption {
       type = types.bool;
       default = true;

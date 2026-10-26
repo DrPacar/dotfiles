@@ -4,9 +4,9 @@
   ...
 }: let
   inherit (lib) mkOption mkIf types;
-  cfg = config.arr;
+  cfg = config.server.arr;
 in {
-  options.arr.flaresolverr = {
+  options.server.arr.flaresolverr = {
     enable = mkOption {
       type = types.bool;
       default = true;

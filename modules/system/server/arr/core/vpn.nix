@@ -5,9 +5,9 @@
   ...
 }: let
   inherit (lib) mkOption mkIf any optional types;
-  cfg = config.arr;
+  cfg = config.server.arr;
 in {
-  options.arr.vpn = {
+  options.server.arr.vpn = {
     enable = mkOption {
       type = types.bool;
       default = true;

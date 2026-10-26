@@ -4,14 +4,14 @@
   inputs,
   ...
 }: let
-  inherit (lib) mkEnableOption mkOption mkIf mkDefault mkForce types optionalAttrs;
-  cfg = config.arr;
+  inherit (lib) mkEnableOption mkOption mkIf mkDefault mkForce mkMerge types optionalAttrs;
+  cfg = config.server.arr;
 in {
   imports = [
     inputs.nixflix.nixosModules.default
   ];
 
-  options.arr = {
+  options.server.arr = {
     enable = mkEnableOption "media automation stack (Arr Stack)";
 
     dataDir = mkOption {
@@ -196,269 +196,282 @@ in {
     };
   };
 
-  config = mkIf cfg.enable {
-    assertions = let
-      assignedPorts = [
-        (lib.optionalAttrs cfg.jellyfin.enable {
-          name = "Jellyfin";
-          port = cfg.jellyfin.port;
-        })
-        (lib.optionalAttrs cfg.qbittorrent.enable {
-          name = "qBittorrent WebUI";
-          port = cfg.qbittorrent.webuiPort;
-        })
-        (lib.optionalAttrs cfg.radarr.enable {
-          name = "Radarr";
-          port = cfg.radarr.port;
-        })
-        (lib.optionalAttrs cfg.sonarr.enable {
-          name = "Sonarr";
-          port = cfg.sonarr.port;
-        })
-        (lib.optionalAttrs (cfg.sonarr.enable && cfg.sonarr.anime.enable) {
-          name = "Sonarr Anime";
-          port = cfg.sonarr.anime.port;
-        })
-        (lib.optionalAttrs cfg.prowlarr.enable {
-          name = "Prowlarr";
-          port = cfg.prowlarr.port;
-        })
-        (lib.optionalAttrs cfg.bazarr.enable {
-          name = "Bazarr";
-          port = cfg.bazarr.port;
-        })
-        (lib.optionalAttrs cfg.seerr.enable {
-          name = "Seerr";
-          port = cfg.seerr.port;
-        })
-        (lib.optionalAttrs cfg.flaresolverr.enable {
-          name = "FlareSolverr";
-          port = cfg.flaresolverr.port;
-        })
-      ];
-      activePorts = lib.filter (p: p ? port) assignedPorts;
-      portList = map (p: p.port) activePorts;
-      uniquePortList = lib.unique portList;
-    in [
-      {
-        assertion = builtins.length portList == builtins.length uniquePortList;
-        message = "arr: Port collision detected among enabled Arr services. Ensure all services have distinct ports.";
-      }
-    ];
-
-    # -------------------------------------------------------------------------
-    # Shared Permissions & Storage Structure
-    # -------------------------------------------------------------------------
-    users.groups.${cfg.mediaGroup} =
-      {
-        members = [cfg.mediaUser] ++ lib.optional cfg.bazarr.enable "bazarr";
-      }
-      // lib.optionalAttrs (cfg.mediaGid != null) {
-        gid = mkDefault cfg.mediaGid;
-      };
-
-    # -------------------------------------------------------------------------
-    # Secrets Permissions & Automatic Service Synchronization
-    # -------------------------------------------------------------------------
-    sops.secrets =
-      (lib.genAttrs (
-          lib.optional cfg.sonarr.enable "arr_sonarr_api_key"
-          ++ lib.optional (cfg.sonarr.enable && cfg.sonarr.anime.enable) "arr_sonarr_anime_api_key"
-          ++ lib.optional cfg.radarr.enable "arr_radarr_api_key"
-          ++ lib.optional cfg.prowlarr.enable "arr_prowlarr_api_key"
-          ++ lib.optional cfg.bazarr.enable "arr_bazarr_api_key"
-          ++ lib.optional cfg.seerr.enable "arr_seerr_api_key"
-          ++ lib.optional cfg.jellyfin.enable "arr_jellyfin_api_key"
-          ++ lib.optional cfg.jellyfin.enable "arr_jellyfin_admin_password"
-          ++ lib.optional cfg.qbittorrent.enable "arr_qbittorrent_password"
-        ) (_name: {
-          group = lib.mkForce cfg.mediaGroup;
-          mode = lib.mkForce "0440";
-        }))
-      // lib.optionalAttrs cfg.vpn.enable {
-        arr_wireguard_conf = {
-          mode = lib.mkForce "0400";
-          restartUnits = ["${cfg.vpn.namespace}.service"];
-        };
-      }
-      // lib.optionalAttrs cfg.sonarr.enable {
-        arr_sonarr_api_key.restartUnits =
-          lib.optional cfg.sonarr.enable "sonarr-config.service"
-          ++ lib.optional (cfg.prowlarr.enable && cfg.sonarr.enable) "prowlarr-applications.service"
-          ++ lib.optional (cfg.seerr.enable && cfg.sonarr.enable) "seerr-sonarr.service"
-          ++ lib.optional (cfg.bazarr.enable && cfg.sonarr.enable) "bazarr.service";
-      }
-      // lib.optionalAttrs (cfg.sonarr.enable && cfg.sonarr.anime.enable) {
-        arr_sonarr_anime_api_key.restartUnits =
-          lib.optional (cfg.sonarr.enable && cfg.sonarr.anime.enable) "sonarr-anime-config.service"
-          ++ lib.optional (cfg.prowlarr.enable && cfg.sonarr.enable && cfg.sonarr.anime.enable) "prowlarr-applications.service"
-          ++ lib.optional (cfg.seerr.enable && cfg.sonarr.enable && cfg.sonarr.anime.enable) "seerr-sonarr.service";
-      }
-      // lib.optionalAttrs cfg.radarr.enable {
-        arr_radarr_api_key.restartUnits =
-          lib.optional cfg.radarr.enable "radarr-config.service"
-          ++ lib.optional (cfg.prowlarr.enable && cfg.radarr.enable) "prowlarr-applications.service"
-          ++ lib.optional (cfg.seerr.enable && cfg.radarr.enable) "seerr-radarr.service"
-          ++ lib.optional (cfg.bazarr.enable && cfg.radarr.enable) "bazarr.service";
-      }
-      // lib.optionalAttrs cfg.prowlarr.enable {
-        arr_prowlarr_api_key.restartUnits =
-          lib.optional cfg.prowlarr.enable "prowlarr-config.service"
-          ++ lib.optional cfg.prowlarr.enable "prowlarr-applications.service";
-      }
-      // lib.optionalAttrs cfg.seerr.enable {
-        arr_seerr_api_key.restartUnits =
-          lib.optional cfg.seerr.enable "seerr.service"
-          ++ lib.optional (cfg.seerr.enable && cfg.sonarr.enable) "seerr-sonarr.service"
-          ++ lib.optional (cfg.seerr.enable && cfg.radarr.enable) "seerr-radarr.service";
-      }
-      // lib.optionalAttrs cfg.bazarr.enable {
-        arr_bazarr_api_key.restartUnits =
-          lib.optional cfg.bazarr.enable "bazarr.service";
-      }
-      // lib.optionalAttrs cfg.jellyfin.enable {
-        arr_jellyfin_admin_password.restartUnits =
-          lib.optional cfg.jellyfin.enable "jellyfin.service"
-          ++ lib.optional cfg.sonarr.enable "sonarr-config.service"
-          ++ lib.optional (cfg.sonarr.enable && cfg.sonarr.anime.enable) "sonarr-anime-config.service"
-          ++ lib.optional cfg.radarr.enable "radarr-config.service"
-          ++ lib.optional cfg.prowlarr.enable "prowlarr-config.service";
-      };
-
-    # Configure directory hierarchy with setgid (2775)
-    # Using systemd.tmpfiles.settings."10-nixflix" directly to avoid conflicting duplicate tmpfiles rules
-    systemd.tmpfiles.settings."10-nixflix" =
-      {
-        "${cfg.dataDir}".d = {
-          mode = "2775";
-          user = "root";
-          group = cfg.mediaGroup;
-        };
-        "${cfg.paths.torrents}".d = {
-          mode = mkForce "2775";
-          user = "root";
-          group = cfg.mediaGroup;
-        };
-        "${cfg.paths.torrents}/default".d = {
-          mode = "2775";
-          user = "root";
-          group = cfg.mediaGroup;
-        };
-        "${cfg.paths.media}".d = {
-          mode = mkForce "2775";
-          user = "root";
-          group = cfg.mediaGroup;
-        };
-      }
-      // optionalAttrs cfg.radarr.enable {
-        "${cfg.paths.torrents}/radarr".d = {
-          mode = "2775";
-          user = "root";
-          group = cfg.mediaGroup;
-        };
-        "${cfg.paths.movies}".d = {
-          mode = "2775";
-          user = "root";
-          group = cfg.mediaGroup;
-        };
-      }
-      // optionalAttrs cfg.sonarr.enable {
-        "${cfg.paths.torrents}/sonarr".d = {
-          mode = "2775";
-          user = "root";
-          group = cfg.mediaGroup;
-        };
-        "${cfg.paths.tv}".d = {
-          mode = "2775";
-          user = "root";
-          group = cfg.mediaGroup;
-        };
-      }
-      // optionalAttrs (cfg.sonarr.enable && cfg.sonarr.anime.enable) {
-        "${cfg.paths.torrents}/sonarr-anime".d = {
-          mode = "2775";
-          user = "root";
-          group = cfg.mediaGroup;
-        };
-        "${cfg.paths.anime}".d = {
-          mode = "2775";
-          user = "root";
-          group = cfg.mediaGroup;
-        };
-      };
-
-    # -------------------------------------------------------------------------
-    # Base Nixflix Configuration
-    # -------------------------------------------------------------------------
-    nixflix = {
-      enable = true;
-
-      mediaDir = cfg.paths.media;
-      downloadsDir = cfg.paths.torrents;
-      mediaUsers = [cfg.mediaUser];
-
-      # Disable public reverse proxies; services are accessed securely via Tailscale and localhost
-      nginx.enable = false;
-      caddy.enable = false;
-    };
-
-    # -------------------------------------------------------------------------
-    # Resource Management (cgroups v2 arr.slice)
-    # -------------------------------------------------------------------------
-    systemd.slices.arr = mkIf cfg.resources.enable {
-      description = "Media and Automation Stack Slice";
-      sliceConfig =
-        {
-          CPUWeight = cfg.resources.cpuWeight;
-          IOWeight = cfg.resources.ioWeight;
-        }
-        // optionalAttrs (cfg.resources.memoryHigh != null) {
-          MemoryHigh = cfg.resources.memoryHigh;
-        }
-        // optionalAttrs (cfg.resources.memoryMax != null) {
-          MemoryMax = cfg.resources.memoryMax;
-        };
-    };
-
-    systemd.services = mkIf cfg.resources.enable (
-      lib.mkMerge [
-        (mkIf cfg.jellyfin.enable {
-          jellyfin.serviceConfig.Slice = "arr.slice";
-        })
-        (mkIf cfg.qbittorrent.enable {
-          qbittorrent.serviceConfig.Slice = "arr.slice";
-        })
-        (mkIf (cfg.qbittorrent.enable && cfg.vpn.enable) {
-          qbittorrent-webui-proxy.serviceConfig.Slice = "arr.slice";
-        })
-        (mkIf (cfg.qbittorrent.enable && cfg.vpn.enable && cfg.vpn.portForwarding.enable) {
-          protonvpn-port-forward.serviceConfig.Slice = "arr.slice";
-        })
-        (mkIf cfg.radarr.enable {
-          radarr.serviceConfig.Slice = "arr.slice";
-        })
-        (mkIf cfg.sonarr.enable {
-          sonarr.serviceConfig.Slice = "arr.slice";
-        })
-        (mkIf (cfg.sonarr.enable && cfg.sonarr.anime.enable) {
-          sonarr-anime.serviceConfig.Slice = "arr.slice";
-        })
-        (mkIf cfg.prowlarr.enable {
-          prowlarr.serviceConfig.Slice = "arr.slice";
-        })
-        (mkIf cfg.bazarr.enable {
-          bazarr.serviceConfig.Slice = "arr.slice";
-        })
-        (mkIf cfg.seerr.enable {
-          seerr.serviceConfig.Slice = "arr.slice";
-        })
-        (mkIf (cfg.recyclarr.enable && (cfg.radarr.enable || cfg.sonarr.enable)) {
-          recyclarr.serviceConfig.Slice = "arr.slice";
-        })
-        (mkIf cfg.flaresolverr.enable {
-          flaresolverr.serviceConfig.Slice = "arr.slice";
-        })
-      ]
-    );
+  # Compatibility alias for top-level arr option
+  options.arr = mkOption {
+    type = types.anything;
+    default = {};
+    visible = false;
+    description = "Backward-compatibility alias for server.arr.";
   };
+
+  config = mkMerge [
+    (mkIf (config.arr != {}) {
+      server.arr = config.arr;
+    })
+    (mkIf cfg.enable {
+      assertions = let
+        assignedPorts = [
+          (lib.optionalAttrs cfg.jellyfin.enable {
+            name = "Jellyfin";
+            port = cfg.jellyfin.port;
+          })
+          (lib.optionalAttrs cfg.qbittorrent.enable {
+            name = "qBittorrent WebUI";
+            port = cfg.qbittorrent.webuiPort;
+          })
+          (lib.optionalAttrs cfg.radarr.enable {
+            name = "Radarr";
+            port = cfg.radarr.port;
+          })
+          (lib.optionalAttrs cfg.sonarr.enable {
+            name = "Sonarr";
+            port = cfg.sonarr.port;
+          })
+          (lib.optionalAttrs (cfg.sonarr.enable && cfg.sonarr.anime.enable) {
+            name = "Sonarr Anime";
+            port = cfg.sonarr.anime.port;
+          })
+          (lib.optionalAttrs cfg.prowlarr.enable {
+            name = "Prowlarr";
+            port = cfg.prowlarr.port;
+          })
+          (lib.optionalAttrs cfg.bazarr.enable {
+            name = "Bazarr";
+            port = cfg.bazarr.port;
+          })
+          (lib.optionalAttrs cfg.seerr.enable {
+            name = "Seerr";
+            port = cfg.seerr.port;
+          })
+          (lib.optionalAttrs cfg.flaresolverr.enable {
+            name = "FlareSolverr";
+            port = cfg.flaresolverr.port;
+          })
+        ];
+        activePorts = lib.filter (p: p ? port) assignedPorts;
+        portList = map (p: p.port) activePorts;
+        uniquePortList = lib.unique portList;
+      in [
+        {
+          assertion = builtins.length portList == builtins.length uniquePortList;
+          message = "arr: Port collision detected among enabled Arr services. Ensure all services have distinct ports.";
+        }
+      ];
+
+      # -------------------------------------------------------------------------
+      # Shared Permissions & Storage Structure
+      # -------------------------------------------------------------------------
+      users.groups.${cfg.mediaGroup} =
+        {
+          members = [cfg.mediaUser] ++ lib.optional cfg.bazarr.enable "bazarr";
+        }
+        // lib.optionalAttrs (cfg.mediaGid != null) {
+          gid = mkDefault cfg.mediaGid;
+        };
+
+      # -------------------------------------------------------------------------
+      # Secrets Permissions & Automatic Service Synchronization
+      # -------------------------------------------------------------------------
+      sops.secrets =
+        (lib.genAttrs (
+            lib.optional cfg.sonarr.enable "arr_sonarr_api_key"
+            ++ lib.optional (cfg.sonarr.enable && cfg.sonarr.anime.enable) "arr_sonarr_anime_api_key"
+            ++ lib.optional cfg.radarr.enable "arr_radarr_api_key"
+            ++ lib.optional cfg.prowlarr.enable "arr_prowlarr_api_key"
+            ++ lib.optional cfg.bazarr.enable "arr_bazarr_api_key"
+            ++ lib.optional cfg.seerr.enable "arr_seerr_api_key"
+            ++ lib.optional cfg.jellyfin.enable "arr_jellyfin_api_key"
+            ++ lib.optional cfg.jellyfin.enable "arr_jellyfin_admin_password"
+            ++ lib.optional cfg.qbittorrent.enable "arr_qbittorrent_password"
+          ) (_name: {
+            group = lib.mkForce cfg.mediaGroup;
+            mode = lib.mkForce "0440";
+          }))
+        // lib.optionalAttrs cfg.vpn.enable {
+          arr_wireguard_conf = {
+            mode = lib.mkForce "0400";
+            restartUnits = ["${cfg.vpn.namespace}.service"];
+          };
+        }
+        // lib.optionalAttrs cfg.sonarr.enable {
+          arr_sonarr_api_key.restartUnits =
+            lib.optional cfg.sonarr.enable "sonarr-config.service"
+            ++ lib.optional (cfg.prowlarr.enable && cfg.sonarr.enable) "prowlarr-applications.service"
+            ++ lib.optional (cfg.seerr.enable && cfg.sonarr.enable) "seerr-sonarr.service"
+            ++ lib.optional (cfg.bazarr.enable && cfg.sonarr.enable) "bazarr.service";
+        }
+        // lib.optionalAttrs (cfg.sonarr.enable && cfg.sonarr.anime.enable) {
+          arr_sonarr_anime_api_key.restartUnits =
+            lib.optional (cfg.sonarr.enable && cfg.sonarr.anime.enable) "sonarr-anime-config.service"
+            ++ lib.optional (cfg.prowlarr.enable && cfg.sonarr.enable && cfg.sonarr.anime.enable) "prowlarr-applications.service"
+            ++ lib.optional (cfg.seerr.enable && cfg.sonarr.enable && cfg.sonarr.anime.enable) "seerr-sonarr.service";
+        }
+        // lib.optionalAttrs cfg.radarr.enable {
+          arr_radarr_api_key.restartUnits =
+            lib.optional cfg.radarr.enable "radarr-config.service"
+            ++ lib.optional (cfg.prowlarr.enable && cfg.radarr.enable) "prowlarr-applications.service"
+            ++ lib.optional (cfg.seerr.enable && cfg.radarr.enable) "seerr-radarr.service"
+            ++ lib.optional (cfg.bazarr.enable && cfg.radarr.enable) "bazarr.service";
+        }
+        // lib.optionalAttrs cfg.prowlarr.enable {
+          arr_prowlarr_api_key.restartUnits =
+            lib.optional cfg.prowlarr.enable "prowlarr-config.service"
+            ++ lib.optional cfg.prowlarr.enable "prowlarr-applications.service";
+        }
+        // lib.optionalAttrs cfg.seerr.enable {
+          arr_seerr_api_key.restartUnits =
+            lib.optional cfg.seerr.enable "seerr.service"
+            ++ lib.optional (cfg.seerr.enable && cfg.sonarr.enable) "seerr-sonarr.service"
+            ++ lib.optional (cfg.seerr.enable && cfg.radarr.enable) "seerr-radarr.service";
+        }
+        // lib.optionalAttrs cfg.bazarr.enable {
+          arr_bazarr_api_key.restartUnits =
+            lib.optional cfg.bazarr.enable "bazarr.service";
+        }
+        // lib.optionalAttrs cfg.jellyfin.enable {
+          arr_jellyfin_admin_password.restartUnits =
+            lib.optional cfg.jellyfin.enable "jellyfin.service"
+            ++ lib.optional cfg.sonarr.enable "sonarr-config.service"
+            ++ lib.optional (cfg.sonarr.enable && cfg.sonarr.anime.enable) "sonarr-anime-config.service"
+            ++ lib.optional cfg.radarr.enable "radarr-config.service"
+            ++ lib.optional cfg.prowlarr.enable "prowlarr-config.service";
+        };
+
+      # Configure directory hierarchy with setgid (2775)
+      # Using systemd.tmpfiles.settings."10-nixflix" directly to avoid conflicting duplicate tmpfiles rules
+      systemd.tmpfiles.settings."10-nixflix" =
+        {
+          "${cfg.dataDir}".d = {
+            mode = "2775";
+            user = "root";
+            group = cfg.mediaGroup;
+          };
+          "${cfg.paths.torrents}".d = {
+            mode = mkForce "2775";
+            user = "root";
+            group = cfg.mediaGroup;
+          };
+          "${cfg.paths.torrents}/default".d = {
+            mode = "2775";
+            user = "root";
+            group = cfg.mediaGroup;
+          };
+          "${cfg.paths.media}".d = {
+            mode = mkForce "2775";
+            user = "root";
+            group = cfg.mediaGroup;
+          };
+        }
+        // optionalAttrs cfg.radarr.enable {
+          "${cfg.paths.torrents}/radarr".d = {
+            mode = "2775";
+            user = "root";
+            group = cfg.mediaGroup;
+          };
+          "${cfg.paths.movies}".d = {
+            mode = "2775";
+            user = "root";
+            group = cfg.mediaGroup;
+          };
+        }
+        // optionalAttrs cfg.sonarr.enable {
+          "${cfg.paths.torrents}/sonarr".d = {
+            mode = "2775";
+            user = "root";
+            group = cfg.mediaGroup;
+          };
+          "${cfg.paths.tv}".d = {
+            mode = "2775";
+            user = "root";
+            group = cfg.mediaGroup;
+          };
+        }
+        // optionalAttrs (cfg.sonarr.enable && cfg.sonarr.anime.enable) {
+          "${cfg.paths.torrents}/sonarr-anime".d = {
+            mode = "2775";
+            user = "root";
+            group = cfg.mediaGroup;
+          };
+          "${cfg.paths.anime}".d = {
+            mode = "2775";
+            user = "root";
+            group = cfg.mediaGroup;
+          };
+        };
+
+      # -------------------------------------------------------------------------
+      # Base Nixflix Configuration
+      # -------------------------------------------------------------------------
+      nixflix = {
+        enable = true;
+
+        mediaDir = cfg.paths.media;
+        downloadsDir = cfg.paths.torrents;
+        mediaUsers = [cfg.mediaUser];
+
+        # Disable public reverse proxies; services are accessed securely via Tailscale and localhost
+        nginx.enable = false;
+        caddy.enable = false;
+      };
+
+      # -------------------------------------------------------------------------
+      # Resource Management (cgroups v2 arr.slice)
+      # -------------------------------------------------------------------------
+      systemd.slices.arr = mkIf cfg.resources.enable {
+        description = "Media and Automation Stack Slice";
+        sliceConfig =
+          {
+            CPUWeight = cfg.resources.cpuWeight;
+            IOWeight = cfg.resources.ioWeight;
+          }
+          // optionalAttrs (cfg.resources.memoryHigh != null) {
+            MemoryHigh = cfg.resources.memoryHigh;
+          }
+          // optionalAttrs (cfg.resources.memoryMax != null) {
+            MemoryMax = cfg.resources.memoryMax;
+          };
+      };
+
+      systemd.services = mkIf cfg.resources.enable (
+        lib.mkMerge [
+          (mkIf cfg.jellyfin.enable {
+            jellyfin.serviceConfig.Slice = "arr.slice";
+          })
+          (mkIf cfg.qbittorrent.enable {
+            qbittorrent.serviceConfig.Slice = "arr.slice";
+          })
+          (mkIf (cfg.qbittorrent.enable && cfg.vpn.enable) {
+            qbittorrent-webui-proxy.serviceConfig.Slice = "arr.slice";
+          })
+          (mkIf (cfg.qbittorrent.enable && cfg.vpn.enable && cfg.vpn.portForwarding.enable) {
+            protonvpn-port-forward.serviceConfig.Slice = "arr.slice";
+          })
+          (mkIf cfg.radarr.enable {
+            radarr.serviceConfig.Slice = "arr.slice";
+          })
+          (mkIf cfg.sonarr.enable {
+            sonarr.serviceConfig.Slice = "arr.slice";
+          })
+          (mkIf (cfg.sonarr.enable && cfg.sonarr.anime.enable) {
+            sonarr-anime.serviceConfig.Slice = "arr.slice";
+          })
+          (mkIf cfg.prowlarr.enable {
+            prowlarr.serviceConfig.Slice = "arr.slice";
+          })
+          (mkIf cfg.bazarr.enable {
+            bazarr.serviceConfig.Slice = "arr.slice";
+          })
+          (mkIf cfg.seerr.enable {
+            seerr.serviceConfig.Slice = "arr.slice";
+          })
+          (mkIf (cfg.recyclarr.enable && (cfg.radarr.enable || cfg.sonarr.enable)) {
+            recyclarr.serviceConfig.Slice = "arr.slice";
+          })
+          (mkIf cfg.flaresolverr.enable {
+            flaresolverr.serviceConfig.Slice = "arr.slice";
+          })
+        ]
+      );
+    })
+  ];
 }

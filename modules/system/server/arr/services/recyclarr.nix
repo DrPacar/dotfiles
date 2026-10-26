@@ -5,9 +5,9 @@
   ...
 }: let
   inherit (lib) mkOption mkIf mkForce optional types;
-  cfg = config.arr;
+  cfg = config.server.arr;
 in {
-  options.arr.recyclarr = {
+  options.server.arr.recyclarr = {
     enable = mkOption {
       type = types.bool;
       default = true;

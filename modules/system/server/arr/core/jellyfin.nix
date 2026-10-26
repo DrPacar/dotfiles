@@ -5,13 +5,13 @@
   ...
 }: let
   inherit (lib) mkOption mkIf types optionals;
-  cfg = config.arr;
+  cfg = config.server.arr;
   inherit (import ../_lib.nix) secretRef;
 
   jellyfinUser = "jellyfin";
 in {
   # Options associated with jellyfin
-  options.arr.jellyfin = {
+  options.server.arr.jellyfin = {
     enable = mkOption {
       type = types.bool;
       default = true;

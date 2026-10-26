@@ -5,10 +5,10 @@
   ...
 }: let
   inherit (lib) mkOption mkIf mkForce types;
-  cfg = config.arr;
+  cfg = config.server.arr;
   inherit (import ../_lib.nix) secretRef;
 in {
-  options.arr.qbittorrent = {
+  options.server.arr.qbittorrent = {
     enable = mkOption {
       type = types.bool;
       default = true;

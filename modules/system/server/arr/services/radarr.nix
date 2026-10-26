@@ -4,13 +4,13 @@
   ...
 }: let
   inherit (lib) mkOption mkIf types;
-  cfg = config.arr;
+  cfg = config.server.arr;
   inherit (import ../_lib.nix) secretRef;
 
   radarrUser = "radarr";
   allowedHosts = lib.concatStringsSep "," cfg.network.allowedHosts;
 in {
-  options.arr.radarr = {
+  options.server.arr.radarr = {
     enable = mkOption {
       type = types.bool;
       default = true;

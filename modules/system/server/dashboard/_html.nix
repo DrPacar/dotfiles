@@ -6,7 +6,7 @@
   servicesList,
 }: let
   serverCfg = config.server;
-  arrCfg = config.arr or {};
+  arrCfg = config.server.arr or {};
 
   displayTitle =
     if serverCfg.domain != null

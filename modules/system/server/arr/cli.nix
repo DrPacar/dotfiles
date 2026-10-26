@@ -5,7 +5,7 @@
   ...
 }: let
   inherit (lib) mkOption mkIf types;
-  cfg = config.arr;
+  cfg = config.server.arr;
 
   arrConfigJson = pkgs.writeText "arr-config.json" (builtins.toJSON {
     domain = cfg.domain;
@@ -192,7 +192,7 @@
     '';
   };
 in {
-  options.arr.cli = {
+  options.server.arr.cli = {
     enable = mkOption {
       type = types.bool;
       default = true;

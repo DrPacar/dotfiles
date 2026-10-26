@@ -4,12 +4,12 @@
   ...
 }: let
   inherit (lib) mkOption mkIf types;
-  cfg = config.arr;
+  cfg = config.server.arr;
   inherit (import ../_lib.nix) secretRef;
 
   bazarrUser = "bazarr";
 in {
-  options.arr.bazarr = {
+  options.server.arr.bazarr = {
     enable = mkOption {
       type = types.bool;
       default = true;
