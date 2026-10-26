@@ -6,6 +6,7 @@
     bat
     eza
     duf
+    cifs-utils
     # network
     nmap
     dig

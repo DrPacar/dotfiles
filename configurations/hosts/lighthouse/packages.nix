@@ -38,6 +38,10 @@
       enable = true;
     };
 
+    samba = {
+      enable = true;
+    };
+
     # Media automation stack (Arr Stack)
     arr = {
       enable = true;
