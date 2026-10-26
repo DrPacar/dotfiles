@@ -86,4 +86,10 @@
       backup.enable = false;
     };
   };
+
+  # Testing CIFS network automount on lighthouse
+  client.shares.data = {
+    enable = true;
+    forceNetworkMount = true;
+  };
 }
