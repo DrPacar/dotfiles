@@ -7,7 +7,13 @@
         center = true;
       }
       {
-        match.title = "^(Open File|Save File|Choose Files)$";
+        match.class = "^(hyprpolkitagent|polkit-gnome-authentication-agent-1|org.kde.polkit-kde-authentication-agent-1|pinentry.*)$";
+        float = true;
+        center = true;
+        dim_around = true;
+      }
+      {
+        match.title = "^(Open File|Save File|Choose Files|File Operation Progress|Confirm to replace files)$";
         float = true;
         center = true;
       }
@@ -20,6 +26,14 @@
         float = true;
         pin = true;
         move = "100%-w-20 100%-h-20";
+        opaque = true;
+        keep_aspect_ratio = true;
+      }
+      {
+        match.class = "^(mpv|imv)$";
+        float = true;
+        center = true;
+        opaque = true;
       }
       {
         match.class = "^(ripdrag|.*ripdrag.*)$";

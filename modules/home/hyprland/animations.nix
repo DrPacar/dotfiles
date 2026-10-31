@@ -3,10 +3,19 @@
     curve = [
       {
         _args = [
-          "myBezier"
+          "easeOutQuint"
           {
             type = "bezier";
-            points = [[0.05 0.9] [0.1 1.05]];
+            points = [[0.23 1] [0.32 1]];
+          }
+        ];
+      }
+      {
+        _args = [
+          "easeInOutCubic"
+          {
+            type = "bezier";
+            points = [[0.65 0.05] [0.36 1]];
           }
         ];
       }
@@ -17,38 +26,39 @@
         leaf = "windows";
         enabled = true;
         speed = 5;
-        bezier = "myBezier";
+        bezier = "easeOutQuint";
       }
       {
         leaf = "windowsOut";
         enabled = true;
-        speed = 5;
-        bezier = "default";
+        speed = 4;
+        bezier = "easeOutQuint";
         style = "popin 80%";
       }
       {
         leaf = "border";
         enabled = true;
         speed = 8;
-        bezier = "default";
+        bezier = "easeOutQuint";
       }
       {
         leaf = "borderangle";
         enabled = true;
         speed = 6;
-        bezier = "default";
+        bezier = "easeOutQuint";
       }
       {
         leaf = "fade";
         enabled = true;
-        speed = 5;
-        bezier = "default";
+        speed = 4;
+        bezier = "easeOutQuint";
       }
       {
         leaf = "workspaces";
         enabled = true;
         speed = 5;
-        bezier = "default";
+        bezier = "easeOutQuint";
+        style = "slidefade 20%";
       }
     ];
   };

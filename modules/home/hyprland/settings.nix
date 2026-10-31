@@ -5,7 +5,7 @@
       gaps_out = 8;
       border_size = 2;
       layout = "dwindle";
-      allow_tearing = false;
+      allow_tearing = true;
       col = {
         active_border = {
           colors = ["rgba(7aa2f7ee)" "rgba(bb9af7ee)"];
@@ -28,6 +28,39 @@
       touchpad = {
         natural_scroll = true;
         tap_to_click = true;
+      };
+    };
+
+    cursor = {
+      inactive_timeout = 3;
+      no_warps = false;
+    };
+
+    render = {
+      direct_scanout = true;
+    };
+
+    xwayland = {
+      force_zero_scaling = true;
+    };
+
+    group = {
+      col = {
+        border_active = {
+          colors = ["rgba(7aa2f7ee)" "rgba(bb9af7ee)"];
+          angle = 45;
+        };
+        border_inactive = "rgba(24283baa)";
+      };
+      groupbar = {
+        font_family = "JetBrainsMono Nerd Font";
+        font_size = 10;
+        gradients = true;
+        text_color = "rgba(c0caf5ff)";
+        col = {
+          active = "rgba(7aa2f7cc)";
+          inactive = "rgba(24283bcc)";
+        };
       };
     };
 
@@ -63,7 +96,7 @@
       disable_splash_rendering = true;
       mouse_move_enables_dpms = true;
       key_press_enables_dpms = true;
-      vrr = 0;
+      vrr = 2;
     };
   };
 }

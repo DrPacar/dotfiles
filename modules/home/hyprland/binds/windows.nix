@@ -10,7 +10,7 @@ in {
     {_args = ["${mod} + F" (lua "hl.dsp.window.fullscreen({ mode = 0 })")];}
     {_args = ["${mod} + M" (lua "hl.dsp.window.fullscreen({ mode = 1 })")];}
     {_args = ["${mod} + P" (lua "hl.dsp.window.pin()")];} # Pin floating window across all workspaces
-    {_args = ["${mod} + SHIFT + P" (lua "hl.dsp.window.pin()")];}
+    {_args = ["${mod} + SHIFT + P" (lua ''hl.dsp.layout("pseudo")'')];} # Pseudotile (keep native aspect/size in tile)
     {_args = ["${mod} + T" (lua ''hl.dsp.layout("togglesplit")'')];}
 
     # Fast native window focus cycling
