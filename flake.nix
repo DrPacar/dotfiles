@@ -69,6 +69,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.treefmt-nix.follows = "treefmt-nix";
     };
+
+    compress-yazi = {
+      url = "github:KKV9/compress.yazi";
+      flake = false;
+    };
   };
 
   outputs = inputs @ {

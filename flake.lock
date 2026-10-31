@@ -1,5 +1,21 @@
 {
   "nodes": {
+    "compress-yazi": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1787430742,
+        "narHash": "sha256-9cdA8D/TtwHcLqrtoyIixA0YJmTs+c8FSNrjxp8CYI0=",
+        "owner": "KKV9",
+        "repo": "compress.yazi",
+        "rev": "80e5268ec74c7ac17d4d739e13a9958cba4c70d3",
+        "type": "github"
+      },
+      "original": {
+        "owner": "KKV9",
+        "repo": "compress.yazi",
+        "type": "github"
+      }
+    },
     "disko": {
       "inputs": {
         "nixpkgs": [
@@ -206,6 +222,7 @@
     },
     "root": {
       "inputs": {
+        "compress-yazi": "compress-yazi",
         "disko": "disko",
         "flake-parts": "flake-parts",
         "git-hooks-nix": "git-hooks-nix",

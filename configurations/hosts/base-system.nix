@@ -42,6 +42,7 @@
   };
 
   services.flatpak.enable = true;
+  services.udisks2.enable = true;
 
   # Enable Nix dynamic linker (needed by Jetbrains)
   programs.nix-ld.enable = true;

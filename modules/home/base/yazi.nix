@@ -1,4 +1,8 @@
-{pkgs, ...}: let
+{
+  pkgs,
+  inputs,
+  ...
+}: let
   # TokyoNight color palette (consistent with Ghostty, Zathura, Neovim)
   colors = {
     bg = "#1a1b26";
@@ -41,10 +45,19 @@ in {
       wl-clipboard # Wayland clipboard integration
       ripdrag # Wayland drag and drop
       libnotify # Desktop notifications (notify-send)
+      _7zz # 7z and archive handling
+      zip # Zip compression
+      unzip # Zip extraction
       poppler-utils # PDF previews (pdftoppm)
       imagemagick # SVG & image conversions
       chafa # Character-art image preview fallback
       jq # JSON format previews
+      mpv # Video and audio player
+      udisks2 # Mount manager daemon client
+      util-linux # lsblk and eject for mount manager
+      ripgrep # Content search (yafg)
+      fzf # Fuzzy finder (yafg)
+      bat # Syntax highlighting preview (yafg)
     ];
 
     # Community plugins packaged in Nixpkgs
@@ -58,6 +71,20 @@ in {
       git = {
         package = pkgs.yaziPlugins.git;
         setup = true;
+      };
+      compress = {
+        package = inputs.compress-yazi;
+      };
+      mount = {
+        package = pkgs.yaziPlugins.mount;
+      };
+      yafg = {
+        package = pkgs.yaziPlugins.yafg;
+        setup = true;
+        settings = {
+          editor = "nvim";
+          file_arg_format = "+{row} {file}";
+        };
       };
     };
 
@@ -83,29 +110,36 @@ in {
       opener = {
         edit = [
           {
-            run = ''nvim "$@"'';
+            run = ''command -v nvim >/dev/null && nvim %s || ''${EDITOR:-nano} %s'';
             block = true;
             desc = "Neovim";
           }
         ];
         open = [
           {
-            run = ''xdg-open "$@"'';
+            run = "xdg-open %s";
             desc = "Open";
           }
         ];
         image = [
           {
-            run = ''imv "$@"'';
+            run = ''command -v imv >/dev/null && imv %s || xdg-open %s'';
             orphan = true;
             desc = "imv";
           }
         ];
         pdf = [
           {
-            run = ''zathura "$@"'';
+            run = ''command -v zathura >/dev/null && zathura %s || xdg-open %s'';
             orphan = true;
             desc = "Zathura";
+          }
+        ];
+        play = [
+          {
+            run = ''command -v mpv >/dev/null && mpv %s || xdg-open %s'';
+            orphan = true;
+            desc = "mpv";
           }
         ];
       };
@@ -123,6 +157,14 @@ in {
           {
             mime = "application/pdf";
             use = ["pdf" "open"];
+          }
+          {
+            mime = "video/*";
+            use = ["play" "open"];
+          }
+          {
+            mime = "audio/*";
+            use = ["play" "open"];
           }
         ];
       };
@@ -386,6 +428,45 @@ in {
             on = ["c" "m"];
             run = "plugin chmod";
             desc = "Chmod on selected files";
+          }
+          # Archive: Compress (compress.yazi)
+          {
+            on = ["c" "a"];
+            run = "plugin compress";
+            desc = "Archive selected files";
+          }
+          {
+            on = ["c" "z"];
+            run = "plugin compress";
+            desc = "Archive selected files (zip)";
+          }
+          {
+            on = ["c" "P"];
+            run = "plugin compress -p";
+            desc = "Archive selected files with password";
+          }
+          # Archive: Extract
+          {
+            on = ["c" "e"];
+            run = ''shell 'ya pub extract --list %s' --orphan'';
+            desc = "Extract archive here";
+          }
+          # Mount manager (mount.yazi)
+          {
+            on = ["M"];
+            run = "plugin mount";
+            desc = "Mount manager (USB/disks)";
+          }
+          # Content search via ripgrep & fzf (yafg.yazi)
+          {
+            on = ["<C-f>"];
+            run = "plugin yafg";
+            desc = "Search file contents (ripgrep/fzf)";
+          }
+          {
+            on = ["F" "G"];
+            run = "plugin yafg";
+            desc = "Search file contents (ripgrep/fzf)";
           }
           # Drag and drop (Wayland ripdrag)
           {
