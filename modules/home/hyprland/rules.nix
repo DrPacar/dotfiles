@@ -22,6 +22,11 @@
         move = "100%-w-20 100%-h-20";
       }
       {
+        match.class = "^(ripdrag|.*ripdrag.*)$";
+        float = true;
+        pin = true;
+      }
+      {
         match.class = ".*";
         idle_inhibit = "fullscreen";
       }

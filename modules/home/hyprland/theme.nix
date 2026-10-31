@@ -15,6 +15,12 @@
       package = pkgs.bibata-cursors;
       size = 24;
     };
+    gtk3.extraConfig = {
+      gtk-application-prefer-dark-theme = 1;
+    };
+    gtk4.extraConfig = {
+      gtk-application-prefer-dark-theme = 1;
+    };
     gtk3.extraCss = ''
       @define-color accent_color #37f499;
       @define-color accent_bg_color #37f499;
