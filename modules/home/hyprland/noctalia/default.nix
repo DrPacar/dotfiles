@@ -70,6 +70,10 @@ in {
         };
       };
 
+      location = {
+        auto_locate = true;
+      };
+
       weather = {
         enabled = true;
         unit = "metric";
@@ -77,14 +81,55 @@ in {
 
       bar.main = {
         position = "top";
-        start = ["launcher" "workspaces" "active-window"];
+        thickness = 36;
+        background_opacity = 0.88;
+        compositor_blur = true;
+        radius = 16;
+        concave_edge_corners = true;
+        margin_edge = 0;
+        margin_ends = 120;
+        padding = 16;
+        widget_spacing = 8;
+        shadow = true;
+        border = "outline";
+        border_width = 1.0;
+
+        capsule = true;
+        capsule_fill = "surface_variant";
+        capsule_opacity = 0.70;
+        capsule_radius = 8.0;
+        capsule_border = "outline";
+        capsule_border_width = 1.0;
+        hover_highlight = true;
+
+        capsule_group = [
+          {
+            id = "sysmon";
+            members = ["cpu" "ram"];
+            fill = "surface_variant";
+            opacity = 0.70;
+            radius = 8.0;
+            border = "outline";
+            border_width = 1.0;
+            padding = 6.0;
+            widget_spacing = 6;
+          }
+        ];
+
+        start = ["launcher" "workspaces" "active_window"];
         center = ["clock"];
         end =
           [
-            "media"
-            "tray"
-            "network"
+            "privacy"
+            "group:sysmon"
+            "power_profile"
+            "caffeine"
+            "nightlight"
+            "brightness"
             "volume"
+            "network"
+            "weather"
+            "tray"
           ]
           ++ lib.optional hasBattery "battery"
           ++ [
@@ -92,8 +137,60 @@ in {
           ];
       };
 
+      widget.launcher = {
+        glyph = "U+F313";
+        icon_color = "primary";
+      };
+
+      widget.workspaces = {
+        style = "minimal";
+        show_labels = true;
+        label_source = "id";
+        focused_color = "primary";
+        occupied_color = "secondary";
+        empty_color = "outline";
+        change_color_on_hover = true;
+      };
+
+      widget.active_window = {
+        min_length = 50;
+        max_length = 240;
+        title_scroll = "on_hover";
+        show_empty_label = false;
+      };
+
       widget.clock = {
         anchor = true;
+        format = "{:%H:%M}  •  {:%a, %d. %b}";
+        tooltip_format = "{:%A, %d. %B %Y}";
+        font_weight = 600;
+      };
+
+      widget.privacy = {
+        hide_inactive = true;
+      };
+
+      widget.cpu = {
+        type = "sysmon";
+        stat = "cpu_usage";
+        visualization = "none";
+      };
+
+      widget.ram = {
+        type = "sysmon";
+        stat = "ram_used";
+        visualization = "none";
+      };
+
+      widget.brightness = {
+        show_glyph = true;
+        show_label = true;
+        show_when_unavailable = false;
+      };
+
+      widget.weather = {
+        show_condition = false;
+        show_temperature = true;
       };
 
       widget.tray = {
