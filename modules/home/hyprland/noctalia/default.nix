@@ -44,9 +44,98 @@ in {
 
       lockscreen = {
         enabled = true;
-        blurred_desktop = true;
-        blur_intensity = 0.5;
-        tint_intensity = 0.3;
+        blurred_desktop = false;
+        blur_intensity = 0.45;
+        tint_intensity = 0.25;
+        transition = ["fade" "zoom"];
+        transition_duration = 1000.0;
+        edge_smoothness = 0.4;
+        grace_period_seconds = 5;
+      };
+
+      lockscreen_widgets = {
+        enabled = true;
+        widget_order = [
+          "clock_main"
+          "clock_secondary"
+          "lockscreen-login-box@DP-5"
+          "lockscreen-login-box@DP-4"
+        ];
+        widget = {
+          clock_main = {
+            type = "clock";
+            output = "DP-5";
+            cx = 1280.0;
+            cy = 480.0;
+            box_width = 0.0;
+            box_height = 0.0;
+            settings = {
+              clock_style = "digital";
+              format = "{:%H:%M}";
+              color = "primary";
+              shadow = true;
+              center_text = true;
+            };
+          };
+
+          clock_secondary = {
+            type = "clock";
+            output = "DP-4";
+            cx = 960.0;
+            cy = 380.0;
+            box_width = 0.0;
+            box_height = 0.0;
+            settings = {
+              clock_style = "digital";
+              format = "{:%H:%M}";
+              color = "primary";
+              shadow = true;
+              center_text = true;
+            };
+          };
+
+          "lockscreen-login-box@DP-5" = {
+            type = "login_box";
+            output = "DP-5";
+            cx = 1280.0;
+            cy = 840.0;
+            box_width = 0.0;
+            box_height = 0.0;
+            settings = {
+              layout = "regular";
+              show_session_buttons = true;
+              show_media = true;
+              show_weather = true;
+              show_unlock_hint = true;
+              background_color = "surface_variant";
+              background_opacity = 0.85;
+              background_radius = 16.0;
+              input_opacity = 0.9;
+              input_radius = 8.0;
+            };
+          };
+
+          "lockscreen-login-box@DP-4" = {
+            type = "login_box";
+            output = "DP-4";
+            cx = 960.0;
+            cy = 660.0;
+            box_width = 0.0;
+            box_height = 0.0;
+            settings = {
+              layout = "regular";
+              show_session_buttons = true;
+              show_media = true;
+              show_weather = true;
+              show_unlock_hint = true;
+              background_color = "surface_variant";
+              background_opacity = 0.85;
+              background_radius = 16.0;
+              input_opacity = 0.9;
+              input_radius = 8.0;
+            };
+          };
+        };
       };
 
       idle = {
