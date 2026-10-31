@@ -8,10 +8,10 @@
       allow_tearing = false;
       col = {
         active_border = {
-          colors = ["rgba(37f499ee)" "rgba(04d1f9ee)"];
+          colors = ["rgba(7aa2f7ee)" "rgba(bb9af7ee)"];
           angle = 45;
         };
-        inactive_border = "rgba(292e42aa)";
+        inactive_border = "rgba(24283baa)";
       };
     };
 
@@ -32,22 +32,23 @@
     };
 
     decoration = {
-      rounding = 10;
+      rounding = 12;
       active_opacity = 1.0;
-      inactive_opacity = 0.95;
+      inactive_opacity = 0.94;
 
       blur = {
         enabled = true;
         size = 6;
-        passes = 2;
+        passes = 3;
         new_optimizations = true;
+        vibrancy = 0.2;
       };
 
       shadow = {
         enabled = true;
-        range = 15;
+        range = 20;
         render_power = 3;
-        color = "rgba(16161e99)";
+        color = "rgba(16161ecc)";
       };
     };
 

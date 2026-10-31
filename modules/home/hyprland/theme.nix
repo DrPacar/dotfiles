@@ -22,14 +22,14 @@
       gtk-application-prefer-dark-theme = 1;
     };
     gtk3.extraCss = ''
-      @define-color accent_color #37f499;
-      @define-color accent_bg_color #37f499;
-      @define-color accent_fg_color #171928;
+      @define-color accent_color #7aa2f7;
+      @define-color accent_bg_color #7aa2f7;
+      @define-color accent_fg_color #1a1b26;
     '';
     gtk4.extraCss = ''
-      @define-color accent_color #37f499;
-      @define-color accent_bg_color #37f499;
-      @define-color accent_fg_color #171928;
+      @define-color accent_color #7aa2f7;
+      @define-color accent_bg_color #7aa2f7;
+      @define-color accent_fg_color #1a1b26;
     '';
   };
 

@@ -23,7 +23,7 @@ in {
       theme = {
         mode = "dark";
         source = "builtin";
-        builtin = "Eldritch";
+        builtin = "Tokyo-Night";
       };
 
       wallpaper = {
@@ -83,7 +83,6 @@ in {
           [
             "media"
             "tray"
-            "notifications"
             "network"
             "volume"
           ]
