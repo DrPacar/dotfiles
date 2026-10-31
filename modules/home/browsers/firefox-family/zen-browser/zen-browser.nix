@@ -100,13 +100,35 @@ in {
           position = 300;
           icon = "🎓";
           container = 3;
+          routes = {
+            tuwien = {
+              reference = "tuwien.ac.at";
+              matchType = "contains";
+            };
+          };
         };
         "Chess" = {
           id = "a1b2c3d4-1234-56ab-cdef-7890123456ab";
           position = 400;
           icon = "♟️";
           container = 4;
+          routes = {
+            chess-com = {
+              reference = "chess.com";
+              matchType = "contains";
+            };
+            lichess = {
+              reference = "lichess.org";
+              matchType = "contains";
+            };
+          };
         };
+      };
+
+      # --- Space Routing ---
+      spaceRouting = {
+        force = true;
+        defaultExternalRoute = "most-recent-space";
       };
 
       # --- Pinned Tabs ---
@@ -236,6 +258,90 @@ in {
           workspace = "a1b2c3d4-1234-56ab-cdef-7890123456ab";
           position = 402;
         };
+      };
+
+      # --- Keyboard Shortcuts ---
+      keyboardShortcuts = [
+        # Disable default Firefox Alt+1..4 tab switching so Alt+1..4 switches Zen workspaces cleanly
+        {
+          id = "key_selectTab1";
+          disabled = true;
+        }
+        {
+          id = "key_selectTab2";
+          disabled = true;
+        }
+        {
+          id = "key_selectTab3";
+          disabled = true;
+        }
+        {
+          id = "key_selectTab4";
+          disabled = true;
+        }
+
+        # Workspace direct switch: Alt+1 = Private, Alt+2 = Work, Alt+3 = Uni, Alt+4 = Chess
+        {
+          id = "zen-workspace-switch-1";
+          key = "1";
+          modifiers = {
+            control = false;
+            alt = true;
+            shift = false;
+            meta = false;
+            accel = false;
+          };
+        }
+        {
+          id = "zen-workspace-switch-2";
+          key = "2";
+          modifiers = {
+            control = false;
+            alt = true;
+            shift = false;
+            meta = false;
+            accel = false;
+          };
+        }
+        {
+          id = "zen-workspace-switch-3";
+          key = "3";
+          modifiers = {
+            control = false;
+            alt = true;
+            shift = false;
+            meta = false;
+            accel = false;
+          };
+        }
+        {
+          id = "zen-workspace-switch-4";
+          key = "4";
+          modifiers = {
+            control = false;
+            alt = true;
+            shift = false;
+            meta = false;
+            accel = false;
+          };
+        }
+      ];
+
+      # --- Extension Toolbar Placement ---
+      extensionButtons = {
+        "nav-bar" = [
+          "{446900e4-71c2-419f-a6a7-df9c091e268b}" # Bitwarden
+        ];
+        "unified-extensions-area" = [
+          "adguardadblocker@adguard.com"
+          "sponsorBlocker@ajay.app"
+          "{74145f27-f039-47ce-a470-a662b129930a}" # ClearURLs
+          "{762f9885-5a13-4abd-9c77-433dcd38b8fd}" # Return YouTube Dislikes
+          "{c2c003ee-bd69-42a2-b0e9-6f34222cb046}" # Auto Tab Discard
+          "{b86e4813-687a-43e6-ab65-0bde4ab75758}" # LocalCDN
+          "{531906d3-e22f-4a6c-a102-8057b88a1a63}" # SingleFile
+          "{22b0eca1-8c02-4c0d-a5d7-6604ddd9836e}" # Nicothin Space
+        ];
       };
     };
   };

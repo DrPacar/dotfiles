@@ -11,6 +11,7 @@
   "zen.workspaces.hide-default-container-indicator" = true;
   "zen.pinned-tab-manager.restore-pinned-tabs-to-pinned-url" = true;
   "zen.theme.accent-color" = "#7aa2f7";
+  "zen.theme.hide-unified-extensions-button" = false;
   "ui.systemUsesDarkTheme" = 1;
   "extensions.formautofill.creditCards.enabled" = false;
   "extensions.formautofill.addresses.enabled" = false;
@@ -42,6 +43,12 @@
   "gfx.canvas.accelerated.cache-items" = 32768;
   "gfx.canvas.accelerated.cache-size" = 4096;
   "webgl.max-size" = 16384;
+
+  # Tab Unloading & Memory Saver
+  "zen.tab-unloader.timeout-minutes" = 20;
+  "browser.tabs.unloadOnLowMemory" = true;
+  "browser.tabs.min_inactive_duration_before_unload" = 1200000;
+  "browser.tabs.unloadTabInContextMenu" = true;
 
   # Disk & Memory Cache
   "browser.cache.disk.enable" = false;
