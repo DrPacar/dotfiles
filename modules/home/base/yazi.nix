@@ -72,11 +72,7 @@
       };
 
       open = {
-        rules = [
-          {
-            name = "*/";
-            use = ["edit" "open"];
-          }
+        prepend_rules = [
           {
             mime = "text/*";
             use = ["edit" "open"];
@@ -88,10 +84,6 @@
           {
             mime = "application/pdf";
             use = ["pdf" "open"];
-          }
-          {
-            mime = "*";
-            use = ["open" "edit"];
           }
         ];
       };
