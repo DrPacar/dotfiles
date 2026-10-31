@@ -262,7 +262,6 @@ in {
 
       # --- Keyboard Shortcuts ---
       keyboardShortcuts = [
-        # Disable default Firefox Alt+1..4 tab switching so Alt+1..4 switches Zen workspaces cleanly
         {
           id = "key_selectTab1";
           disabled = true;
@@ -280,7 +279,6 @@ in {
           disabled = true;
         }
 
-        # Workspace direct switch: Alt+1 = Private, Alt+2 = Work, Alt+3 = Uni, Alt+4 = Chess
         {
           id = "zen-workspace-switch-1";
           key = "1";
