@@ -86,13 +86,13 @@ in {
         "Private" = {
           id = "d4e5f6a1-8901-23ab-cdef-4567890123ab";
           position = 100;
-          icon = "🏠";
+          icon = "🌙";
           container = 1;
         };
         "Work" = {
           id = "e5f6a1b2-9012-34ab-cdef-5678901234ab";
           position = 200;
-          icon = "💼";
+          icon = "💻";
           container = 2;
         };
         "Uni" = {
