@@ -202,9 +202,9 @@ hbox#titlebar,
 
 /* ==========================================================================
    Sidebar Top Buttons:
-   Keep Compact Mode, Synced Tabs, Print, Navigation (← → ↻), and Overflow (...)
+   Keep 3-dots Menu (...), Compact Mode, Synced Tabs, Print, Navigation (← → ↻)
    ========================================================================== */
-#zen-sidebar-top-buttons-customization-target > :not(#zen-toggle-compact-mode):not(#sync-button):not(#print-button):not(#nav-bar-overflow-button):not(.overflow-button):not(#back-button):not(#forward-button):not(#stop-reload-button):not(#reload-button):not(#zen-sidebar-top-buttons-separator):not(.titlebar-buttonbox-container):not(toolbarspring) {
+#zen-sidebar-top-buttons-customization-target > :not(#PanelUI-button):not(#PanelUI-menu-button):not(#zen-toggle-compact-mode):not(#sync-button):not(#print-button):not(#nav-bar-overflow-button):not(.overflow-button):not(#back-button):not(#forward-button):not(#stop-reload-button):not(#reload-button):not(#zen-sidebar-top-buttons-separator):not(.titlebar-buttonbox-container):not(toolbarspring) {
   display: none !important;
 }
 
