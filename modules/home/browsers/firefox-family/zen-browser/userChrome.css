@@ -103,27 +103,52 @@ hbox#titlebar,
 /* ==========================================================================
    Essentials (Pinned Top Grid)
    ========================================================================== */
-.zen-essentials-container .tabbrowser-tab .tab-background {
+.zen-essentials-container .tabbrowser-tab .tab-background,
+.tabbrowser-tab[zen-essential="true"] .tab-background {
   background-color: var(--tn-surface) !important;
   border: 1px solid var(--tn-border) !important;
   border-radius: 8px !important;
   transition: all 0.15s ease-in-out !important;
 }
 
-.zen-essentials-container .tabbrowser-tab:hover .tab-background {
+/* Hover State */
+.zen-essentials-container .tabbrowser-tab:hover .tab-background,
+.tabbrowser-tab[zen-essential="true"]:hover .tab-background {
   background-color: var(--tn-bg-highlight) !important;
   border-color: var(--tn-border-bright) !important;
 }
 
+/* Active / Selected State: override Zen's default greyish pseudo-elements */
+.tabbrowser-tab[zen-essential="true"] {
+  --tab-background-color-selected: var(--tn-bg-highlight) !important;
+  --zen-essential-tab-selected-bg: var(--tn-bg-highlight) !important;
+  --zen-essential-tab-selected-bg-hover: var(--tn-bg-highlight) !important;
+}
+
+.tabbrowser-tab[zen-essential="true"][visuallyselected] > .tab-stack > .tab-background,
+.tabbrowser-tab[zen-essential="true"][selected="true"] > .tab-stack > .tab-background,
 .zen-essentials-container .tabbrowser-tab[selected="true"] .tab-background {
   background-color: var(--tn-bg-highlight) !important;
-  border-color: var(--tn-blue) !important;
+  border: 1px solid var(--tn-blue) !important;
+  box-shadow: 0 0 10px rgba(122, 162, 247, 0.35) !important;
+}
+
+.tabbrowser-tab[zen-essential="true"][visuallyselected] > .tab-stack > .tab-background::before,
+.tabbrowser-tab[zen-essential="true"][selected="true"] > .tab-stack > .tab-background::before {
+  background: var(--tn-bg-highlight) !important;
+  border-radius: 8px !important;
+}
+
+/* Remove blurred favicon backdrop on active essential tab */
+.tabbrowser-tab[zen-essential="true"][visuallyselected] > .tab-stack > .tab-background::after,
+.tabbrowser-tab[zen-essential="true"][selected="true"] > .tab-stack > .tab-background::after {
+  display: none !important;
 }
 
 /* ==========================================================================
    Vertical Tabs & Tab Strip
    ========================================================================== */
-/* Hide awkward container capsule lines on individual tabs */
+/* Hide container indicator lines on individual tabs */
 .tabbrowser-tab .tab-context-line {
   display: none !important;
 }
@@ -181,50 +206,80 @@ hbox#titlebar,
 #zen-sidebar-foot-buttons {
   background-color: var(--tn-bg-dark) !important;
   border-top: 1px solid var(--tn-border) !important;
-  padding: 4px 6px !important;
+  padding: 8px 10px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
-  gap: 4px !important;
+  gap: 8px !important;
 }
 
-/* Workspaces container - transparent and seamless */
-#zen-workspaces-button {
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
+/* Standalone side buttons (Library / Downloads, Add Workspace) as sleek rounded boxes */
+#zen-sidebar-foot-buttons > toolbarbutton:not(#zen-workspaces-button) {
+  background-color: var(--tn-surface) !important;
+  border: 1px solid var(--tn-border) !important;
+  border-radius: 10px !important;
+  min-width: 34px !important;
+  width: 34px !important;
+  height: 34px !important;
   padding: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.15s ease-in-out !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2) !important;
+}
+
+#zen-sidebar-foot-buttons > toolbarbutton:not(#zen-workspaces-button):hover {
+  background-color: var(--tn-bg-highlight) !important;
+  border-color: var(--tn-blue) !important;
+  box-shadow: 0 0 8px rgba(122, 162, 247, 0.25) !important;
+}
+
+/* Workspaces container - styled as a cohesive segmented dock pill */
+#zen-workspaces-button {
+  background-color: var(--tn-surface) !important;
+  border: 1px solid var(--tn-border) !important;
+  border-radius: 12px !important;
+  padding: 3px 5px !important;
   margin: 0 !important;
   gap: 4px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25) !important;
 }
 
-/* Individual workspace buttons */
+/* Individual workspace buttons inside the dock */
 #zen-workspaces-button toolbarbutton {
   border-radius: 8px !important;
-  padding: 4px 6px !important;
+  padding: 3px 6px !important;
+  min-width: 30px !important;
+  height: 28px !important;
   background: transparent !important;
-  transition: all 0.15s ease !important;
+  border: 1px solid transparent !important;
+  transition: all 0.15s ease-in-out !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
-#zen-workspaces-button toolbarbutton:hover {
-  background-color: var(--tn-surface) !important;
+/* Inactive workspace buttons */
+#zen-workspaces-button toolbarbutton:not([active="true"]) {
+  opacity: 0.65 !important;
 }
 
+#zen-workspaces-button toolbarbutton:not([active="true"]):hover {
+  background-color: var(--tn-bg-highlight) !important;
+  border-color: var(--tn-border-bright) !important;
+  opacity: 1 !important;
+}
+
+/* Active workspace button - glowing Tokyo Night highlight */
 #zen-workspaces-button toolbarbutton[active="true"] {
-  background-color: var(--tn-surface) !important;
-  border: 1px solid var(--tn-border-bright) !important;
-  box-shadow: inset 0 -2px 0 var(--tn-blue) !important;
-}
-
-/* Footer side buttons (Library, Add workspace, etc.) */
-#zen-sidebar-foot-buttons > toolbarbutton {
-  border-radius: 8px !important;
-  padding: 4px 6px !important;
-  transition: all 0.15s ease !important;
-}
-
-#zen-sidebar-foot-buttons > toolbarbutton:hover {
-  background-color: var(--tn-surface) !important;
+  background-color: var(--tn-bg-highlight) !important;
+  border: 1px solid var(--tn-blue) !important;
+  box-shadow: 0 0 8px rgba(122, 162, 247, 0.35) !important;
+  opacity: 1 !important;
 }
 
 /* ==========================================================================
