@@ -201,9 +201,10 @@ hbox#titlebar,
 }
 
 /* ==========================================================================
-   Sidebar Top Buttons (Keep only: Compact Mode, Synced Tabs, Print)
+   Sidebar Top Buttons:
+   Keep Compact Mode, Synced Tabs, Print, Navigation (← → ↻), and Overflow (...)
    ========================================================================== */
-#zen-sidebar-top-buttons-customization-target > :not(#zen-toggle-compact-mode):not(#sync-button):not(#print-button):not(#zen-sidebar-top-buttons-separator):not(.titlebar-buttonbox-container) {
+#zen-sidebar-top-buttons-customization-target > :not(#zen-toggle-compact-mode):not(#sync-button):not(#print-button):not(#nav-bar-overflow-button):not(.overflow-button):not(#back-button):not(#forward-button):not(#stop-reload-button):not(#reload-button):not(#zen-sidebar-top-buttons-separator):not(.titlebar-buttonbox-container):not(toolbarspring) {
   display: none !important;
 }
 
