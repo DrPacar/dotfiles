@@ -68,7 +68,7 @@ in {
           icon = "briefcase";
           id = 2;
         };
-        "Uni" = {
+        "Education" = {
           color = "purple";
           icon = "circle";
           id = 3;
@@ -86,26 +86,26 @@ in {
         "Private" = {
           id = "d4e5f6a1-8901-23ab-cdef-4567890123ab";
           position = 100;
-          icon = "🌙";
+          icon = "🏠";
           container = 1;
         };
-        "Work" = {
-          id = "e5f6a1b2-9012-34ab-cdef-5678901234ab";
-          position = 200;
-          icon = "💻";
-          container = 2;
-        };
-        "Uni" = {
+        "Education" = {
           id = "f6a1b2c3-0123-45ab-cdef-6789012345ab";
-          position = 300;
+          position = 200;
           icon = "🎓";
-          container = 3;
+          container = 2;
           routes = {
             tuwien = {
               reference = "tuwien.ac.at";
               matchType = "contains";
             };
           };
+        };
+        "Work" = {
+          id = "e5f6a1b2-9012-34ab-cdef-5678901234ab";
+          position = 300;
+          icon = "💻";
+          container = 3;
         };
         "Chess" = {
           id = "a1b2c3d4-1234-56ab-cdef-7890123456ab";
@@ -160,17 +160,17 @@ in {
           isEssential = true;
           position = 40;
         };
-        "Files" = {
+        "Dashboard" = {
           id = "55555555-5555-5555-5555-555555555555";
-          url = "https://example.com/dummy-files";
+          url = "https://lukpac.dev";
           isEssential = true;
           position = 50;
         };
 
         # --- Private Pinned Tabs ---
-        "YouTube" = {
-          id = "eb7870a6-ca65-4d2b-9999-123456789012";
-          url = "https://www.youtube.com";
+        "Claude (Private)" = {
+          id = "eb7870a6-ca65-4d2b-9999-123456aaa012";
+          url = "https://claude.ai";
           container = 1;
           workspace = "d4e5f6a1-8901-23ab-cdef-4567890123ab";
           position = 101;
@@ -182,81 +182,109 @@ in {
           workspace = "d4e5f6a1-8901-23ab-cdef-4567890123ab";
           position = 102;
         };
-        "Lichess" = {
-          id = "77777777-7777-7777-7777-777777777777";
-          url = "https://lichess.org";
+        "Seerr" = {
+          id = "eb7870a6-ca65-4d2b-9999-123456789016";
+          url = "https://seerr.media.lukpac.dev";
+          container = 1;
+          workspace = "d4e5f6a1-8901-23ab-cdef-4567890123ab";
+          position = 103;
+        };
+        "Jellyfin" = {
+          id = "eb7870a6-ca65-4d2b-9999-123456789017";
+          url = "https://jellyfin.media.lukpac.dev";
           container = 1;
           workspace = "d4e5f6a1-8901-23ab-cdef-4567890123ab";
           position = 103;
         };
 
-        # --- Work Pinned Tabs ---
-        "GitHub Repos" = {
-          id = "48e8a119-5a14-4826-9545-91c8e8dd3bf6";
-          url = "https://github.com/DrPacar?tab=repositories";
+        # --- Education Pinned Tabs ---
+        "Claude (Education)" = {
+          id = "bbbbbmmm-bbbb-bbbb-bbbb-bbbbbbbbbbbm";
+          url = "https://claude.ai";
           container = 2;
-          workspace = "e5f6a1b2-9012-34ab-cdef-5678901234ab";
+          workspace = "f6a1b2c3-0123-45ab-cdef-6789012345ab";
           position = 201;
+        };
+        "Gemini (Education)" = {
+          id = "bbbbbmmm-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
+          url = "https://gemini.google.com";
+          container = 2;
+          workspace = "f6a1b2c3-0123-45ab-cdef-6789012345ab";
+          position = 202;
+        };
+        "Tiss" = {
+          id = "c3d4e5f6-7890-12ab-cdef-3456789012ab";
+          url = "https://tiss.tuwien.ac.at/";
+          container = 2;
+          workspace = "f6a1b2c3-0123-45ab-cdef-6789012345ab";
+          position = 203;
+        };
+        "Tuwel" = {
+          id = "c3d4e5f6-7890-12ab-cdef-3456789012ac";
+          url = "https://tuwel.tuwien.ac.at/my";
+          container = 2;
+          workspace = "f6a1b2c3-0123-45ab-cdef-6789012345ab";
+          position = 204;
+        };
+
+        # --- Work Pinned Tabs ---
+        "Claude (Work)" = {
+          id = "99999999-9999-9999-9999-999999999999";
+          url = "https://claude.ai";
+          container = 3;
+          workspace = "e5f6a1b2-9012-34ab-cdef-5678901234ab";
+          position = 301;
         };
         "Gemini (Work)" = {
           id = "88888888-8888-8888-8888-888888888888";
           url = "https://gemini.google.com";
-          container = 2;
-          workspace = "e5f6a1b2-9012-34ab-cdef-5678901234ab";
-          position = 202;
-        };
-        "Claude (Work)" = {
-          id = "99999999-9999-9999-9999-999999999999";
-          url = "https://claude.ai";
-          container = 2;
-          workspace = "e5f6a1b2-9012-34ab-cdef-5678901234ab";
-          position = 203;
-        };
-
-        # --- Uni Pinned Tabs ---
-        "Outlook" = {
-          id = "aaaaaamm-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
-          url = "https://outlook.office.com/mail";
           container = 3;
-          workspace = "f6a1b2c3-0123-45ab-cdef-6789012345ab";
-          position = 301;
-        };
-        "TISS" = {
-          id = "c3d4e5f6-7890-12ab-cdef-3456789012ab";
-          url = "https://tiss.tuwien.ac.at/";
-          container = 3;
-          workspace = "f6a1b2c3-0123-45ab-cdef-6789012345ab";
+          workspace = "e5f6a1b2-9012-34ab-cdef-5678901234ab";
           position = 302;
         };
-        "TUWEL" = {
-          id = "c3d4e5f6-7890-12ab-cdef-3456789012ac";
-          url = "https://tuwel.tuwien.ac.at/my";
+        "GitHub Repos" = {
+          id = "48e8a119-5a14-4826-9545-91c8e8dd3bf6";
+          url = "https://github.com/DrPacar?tab=repositories";
           container = 3;
-          workspace = "f6a1b2c3-0123-45ab-cdef-6789012345ab";
+          workspace = "e5f6a1b2-9012-34ab-cdef-5678901234ab";
           position = 303;
-        };
-        "Gemini (Uni)" = {
-          id = "bbbbbmmm-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
-          url = "https://gemini.google.com";
-          container = 3;
-          workspace = "f6a1b2c3-0123-45ab-cdef-6789012345ab";
-          position = 304;
         };
 
         # --- Chess Pinned Tabs ---
-        "Chess.com Library" = {
+        "Claude (Chess)" = {
           id = "cc000001-cc00-cc00-cc00-cc0000000001";
-          url = "https://www.chess.com/library";
+          url = "https://claude.ai";
           container = 4;
           workspace = "a1b2c3d4-1234-56ab-cdef-7890123456ab";
           position = 401;
         };
-        "Lichess Study" = {
-          id = "cc000002-cc00-cc00-cc00-cc0000000002";
-          url = "https://lichess.org/study/BPdatP6K";
+        "Gemini (Chess)" = {
+          id = "cc000001-cc00-cc00-cc00-cc0000000002";
+          url = "https://gemini.google.com";
           container = 4;
           workspace = "a1b2c3d4-1234-56ab-cdef-7890123456ab";
           position = 402;
+        };
+        "Chess.com Library" = {
+          id = "cc000001-cc00-cc00-cc00-cc0000000003";
+          url = "https://www.chess.com/library";
+          container = 4;
+          workspace = "a1b2c3d4-1234-56ab-cdef-7890123456ab";
+          position = 403;
+        };
+        "Chess.com Events" = {
+          id = "cc000001-cc00-cc00-cc00-cc0000000004";
+          url = "https://www.chess.com/events";
+          container = 4;
+          workspace = "a1b2c3d4-1234-56ab-cdef-7890123456ab";
+          position = 404;
+        };
+        "Lichess" = {
+          id = "cc000002-cc00-cc00-cc00-cc0000000005";
+          url = "https://lichess.org";
+          container = 4;
+          workspace = "a1b2c3d4-1234-56ab-cdef-7890123456ab";
+          position = 405;
         };
       };
 
