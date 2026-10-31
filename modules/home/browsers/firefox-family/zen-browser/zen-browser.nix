@@ -1,6 +1,8 @@
 {
   inputs,
   pkgs,
+  config,
+  lib,
   ...
 }: let
   zenSettings = import ./_settings.nix;
@@ -370,5 +372,54 @@ in {
         ];
       };
     };
+
+    # Declaratively enforce the sidebar top buttons placement:
+    # 1. Toggle Compact Mode
+    # 2. Show Tabs From Other Devices (sync-button)
+    # 3. Print this Page... (print-button)
+    activationFragments.default = [
+      {
+        priority = 200;
+        requiresLock = true;
+        skipSubject = "sidebar top buttons";
+        text = ''
+                    PREFS_FILE="${config.programs.zen-browser.profilesPath}/default/prefs.js"
+                    if [ -f "$PREFS_FILE" ]; then
+                      ${pkgs.python3}/bin/python3 - << 'EOF'
+          import json
+
+          path = "${config.programs.zen-browser.profilesPath}/default/prefs.js"
+          try:
+              with open(path, "r") as f:
+                  lines = f.readlines()
+
+              new_lines = []
+              modified = False
+              for line in lines:
+                  if line.startswith('user_pref("browser.uiCustomization.state", '):
+                      prefix = 'user_pref("browser.uiCustomization.state", '
+                      suffix = ');\n'
+                      val_str = line[len(prefix):-len(suffix)]
+                      raw_json = json.loads(val_str)
+                      state = json.loads(raw_json)
+                      target = ["zen-toggle-compact-mode", "sync-button", "print-button"]
+                      if state.get("placements", {}).get("zen-sidebar-top-buttons") != target:
+                          state.setdefault("placements", {})["zen-sidebar-top-buttons"] = target
+                          new_val_str = json.dumps(json.dumps(state))
+                          new_lines.append(f"{prefix}{new_val_str}{suffix}")
+                          modified = True
+                          continue
+                  new_lines.append(line)
+
+              if modified:
+                  with open(path, "w") as f:
+                      f.writelines(new_lines)
+          except Exception:
+              pass
+          EOF
+                    fi
+        '';
+      }
+    ];
   };
 }

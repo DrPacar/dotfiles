@@ -201,6 +201,13 @@ hbox#titlebar,
 }
 
 /* ==========================================================================
+   Sidebar Top Buttons (Keep only: Compact Mode, Synced Tabs, Print)
+   ========================================================================== */
+#zen-sidebar-top-buttons-customization-target > :not(#zen-toggle-compact-mode):not(#sync-button):not(#print-button):not(#zen-sidebar-top-buttons-separator):not(.titlebar-buttonbox-container) {
+  display: none !important;
+}
+
+/* ==========================================================================
    Bottom Toolbar & Workspaces (Footer Dock)
    ========================================================================== */
 #zen-sidebar-foot-buttons {
