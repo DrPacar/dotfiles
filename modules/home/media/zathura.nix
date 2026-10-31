@@ -26,7 +26,7 @@ in {
       adjust-open = "best-fit";
       pages-per-row = 1;
       scroll-page-aware = true;
-      scroll-step = 50;
+      scroll-step = 80;
 
       # Window & Statusbar
       window-title-basename = true;
