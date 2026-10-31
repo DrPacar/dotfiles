@@ -474,7 +474,7 @@ in {
             run = scripts.ripdrag;
             desc = "Drag and drop via ripdrag";
           }
-          # Copy files to system clipboard for Ctrl+V paste in Browser / Discord
+          # Copy files to system clipboard
           {
             on = ["Y"];
             run = scripts.copyFiles;
@@ -485,7 +485,7 @@ in {
             run = scripts.copyFiles;
             desc = "Copy files to system clipboard (Ctrl+V)";
           }
-          # Copy raw image data to clipboard (for pasting image pixels directly into Discord/GIMP)
+          # Copy raw image data to clipboard
           {
             on = ["c" "i"];
             run = scripts.copyImage;
