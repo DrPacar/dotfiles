@@ -1,0 +1,39 @@
+/* ==========================================================================
+   Zen Browser - Tokyo Night Theme (userContent.css)
+   ========================================================================== */
+
+/* Common variables affecting about: pages */
+@-moz-document url-prefix("about:") {
+  :root {
+    --in-content-page-color: #c0caf5 !important;
+    --color-accent-primary: #7aa2f7 !important;
+    --color-accent-primary-hover: #7dcfff !important;
+    --color-accent-primary-active: #bb9af7 !important;
+    background-color: #1a1b26 !important;
+    --in-content-page-background: #1a1b26 !important;
+  }
+}
+
+/* Variables and styles specific to about:newtab and about:home */
+@-moz-document url("about:newtab"), url("about:home") {
+  :root {
+    --newtab-background-color: #1a1b26 !important;
+    --newtab-background-color-secondary: #1f2335 !important;
+    --newtab-element-hover-color: #24283b !important;
+    --newtab-text-primary-color: #c0caf5 !important;
+    --newtab-wordmark-color: #c0caf5 !important;
+    --newtab-primary-action-background: #7aa2f7 !important;
+  }
+
+  .icon {
+    color: #7aa2f7 !important;
+  }
+
+  .card-outer:is(:hover, :focus, .active):not(.placeholder) .card-title {
+    color: #7aa2f7 !important;
+  }
+
+  .top-site-outer .search-topsite {
+    background-color: #7aa2f7 !important;
+  }
+}

@@ -41,6 +41,8 @@ in {
       settings = zenSettings;
       search = searchSettings;
       bookmarks = bookmarkSettings;
+      userChrome = builtins.readFile ./userChrome.css;
+      userContent = builtins.readFile ./userContent.css;
 
       mods = [
         "253a3a74-0cc4-47b7-8b82-996a64f030d5" # Floating History

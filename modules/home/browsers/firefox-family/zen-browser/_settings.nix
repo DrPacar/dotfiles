@@ -8,7 +8,10 @@
   "browser.startup.homepage_override.mstone" = "ignore";
   "zen.watermark.enabled" = false;
   "zen.workspaces.separate-essentials" = false;
-  "zen.workspaces.hide-default-container-indicator" = false;
+  "zen.workspaces.hide-default-container-indicator" = true;
+  "zen.pinned-tab-manager.restore-pinned-tabs-to-pinned-url" = true;
+  "zen.theme.accent-color" = "#7aa2f7";
+  "ui.systemUsesDarkTheme" = 1;
   "extensions.formautofill.creditCards.enabled" = false;
   "extensions.formautofill.addresses.enabled" = false;
 
