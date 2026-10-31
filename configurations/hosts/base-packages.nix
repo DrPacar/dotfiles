@@ -16,6 +16,7 @@
     "ios"
     "sops"
     "openconnect"
+    "backup"
 
     # gui
     "hyprland"
