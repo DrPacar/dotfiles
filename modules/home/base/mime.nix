@@ -7,7 +7,7 @@
   # ============================================================================
   apps = {
     browser = "zen-beta.desktop";
-    fileManager = "org.gnome.Nautilus.desktop";
+    fileManager = "yazi.desktop";
     office = "onlyoffice-desktopeditors.desktop";
     textEditor = "nvim.desktop";
     pdfViewer = "org.pwmt.zathura.desktop";
