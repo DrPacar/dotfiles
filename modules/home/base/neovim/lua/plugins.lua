@@ -36,6 +36,8 @@ if telescope_ok then
   vim.keymap.set("n", "<leader>fb", builtin.buffers, { desc = "Find Buffers" })
   vim.keymap.set("n", "<leader>fh", builtin.help_tags, { desc = "Help Tags" })
   vim.keymap.set("n", "<leader>fr", builtin.oldfiles, { desc = "Recent Files" })
+  vim.keymap.set("n", "<leader>fd", builtin.diagnostics, { desc = "Search Diagnostics" })
+  vim.keymap.set("n", "<leader>/", builtin.current_buffer_fuzzy_find, { desc = "Fuzzy Find in Buffer" })
 end
 
 -- 3. Gitsigns (Git status, hunks, blame)
@@ -125,5 +127,6 @@ if wk_ok then
     { "<leader>b", group = "Buffers" },
     { "<leader>h", group = "Git Hunks" },
     { "<leader>c", group = "Code / LSP" },
+    { "<leader>t", group = "Toggle" },
   })
 end

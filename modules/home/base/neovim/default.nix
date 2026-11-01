@@ -42,8 +42,9 @@
       telescope-fzf-native-nvim
       yazi-nvim
 
-      # Treesitter Syntax Highlighting
+      # Treesitter Syntax Highlighting & Sticky Headers
       nvim-treesitter.withAllGrammars
+      nvim-treesitter-context
 
       # Git Integration
       gitsigns-nvim
@@ -61,6 +62,7 @@
     initLua = ''
       require("options")
       require("keymaps")
+      require("autocmds")
       require("theme")
       require("treesitter")
       require("plugins")

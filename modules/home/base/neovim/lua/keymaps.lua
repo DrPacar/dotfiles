@@ -40,3 +40,9 @@ map("v", "K", ":m '<-2<CR>gv=gv", { desc = "Move Selection Up" })
 
 -- Paste over selection without losing paste buffer
 map("x", "<leader>p", '"_dP', { desc = "Paste Without Overwriting Register" })
+
+-- Toggle Inlay Hints (LSP)
+map("n", "<leader>th", function()
+  local filter = { bufnr = 0 }
+  vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled(filter), filter)
+end, { desc = "Toggle Inlay Hints" })
