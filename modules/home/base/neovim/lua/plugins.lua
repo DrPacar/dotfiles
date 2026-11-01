@@ -121,16 +121,24 @@ end
 local wk_ok, wk = pcall(require, "which-key")
 if wk_ok then
   wk.setup({
-    delay = 200,
+    preset = "classic",
+    delay = function(ctx)
+      -- Bei Operatoren (d, c, y) 450ms warten, damit schnelles `dd` flüssig
+      -- und ohne Lag läuft. Hält man kurz inne, öffnet sich das Hilfemenü!
+      return ctx.mode == "o" and 450 or 200
+    end,
     plugins = {
+      marks = true,
+      registers = true,
       presets = {
-        operators = false, -- Keinerlei Lag/Popups bei d, c, y etc.
-        motions = false,
-        text_objects = false,
+        operators = true,
+        motions = true,
+        text_objects = true,
+        windows = true,
+        nav = true,
+        z = true,
+        g = true,
       },
-    },
-    triggers = {
-      { "<leader>", mode = { "n", "v" } },
     },
   })
   wk.add({
@@ -140,5 +148,6 @@ if wk_ok then
     { "<leader>h", group = "Git Hunks" },
     { "<leader>c", group = "Code / LSP" },
     { "<leader>t", group = "Toggle" },
+    { "d", desc = "Current Line", mode = "o" },
   })
 end
