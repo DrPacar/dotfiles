@@ -38,8 +38,21 @@ map("n", "N", "Nzzzv", { desc = "Prev Search Result Centered" })
 map("v", "J", ":m '>+1<CR>gv=gv", { desc = "Move Selection Down" })
 map("v", "K", ":m '<-2<CR>gv=gv", { desc = "Move Selection Up" })
 
--- Paste over selection without losing paste buffer
+-- Delete & Change operations do not overwrite clipboard (black-hole register)
+map({ "n", "v" }, "d", '"_d', { desc = "Delete (no clipboard overwrite)" })
+map({ "n", "v" }, "D", '"_D', { desc = "Delete to end of line (no clipboard overwrite)" })
+map({ "n", "v" }, "c", '"_c', { desc = "Change (no clipboard overwrite)" })
+map({ "n", "v" }, "C", '"_C', { desc = "Change to end of line (no clipboard overwrite)" })
+map({ "n", "v" }, "x", '"_x', { desc = "Delete char (no clipboard overwrite)" })
+map({ "n", "v" }, "X", '"_X', { desc = "Delete char before (no clipboard overwrite)" })
+
+-- Paste in visual mode without losing clipboard
+map("x", "p", '"_dP', { desc = "Paste Without Overwriting Register" })
 map("x", "<leader>p", '"_dP', { desc = "Paste Without Overwriting Register" })
+
+-- Explicit Cut (saves to clipboard and deletes)
+map({ "n", "v" }, "<leader>x", '"+d', { desc = "Cut to Clipboard" })
+map({ "n", "v" }, "<leader>X", '"+D', { desc = "Cut to End of Line" })
 
 -- Toggle Inlay Hints (LSP)
 map("n", "<leader>th", function()
