@@ -130,7 +130,7 @@
   arrDomainHttpsVhost = mkIf (customDomain != null && arrDomain != null && arrDomain != customDomain) {
     "https://${arrDomain}" = {
       extraConfig = ''
-        tls /var/lib/acme/${customDomain}/cert.pem /var/lib/acme/${customDomain}/key.pem
+        tls /var/lib/acme/${arrDomain}/cert.pem /var/lib/acme/${arrDomain}/key.pem
         redir https://${customDomain}{uri} permanent
       '';
     };
@@ -152,7 +152,7 @@
   in {
     "${httpsKey}" = {
       extraConfig = ''
-        tls /var/lib/acme/${customDomain}/cert.pem /var/lib/acme/${customDomain}/key.pem
+        tls /var/lib/acme/${targetDomain}/cert.pem /var/lib/acme/${targetDomain}/key.pem
         reverse_proxy 127.0.0.1:${toString s.port} {
           header_up Host {host}
           header_up X-Real-IP {remote_host}
@@ -175,20 +175,30 @@ in {
     security.acme = mkIf (customDomain != null) {
       acceptTerms = true;
       defaults.email = "lukapacar06@gmail.com";
-      certs."${customDomain}" = {
-        domain = customDomain;
-        extraDomainNames =
-          ["*.${customDomain}"]
-          ++ lib.optionals (arrDomain != null && arrDomain != customDomain) [
-            arrDomain
-            "*.${arrDomain}"
-          ];
-        dnsProvider = "namedotcom";
-        dnsResolver = "1.1.1.1:53";
-        environmentFile = config.sops.secrets.namecom_env.path;
-        group = "caddy";
-        reloadServices = ["caddy.service"];
-      };
+      certs = mkMerge [
+        {
+          "${customDomain}" = {
+            domain = customDomain;
+            extraDomainNames = ["*.${customDomain}"];
+            dnsProvider = "namedotcom";
+            dnsResolver = "1.1.1.1:53";
+            environmentFile = config.sops.secrets.namecom_env.path;
+            group = "caddy";
+            reloadServices = ["caddy.service"];
+          };
+        }
+        (mkIf (arrDomain != null && arrDomain != customDomain) {
+          "${arrDomain}" = {
+            domain = arrDomain;
+            extraDomainNames = ["*.${arrDomain}"];
+            dnsProvider = "namedotcom";
+            dnsResolver = "1.1.1.1:53";
+            environmentFile = config.sops.secrets.namecom_env.path;
+            group = "caddy";
+            reloadServices = ["caddy.service"];
+          };
+        })
+      ];
     };
 
     # Set proper permissions so acme service can read the Name.com API credentials
@@ -208,10 +218,12 @@ in {
         [
           "tailscaled.service"
         ]
-        ++ lib.optional (customDomain != null) "acme-${customDomain}.service";
+        ++ lib.optional (customDomain != null) "acme-${customDomain}.service"
+        ++ lib.optional (arrDomain != null && arrDomain != customDomain) "acme-${arrDomain}.service";
       wants =
         (lib.optional (config.services.tailscale.enable or false) "tailscaled.service")
-        ++ lib.optional (customDomain != null) "acme-${customDomain}.service";
+        ++ lib.optional (customDomain != null) "acme-${customDomain}.service"
+        ++ lib.optional (arrDomain != null && arrDomain != customDomain) "acme-${arrDomain}.service";
     };
 
     # Caddy Reverse Proxy

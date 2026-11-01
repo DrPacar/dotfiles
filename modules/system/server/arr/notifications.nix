@@ -55,6 +55,7 @@ in {
       after = ["sonarr.service"];
       wants = ["sonarr.service"];
       wantedBy = ["multi-user.target"];
+      restartTriggers = [arrNotifyPkg ./scripts/arr-notify-sync.py];
 
       serviceConfig = {
         Type = "oneshot";
@@ -70,6 +71,29 @@ in {
     };
 
     # -------------------------------------------------------------------------
+    # Sonarr Anime Notification Sync Service
+    # -------------------------------------------------------------------------
+    systemd.services.sonarr-anime-notify-sync = mkIf (cfg.sonarr.enable && cfg.sonarr.anime.enable) {
+      description = "Synchronize ntfy notification into Sonarr Anime";
+      after = ["sonarr-anime.service"];
+      wants = ["sonarr-anime.service"];
+      wantedBy = ["multi-user.target"];
+      restartTriggers = [arrNotifyPkg ./scripts/arr-notify-sync.py];
+
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+        ExecStart = "${pkgs.writeShellScript "sonarr-anime-notify-sync" ''
+          exec ${pkgs.python3}/bin/python3 ${./scripts/arr-notify-sync.py} \
+            --app sonarr \
+            --url http://127.0.0.1:${toString cfg.sonarr.anime.port} \
+            --api-key-file "${config.sops.secrets.arr_sonarr_anime_api_key.path}" \
+            --script-path "${arrNotifyPkg}/bin/arr-notify"
+        ''}";
+      };
+    };
+
+    # -------------------------------------------------------------------------
     # Radarr Notification Sync Service
     # -------------------------------------------------------------------------
     systemd.services.radarr-notify-sync = mkIf cfg.radarr.enable {
@@ -77,6 +101,7 @@ in {
       after = ["radarr.service"];
       wants = ["radarr.service"];
       wantedBy = ["multi-user.target"];
+      restartTriggers = [arrNotifyPkg ./scripts/arr-notify-sync.py];
 
       serviceConfig = {
         Type = "oneshot";
