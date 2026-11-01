@@ -6,6 +6,7 @@
 }: let
   inherit (lib) mkIf mkMerge;
   cfg = config.server;
+  arrCfg = config.server.arr or {};
 
   hostName = config.networking.hostName;
   tailscaleFqdn =
@@ -14,6 +15,10 @@
     else null;
 
   customDomain = cfg.domain;
+  arrDomain =
+    if (arrCfg.enable or false)
+    then (arrCfg.domain or null)
+    else null;
 
   portSuffix =
     if cfg.dashboard.port == 80
@@ -35,7 +40,7 @@
 
   # 1. Plaintext Subdomain Virtual Hosts (e.g. adguard.lighthouse, jellyfin.lighthouse, etc.)
   mkPlainSubdomainVhost = s: let
-    allSubNames = [s.subdomain] ++ (s.aliases or []);
+    allSubNames = lib.unique ([s.subdomain] ++ (s.aliases or []));
     hostsList = lib.flatten (map (sub: map (d: mkHttpHost "${sub}.${d}") plainSubdomainDomains) allSubNames);
     vhostKey = lib.concatStringsSep ", " hostsList;
   in {
@@ -112,7 +117,7 @@
     };
   };
 
-  # Custom Domain HTTP -> HTTPS redirect (e.g. http://media.lukpac.dev -> https://media.lukpac.dev)
+  # Custom Domain HTTP -> HTTPS redirect (e.g. http://lukpac.dev -> https://lukpac.dev)
   customDomainHttpRedirectVhost = mkIf (customDomain != null) {
     "http://${customDomain}${portSuffix}" = {
       extraConfig = ''
@@ -121,11 +126,27 @@
     };
   };
 
-  # 5. Custom Domain Subdomains HTTPS (e.g. https://adguard.media.lukpac.dev, https://jellyfin.media.lukpac.dev) with Wildcard ACME Cert
+  # 4b. Arr Media Domain Landing Redirect (e.g. https://media.lukpac.dev -> https://lukpac.dev)
+  arrDomainHttpsVhost = mkIf (customDomain != null && arrDomain != null && arrDomain != customDomain) {
+    "https://${arrDomain}" = {
+      extraConfig = ''
+        tls /var/lib/acme/${customDomain}/cert.pem /var/lib/acme/${customDomain}/key.pem
+        redir https://${customDomain}{uri} permanent
+      '';
+    };
+    "http://${arrDomain}${portSuffix}" = {
+      extraConfig = ''
+        redir https://${arrDomain}{uri} permanent
+      '';
+    };
+  };
+
+  # 5. Custom Domain Subdomains HTTPS (e.g. https://notify.lukpac.dev, https://jellyfin.media.lukpac.dev) with Wildcard ACME Cert
   mkCustomDomainSubVhost = s: let
-    allSubNames = [s.subdomain] ++ (s.aliases or []);
-    httpsHosts = map (sub: "https://${sub}.${customDomain}") allSubNames;
-    httpHosts = map (sub: "http://${sub}.${customDomain}${portSuffix}") allSubNames;
+    targetDomain = s.domain or customDomain;
+    allSubNames = lib.unique ([s.subdomain] ++ (s.aliases or []));
+    httpsHosts = map (sub: "https://${sub}.${targetDomain}") allSubNames;
+    httpHosts = map (sub: "http://${sub}.${targetDomain}${portSuffix}") allSubNames;
     httpsKey = lib.concatStringsSep ", " httpsHosts;
     httpKey = lib.concatStringsSep ", " httpHosts;
   in {
@@ -140,7 +161,7 @@
     };
     "${httpKey}" = {
       extraConfig = ''
-        redir https://${lib.head allSubNames}.${customDomain}{uri} permanent
+        redir https://${lib.head allSubNames}.${targetDomain}{uri} permanent
       '';
     };
   };
@@ -156,7 +177,12 @@ in {
       defaults.email = "lukapacar06@gmail.com";
       certs."${customDomain}" = {
         domain = customDomain;
-        extraDomainNames = ["*.${customDomain}"];
+        extraDomainNames =
+          ["*.${customDomain}"]
+          ++ lib.optionals (arrDomain != null && arrDomain != customDomain) [
+            arrDomain
+            "*.${arrDomain}"
+          ];
         dnsProvider = "namedotcom";
         dnsResolver = "1.1.1.1:53";
         environmentFile = config.sops.secrets.namecom_env.path;
@@ -200,6 +226,7 @@ in {
         tailscaleHttpRedirectVhost
         customDomainHttpsVhost
         customDomainHttpRedirectVhost
+        arrDomainHttpsVhost
         plainSubdomainVhosts
         customDomainSubdomainVhosts
       ];

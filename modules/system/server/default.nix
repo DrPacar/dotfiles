@@ -20,7 +20,7 @@ in {
 
     domain = mkOption {
       type = types.nullOr types.str;
-      default = "media.lukpac.dev";
+      default = "lukpac.dev";
       description = "Public domain used for Caddy reverse proxy and wildcard SSL certificates.";
     };
 

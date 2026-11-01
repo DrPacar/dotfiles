@@ -11,6 +11,7 @@ in
     name = "Uptime Kuma";
     serviceKey = "uptime-kuma";
     subdomain = serverCfg.uptime-kuma.subdomain;
+    domain = serverCfg.domain;
     aliases = ["status"];
     port = serverCfg.uptime-kuma.port;
     category = "Monitoring & Status";
@@ -23,6 +24,7 @@ in
     name = "Beszel";
     serviceKey = "beszel";
     subdomain = serverCfg.beszel.subdomain;
+    domain = serverCfg.domain;
     aliases = ["system"];
     port = serverCfg.beszel.port;
     category = "Monitoring & Status";
@@ -35,6 +37,7 @@ in
     name = "Benachrichtigungen";
     serviceKey = "notify";
     subdomain = serverCfg.notify.subdomain;
+    domain = serverCfg.domain;
     aliases = ["notify" "alerts"];
     port = serverCfg.notify.port;
     category = "Monitoring & Status";
@@ -47,6 +50,7 @@ in
     name = "AdGuard Home";
     serviceKey = "adguard";
     subdomain = serverCfg.adguard.subdomain;
+    domain = serverCfg.domain;
     port = serverCfg.adguard.port;
     category = "Netzwerk & Sicherheit";
     desc = "Netzwerkweiter DNS-Werbeblocker und Tracking-Schutz.";
@@ -58,6 +62,7 @@ in
     name = "Vaultwarden";
     serviceKey = "vaultwarden";
     subdomain = serverCfg.vaultwarden.subdomain;
+    domain = serverCfg.domain;
     aliases = ["vaultwarden" "bitwarden"];
     port = serverCfg.vaultwarden.port;
     category = "Sicherheit & Passwörter";
@@ -70,6 +75,7 @@ in
     name = "Immich";
     serviceKey = "immich";
     subdomain = serverCfg.immich.subdomain;
+    domain = serverCfg.domain;
     aliases = ["photos"];
     port = serverCfg.immich.port;
     category = "Fotos & Medien";
@@ -82,6 +88,7 @@ in
     name = "Paperless-ngx";
     serviceKey = "paperless";
     subdomain = serverCfg.paperless.subdomain;
+    domain = serverCfg.domain;
     aliases = ["docs"];
     port = serverCfg.paperless.port;
     category = "Dokumente & Archiv";
@@ -94,6 +101,7 @@ in
     name = "Seerr";
     serviceKey = "seerr";
     subdomain = arrCfg.seerr.subdomain;
+    domain = arrCfg.domain;
     aliases = ["jellyseerr"];
     port = arrCfg.seerr.port;
     category = "Entdecken & Anfragen";
@@ -105,6 +113,7 @@ in
     name = "Jellyfin";
     serviceKey = "jellyfin";
     subdomain = arrCfg.jellyfin.subdomain;
+    domain = arrCfg.domain;
     port = arrCfg.jellyfin.port;
     category = "Streaming & Mediathek";
     desc = "Medienplayer mit Intel QuickSync Hardware-Transcoding.";
@@ -115,6 +124,7 @@ in
     name = "Radarr";
     serviceKey = "radarr";
     subdomain = arrCfg.radarr.subdomain;
+    domain = arrCfg.domain;
     port = arrCfg.radarr.port;
     category = "Filme";
     desc = "Automatische Suche und Qualitätsverwaltung für Spielfilme.";
@@ -125,6 +135,7 @@ in
     name = "Sonarr";
     serviceKey = "sonarr";
     subdomain = arrCfg.sonarr.subdomain;
+    domain = arrCfg.domain;
     port = arrCfg.sonarr.port;
     category = "Serien";
     desc = "Tracking und automatische Downloads für TV-Serien.";
@@ -135,6 +146,7 @@ in
     name = "Sonarr Anime";
     serviceKey = "sonarr-anime";
     subdomain = arrCfg.sonarr.anime.subdomain;
+    domain = arrCfg.domain;
     aliases = ["sonarr-anime"];
     port = arrCfg.sonarr.anime.port;
     category = "Anime";
@@ -146,6 +158,7 @@ in
     name = "Prowlarr";
     serviceKey = "prowlarr";
     subdomain = arrCfg.prowlarr.subdomain;
+    domain = arrCfg.domain;
     port = arrCfg.prowlarr.port;
     category = "Indexer & Tracker";
     desc = "Zentrale Verwaltung aller Torrent-Tracker und FlareSolverr.";
@@ -156,6 +169,7 @@ in
     name = "qBittorrent";
     serviceKey = "qbittorrent";
     subdomain = arrCfg.qbittorrent.subdomain;
+    domain = arrCfg.domain;
     aliases = ["qbittorrent"];
     port = arrCfg.qbittorrent.webuiPort;
     category = "Download-Client";
@@ -167,6 +181,7 @@ in
     name = "Bazarr";
     serviceKey = "bazarr";
     subdomain = arrCfg.bazarr.subdomain;
+    domain = arrCfg.domain;
     port = arrCfg.bazarr.port;
     category = "Untertitel";
     desc = "Automatischer Abgleich und Download passender Untertitel.";
@@ -177,6 +192,7 @@ in
     name = "FlareSolverr";
     serviceKey = "flaresolverr";
     subdomain = arrCfg.flaresolverr.subdomain;
+    domain = arrCfg.domain;
     port = arrCfg.flaresolverr.port;
     category = "Indexer Proxy";
     desc = "Bypass-Proxy für Cloudflare-geschützte Indexer.";

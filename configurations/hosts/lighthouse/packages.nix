@@ -22,7 +22,7 @@
   # Central Server Infrastructure & Services
   server = {
     enable = true;
-    domain = "media.lukpac.dev";
+    domain = "lukpac.dev";
     tailscaleDomain = "gute-court.ts.net";
 
     adguard = {
@@ -68,6 +68,7 @@
     # Media automation stack (Arr Stack)
     arr = {
       enable = true;
+      domain = "media.lukpac.dev";
       adminUser = "luka";
       dataDir = "/arr_data";
       mediaGid = 169;

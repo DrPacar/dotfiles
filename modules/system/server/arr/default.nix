@@ -51,7 +51,10 @@ in {
 
     domain = mkOption {
       type = types.nullOr types.str;
-      default = config.server.domain or null;
+      default =
+        if config.server.domain != null
+        then "media.${config.server.domain}"
+        else null;
       example = "media.domain.at";
       description = ''
         Primary base domain for web interface reverse proxy routing.
@@ -99,6 +102,10 @@ in {
           ++ lib.optionals (cfg.domain != null) [
             cfg.domain
             "*.${cfg.domain}"
+          ]
+          ++ lib.optionals (config.server.domain != null && config.server.domain != cfg.domain) [
+            config.server.domain
+            "*.${config.server.domain}"
           ]
           ++ cfg.network.extraAllowedHosts;
         description = "List of host patterns permitted by .NET host header validation.";

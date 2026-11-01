@@ -32,7 +32,9 @@ in {
     jellyfinUrl = mkOption {
       type = types.str;
       default =
-        if config.server.domain != null
+        if cfg.domain != null
+        then "https://${cfg.jellyfin.subdomain}.${cfg.domain}"
+        else if config.server.domain != null
         then "https://${cfg.jellyfin.subdomain}.${config.server.domain}"
         else "http://${config.networking.hostName}:8096";
       description = "Public Jellyfin URL embedded in download completion notifications.";

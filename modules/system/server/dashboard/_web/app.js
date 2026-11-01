@@ -21,6 +21,7 @@ const isTailscale = currentHost.endsWith('.ts.net') || currentHost.startsWith('1
 document.querySelectorAll('[data-subdomain]').forEach(el => {
   const sub = el.getAttribute('data-subdomain');
   const port = el.getAttribute('data-port');
+  const targetDomain = el.getAttribute('data-target-domain');
 
   if (isTailscale && port) {
     // Over Tailscale, MagicDNS does not resolve wildcard subdomains (*.ts.net)
@@ -28,6 +29,8 @@ document.querySelectorAll('[data-subdomain]').forEach(el => {
     el.href = 'http://' + currentHost + ':' + port;
   } else if (currentHost === 'localhost' || currentHost === '127.0.0.1') {
     el.href = protocol + '//' + sub + '.localhost' + portSuffix;
+  } else if (targetDomain) {
+    el.href = protocol + '//' + sub + '.' + targetDomain + portSuffix;
   } else {
     el.href = protocol + '//' + sub + '.' + currentHost + portSuffix;
   }
@@ -36,12 +39,14 @@ document.querySelectorAll('[data-subdomain]').forEach(el => {
 // Update subdomain pill badges
 document.querySelectorAll('[data-subdomain-pill]').forEach(el => {
   const sub = el.getAttribute('data-subdomain-pill');
+  const targetDomain = el.getAttribute('data-target-domain');
   if (currentHost === 'localhost' || currentHost === '127.0.0.1') {
     el.textContent = sub + '.localhost';
     el.href = protocol + '//' + sub + '.localhost' + portSuffix;
   } else {
-    el.textContent = sub + '.' + currentHost;
-    el.href = protocol + '//' + sub + '.' + currentHost + portSuffix;
+    const domain = targetDomain || currentHost;
+    el.textContent = sub + '.' + domain;
+    el.href = protocol + '//' + sub + '.' + domain + portSuffix;
   }
 });
 

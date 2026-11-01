@@ -5,6 +5,11 @@
 }: let
   inherit (lib) mkIf mkOption types;
   cfg = config.server;
+  arrCfg = config.server.arr or {};
+  arrDomain =
+    if (arrCfg.enable or false)
+    then (arrCfg.domain or null)
+    else null;
 in {
   options.server.adguard = {
     enable = mkOption {
@@ -72,16 +77,27 @@ in {
           dnssec = true;
         };
         filtering = mkIf (cfg.adguard.lanIp != null && cfg.domain != null) {
-          rewrites = [
-            {
-              domain = "*.${cfg.domain}";
-              answer = cfg.adguard.lanIp;
-            }
-            {
-              domain = cfg.domain;
-              answer = cfg.adguard.lanIp;
-            }
-          ];
+          rewrites =
+            [
+              {
+                domain = "*.${cfg.domain}";
+                answer = cfg.adguard.lanIp;
+              }
+              {
+                domain = cfg.domain;
+                answer = cfg.adguard.lanIp;
+              }
+            ]
+            ++ lib.optionals (arrDomain != null && arrDomain != cfg.domain) [
+              {
+                domain = "*.${arrDomain}";
+                answer = cfg.adguard.lanIp;
+              }
+              {
+                domain = arrDomain;
+                answer = cfg.adguard.lanIp;
+              }
+            ];
         };
         filters = [
           {
