@@ -90,7 +90,10 @@
 
       vpn = {
         enable = true;
-        portForwarding.enable = true;
+        portForwarding = {
+          enable = true;
+          gateway = "10.2.0.1";
+        };
       };
 
       prowlarr = {

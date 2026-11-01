@@ -29,8 +29,6 @@ in {
     accessibleFrom = mkOption {
       type = types.listOf types.str;
       default = [
-        "10.0.0.0/8" # RFC 1918 Class A
-        "172.16.0.0/12" # RFC 1918 Class B
         "192.168.0.0/16" # RFC 1918 Class C (Home LANs)
         "100.64.0.0/10" # RFC 6598 Carrier-Grade NAT (Tailscale CGNAT)
       ];
@@ -131,6 +129,20 @@ in {
             echo "No default route detected after 30s, continuing anyway..."
           ''}"
         ];
+        ExecStartPost = [
+          "+${pkgs.writeShellScript "vpn-post-up-fixes" ''
+            # Ensure internal VPN gateway / DNS (10.2.0.1) is always routed directly through the tunnel
+            ${pkgs.iproute2}/bin/ip -n ${cfg.vpn.namespace} route add 10.2.0.1/32 dev ${cfg.vpn.namespace}0 2>/dev/null || true
+            # Allow fallback public DNS (Cloudflare 1.1.1.1) in firewall to bypass NetShield tracker blocking
+            ${pkgs.iptables}/bin/ip netns exec ${cfg.vpn.namespace} ${pkgs.iptables}/bin/iptables -I dns-fw 1 -p udp -d 1.1.1.1 -j ACCEPT 2>/dev/null || true
+            ${pkgs.iptables}/bin/ip netns exec ${cfg.vpn.namespace} ${pkgs.iptables}/bin/iptables -I dns-fw 1 -p tcp -d 1.1.1.1 -j ACCEPT 2>/dev/null || true
+            if [ -f /etc/netns/${cfg.vpn.namespace}/resolv.conf ]; then
+              if ! grep -q "1.1.1.1" /etc/netns/${cfg.vpn.namespace}/resolv.conf; then
+                echo "nameserver 1.1.1.1" >> /etc/netns/${cfg.vpn.namespace}/resolv.conf
+              fi
+            fi
+          ''}"
+        ];
       };
       unitConfig = {
         StartLimitIntervalSec = 300;
@@ -192,6 +204,7 @@ in {
         Restart = "always";
         RestartSec = 5;
         NetworkNamespacePath = "/run/netns/${cfg.vpn.namespace}";
+        BindReadOnlyPaths = ["/etc/netns/${cfg.vpn.namespace}/resolv.conf:/etc/resolv.conf:norbind"];
         User = "root";
         ExecStart = ''
           ${pkgs.bash}/bin/bash ${../scripts/protonvpn-port-forward.sh} \
