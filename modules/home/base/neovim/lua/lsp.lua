@@ -117,6 +117,7 @@ local servers = {
   tinymist = vim.fn.executable("tinymist") == 1,
   texlab = vim.fn.executable("texlab") == 1,
   lua_ls = vim.fn.executable("lua-language-server") == 1,
+  jdtls = vim.fn.executable("jdtls") == 1,
   pyright = vim.fn.executable("pyright") == 1,
   rust_analyzer = vim.fn.executable("rust-analyzer") == 1,
   gopls = vim.fn.executable("gopls") == 1,

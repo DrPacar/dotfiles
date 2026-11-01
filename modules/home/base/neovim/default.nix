@@ -21,11 +21,13 @@
       tinymist
       texlab
       lua-language-server
+      jdt-language-server
 
       # Formatters
       nixfmt
       stylua
       typstyle
+      google-java-format
     ];
 
     plugins = with pkgs.vimPlugins; [

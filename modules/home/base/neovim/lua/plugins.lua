@@ -101,6 +101,7 @@ if conform_ok then
       nix = { "nixfmt" },
       typst = { "typstyle" },
       lua = { "stylua" },
+      java = { "google-java-format" },
       python = { "isort", "black" },
       rust = { "rustfmt" },
     },
