@@ -1,33 +1,4 @@
-{
-  lib,
-  pkgs,
-  ...
-}: let
-  mediaMimeTypes = [
-    # Video
-    "video/mp4"
-    "video/mkv"
-    "video/x-matroska"
-    "video/webm"
-    "video/avi"
-    "video/x-msvideo"
-    "video/quicktime"
-    "video/x-flv"
-    "video/mpeg"
-    "video/ogg"
-    # Audio
-    "audio/mpeg"
-    "audio/mp3"
-    "audio/flac"
-    "audio/wav"
-    "audio/x-wav"
-    "audio/ogg"
-    "audio/aac"
-    "audio/m4a"
-    "audio/opus"
-  ];
-  mimeAssociations = lib.genAttrs mediaMimeTypes (_: "mpv.desktop");
-in {
+{pkgs, ...}: {
   programs.mpv = {
     enable = true;
 
@@ -62,10 +33,5 @@ in {
       osd-color = "#c0caf5";
       osd-border-color = "#1a1b26";
     };
-  };
-
-  xdg.mimeApps = {
-    enable = true;
-    defaultApplications = mimeAssociations;
   };
 }

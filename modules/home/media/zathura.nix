@@ -1,21 +1,4 @@
-{lib, ...}: let
-  pdfMimeTypes = [
-    "application/pdf"
-    "application/x-pdf"
-    "application/oxps"
-    "application/vnd.comicbook+zip"
-    "application/vnd.comicbook-rar"
-    "application/x-cbz"
-    "application/x-cbr"
-    "application/x-cb7"
-    "application/x-cbt"
-    "application/postscript"
-    "application/x-eps"
-    "image/vnd.djvu"
-    "image/vnd.djvu+multipage"
-  ];
-  mimeAssociations = lib.genAttrs pdfMimeTypes (_: "org.pwmt.zathura.desktop");
-in {
+{...}: {
   programs.zathura = {
     enable = true;
 
@@ -89,10 +72,5 @@ in {
       "r" = "recolor";
       "R" = "reload";
     };
-  };
-
-  xdg.mimeApps = {
-    enable = true;
-    defaultApplications = mimeAssociations;
   };
 }
