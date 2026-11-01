@@ -21,7 +21,7 @@
 
   # Central Server Infrastructure & Services
   server = {
-    enable = true;
+    enable = false;
     domain = "media.lukpac.dev";
     tailscaleDomain = "gute-court.ts.net";
 
@@ -48,6 +48,16 @@
 
     paperless = {
       enable = true;
+    };
+
+    uptime-kuma = {
+      enable = true;
+      subdomain = "status";
+    };
+
+    beszel = {
+      enable = true;
+      subdomain = "system";
     };
 
     # Media automation stack (Arr Stack)

@@ -6,8 +6,32 @@
   arrCfg = config.server.arr or {};
   arrEnabled = arrCfg.enable or false;
 in
+  # Uptime Kuma (Monitoring & Status)
+  (lib.optional (serverCfg.enable && (serverCfg.uptime-kuma.enable or false)) {
+    name = "Uptime Kuma";
+    serviceKey = "uptime-kuma";
+    subdomain = serverCfg.uptime-kuma.subdomain;
+    aliases = ["status"];
+    port = serverCfg.uptime-kuma.port;
+    category = "Monitoring & Status";
+    desc = "Uptime- und Service-Monitoring mit Alarmierung und Status-Seite.";
+    color = "#5cdb95";
+    icon = ''<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>'';
+  })
+  # Beszel (Hardware- & System-Ressourcen)
+  ++ (lib.optional (serverCfg.enable && (serverCfg.beszel.enable or false)) {
+    name = "Beszel";
+    serviceKey = "beszel";
+    subdomain = serverCfg.beszel.subdomain;
+    aliases = ["system"];
+    port = serverCfg.beszel.port;
+    category = "Monitoring & Status";
+    desc = "Leichtgewichtiges System-, CPU-, RAM- und Festplatten-Monitoring.";
+    color = "#f59e0b";
+    icon = ''<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>'';
+  })
   # AdGuard Home (Netzwerk & Sicherheit)
-  (lib.optional (serverCfg.enable && serverCfg.adguard.enable) {
+  ++ (lib.optional (serverCfg.enable && serverCfg.adguard.enable) {
     name = "AdGuard Home";
     serviceKey = "adguard";
     subdomain = serverCfg.adguard.subdomain;
