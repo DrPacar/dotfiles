@@ -1,5 +1,5 @@
 -- ==========================================================================
--- LSP Configuration & Document Tools
+-- LSP Configuration & Document Tools (Neovim 0.11+ native vim.lsp.config)
 -- ==========================================================================
 
 -- Diagnostic display configuration
@@ -7,7 +7,14 @@ vim.diagnostic.config({
   virtual_text = {
     prefix = "●",
   },
-  signs = true,
+  signs = {
+    text = {
+      [vim.diagnostic.severity.ERROR] = " ",
+      [vim.diagnostic.severity.WARN] = " ",
+      [vim.diagnostic.severity.HINT] = " ",
+      [vim.diagnostic.severity.INFO] = " ",
+    },
+  },
   underline = true,
   update_in_insert = false,
   severity_sort = true,
@@ -17,19 +24,17 @@ vim.diagnostic.config({
   },
 })
 
--- Diagnostic signs
-local signs = { Error = " ", Warn = " ", Hint = " ", Info = " " }
-for type, icon in pairs(signs) do
-  local hl = "DiagnosticSign" .. type
-  vim.fn.sign_define(hl, { text = icon, texthl = hl, numhl = "" })
-end
-
 -- Capabilities (Blink.cmp integration)
 local capabilities = vim.lsp.protocol.make_client_capabilities()
 local blink_ok, blink = pcall(require, "blink.cmp")
 if blink_ok then
   capabilities = blink.get_lsp_capabilities(capabilities)
 end
+
+-- Global client capabilities
+vim.lsp.config("*", {
+  capabilities = capabilities,
+})
 
 -- Global LSP Attach Autocmd (Keymaps)
 vim.api.nvim_create_autocmd("LspAttach", {
@@ -57,81 +62,69 @@ vim.g.vimtex_view_method = "zathura"
 vim.g.vimtex_compiler_method = "latexmk"
 vim.g.vimtex_quickfix_mode = 0
 
--- LSP Servers Setup via nvim-lspconfig
-local lspconfig_ok, lspconfig = pcall(require, "lspconfig")
-if lspconfig_ok then
-  -- Nix LSP (nil)
-  if vim.fn.executable("nil") == 1 then
-    lspconfig.nil_ls.setup({
-      capabilities = capabilities,
-      settings = {
-        ["nil"] = {
-          formatting = {
-            command = { "nixfmt" },
-          },
-        },
+-- LSP Server Configurations
+
+-- Nix LSP (nil)
+vim.lsp.config("nil_ls", {
+  settings = {
+    ["nil"] = {
+      formatting = {
+        command = { "nixfmt" },
       },
-    })
-  end
+    },
+  },
+})
 
-  -- Typst LSP (tinymist)
-  if vim.fn.executable("tinymist") == 1 then
-    lspconfig.tinymist.setup({
-      capabilities = capabilities,
-      settings = {
-        exportPdf = "never",
+-- Typst LSP (tinymist)
+vim.lsp.config("tinymist", {
+  settings = {
+    exportPdf = "never",
+  },
+})
+
+-- LaTeX LSP (texlab)
+vim.lsp.config("texlab", {
+  settings = {
+    texlab = {
+      build = {
+        executable = "latexmk",
+        args = { "-pdf", "-interaction=nonstopmode", "-synctex=1", "%f" },
+        onSave = false, -- Handled continuously by VimTeX
       },
-    })
-  end
+    },
+  },
+})
 
-  -- LaTeX LSP (texlab)
-  if vim.fn.executable("texlab") == 1 then
-    lspconfig.texlab.setup({
-      capabilities = capabilities,
-      settings = {
-        texlab = {
-          build = {
-            executable = "latexmk",
-            args = { "-pdf", "-interaction=nonstopmode", "-synctex=1", "%f" },
-            onSave = false, -- Handled continuously by VimTeX
-          },
-        },
+-- Lua LSP (lua_ls)
+vim.lsp.config("lua_ls", {
+  settings = {
+    Lua = {
+      diagnostics = {
+        globals = { "vim" },
       },
-    })
-  end
-
-  -- Lua LSP (lua_ls)
-  if vim.fn.executable("lua-language-server") == 1 then
-    lspconfig.lua_ls.setup({
-      capabilities = capabilities,
-      settings = {
-        Lua = {
-          diagnostics = {
-            globals = { "vim" },
-          },
-          workspace = {
-            checkThirdParty = false,
-            library = vim.api.nvim_get_runtime_file("", true),
-          },
-          telemetry = { enable = false },
-        },
+      workspace = {
+        checkThirdParty = false,
+        library = vim.api.nvim_get_runtime_file("", true),
       },
-    })
-  end
+      telemetry = { enable = false },
+    },
+  },
+})
 
-  -- Python LSP (pyright)
-  if vim.fn.executable("pyright") == 1 then
-    lspconfig.pyright.setup({ capabilities = capabilities })
-  end
+-- Enable configured LSP servers if executable
+local servers = {
+  nil_ls = vim.fn.executable("nil") == 1,
+  tinymist = vim.fn.executable("tinymist") == 1,
+  texlab = vim.fn.executable("texlab") == 1,
+  lua_ls = vim.fn.executable("lua-language-server") == 1,
+  pyright = vim.fn.executable("pyright") == 1,
+  rust_analyzer = vim.fn.executable("rust-analyzer") == 1,
+  gopls = vim.fn.executable("gopls") == 1,
+}
 
-  -- Rust LSP (rust_analyzer)
-  if vim.fn.executable("rust-analyzer") == 1 then
-    lspconfig.rust_analyzer.setup({ capabilities = capabilities })
-  end
-
-  -- Go LSP (gopls)
-  if vim.fn.executable("gopls") == 1 then
-    lspconfig.gopls.setup({ capabilities = capabilities })
+for server, enabled in pairs(servers) do
+  if enabled then
+    vim.lsp.enable(server)
   end
 end
 
