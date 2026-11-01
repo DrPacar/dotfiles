@@ -120,7 +120,19 @@ end
 -- 7. Which-Key (Keybinding Hints)
 local wk_ok, wk = pcall(require, "which-key")
 if wk_ok then
-  wk.setup()
+  wk.setup({
+    delay = 200,
+    plugins = {
+      presets = {
+        operators = false, -- Keinerlei Lag/Popups bei d, c, y etc.
+        motions = false,
+        text_objects = false,
+      },
+    },
+    triggers = {
+      { "<leader>", mode = { "n", "v" } },
+    },
+  })
   wk.add({
     { "<leader>f", group = "Find (Telescope)" },
     { "<leader>s", group = "Splits" },
