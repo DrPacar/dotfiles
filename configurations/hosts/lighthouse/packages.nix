@@ -60,6 +60,11 @@
       subdomain = "system";
     };
 
+    notify = {
+      enable = true;
+      subdomain = "notify";
+    };
+
     # Media automation stack (Arr Stack)
     arr = {
       enable = true;

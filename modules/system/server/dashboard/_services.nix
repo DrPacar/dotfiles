@@ -30,6 +30,18 @@ in
     color = "#f59e0b";
     icon = ''<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>'';
   })
+  # Ntfy (Benachrichtigungs-Server)
+  ++ (lib.optional (serverCfg.enable && (serverCfg.notify.enable or false)) {
+    name = "Benachrichtigungen";
+    serviceKey = "notify";
+    subdomain = serverCfg.notify.subdomain;
+    aliases = ["notify" "alerts"];
+    port = serverCfg.notify.port;
+    category = "Monitoring & Status";
+    desc = "Selbst gehosteter Push-Benachrichtigungsdienst und Live Web-App.";
+    color = "#3b82f6";
+    icon = ''<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>'';
+  })
   # AdGuard Home (Netzwerk & Sicherheit)
   ++ (lib.optional (serverCfg.enable && serverCfg.adguard.enable) {
     name = "AdGuard Home";
