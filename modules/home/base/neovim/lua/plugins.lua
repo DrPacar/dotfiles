@@ -149,5 +149,7 @@ if wk_ok then
     { "<leader>c", group = "Code / LSP" },
     { "<leader>t", group = "Toggle" },
     { "d", desc = "Current Line", mode = "o" },
+    { "y", desc = "Current Line", mode = "o" },
+    { "c", desc = "Current Line", mode = "o" },
   })
 end
