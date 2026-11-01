@@ -53,6 +53,7 @@ in {
       enable = true;
       settings = {
         base-url = "https://${notifyDomain}";
+        upstream-base-url = "https://ntfy.sh";
         listen-http = "127.0.0.1:${toString notifyCfg.port}";
         behind-proxy = true;
         web-root = "app";
