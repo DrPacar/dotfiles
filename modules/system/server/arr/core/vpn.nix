@@ -203,6 +203,7 @@ in {
         Type = "simple";
         Restart = "always";
         RestartSec = 5;
+        TimeoutStopSec = 5;
         NetworkNamespacePath = "/run/netns/${cfg.vpn.namespace}";
         BindReadOnlyPaths = ["/etc/netns/${cfg.vpn.namespace}/resolv.conf:/etc/resolv.conf:norbind"];
         User = "root";

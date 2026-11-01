@@ -137,14 +137,16 @@ COOKIE_FILE=$(mktemp)
 cleanup() {
   rm -f "$COOKIE_FILE"
 }
-trap cleanup EXIT INT TERM
+trap cleanup EXIT
+trap 'exit 0' INT TERM
 
 # --- Wait for qBittorrent WebUI ---
 log_info "Waiting for qBittorrent WebUI at $WEBUI_URL..."
 MAX_WAIT=90
 WAITED=0
 until curl -s -f -I "$WEBUI_URL/" >/dev/null 2>&1; do
-  sleep 1
+  sleep 1 &
+  wait $! || true
   WAITED=$((WAITED + 1))
   if [[ $WAITED -ge $MAX_WAIT ]]; then
     log_warn "qBittorrent WebUI not responding after ${MAX_WAIT}s. Continuing to retry in background..."
@@ -217,9 +219,11 @@ while true; do
     log_warn "Failed to obtain port from NAT-PMP gateway $GATEWAY. Output: $(echo "$combined" | tr '\n' ' ')"
     # Re-detect gateway in case network shifted
     GATEWAY=$(detect_vpn_gateway)
-    sleep 10
+    sleep 10 &
+    wait $! || true
     continue
   fi
 
-  sleep "$REFRESH_INTERVAL"
+  sleep "$REFRESH_INTERVAL" &
+  wait $! || true
 done
