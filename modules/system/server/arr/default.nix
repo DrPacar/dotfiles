@@ -12,7 +12,11 @@ in {
   ];
 
   options.server.arr = {
-    enable = mkEnableOption "media automation stack (Arr Stack)";
+    enable = mkOption {
+      type = types.bool;
+      default = config.server.enable;
+      description = "Enable media automation stack (Arr Stack). Automatically disabled when server.enable is false.";
+    };
 
     dataDir = mkOption {
       type = types.str;
@@ -212,6 +216,9 @@ in {
   };
 
   config = mkMerge [
+    (mkIf (!config.server.enable) {
+      server.arr.enable = lib.mkForce false;
+    })
     (mkIf (config.arr != {}) {
       server.arr = config.arr;
     })

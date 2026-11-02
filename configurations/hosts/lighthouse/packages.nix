@@ -21,7 +21,7 @@
 
   # Central Server Infrastructure & Services
   server = {
-    enable = true;
+    enable = false;
     domain = "lukpac.dev";
     tailscaleDomain = "gute-court.ts.net";
 

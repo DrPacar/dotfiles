@@ -9,7 +9,7 @@ in {
     enable = mkOption {
       type = types.bool;
       default = false;
-      description = "Enable centralized server infrastructure (Caddy reverse proxy, ACME wildcard SSL, unified dashboard).";
+      description = "Master switch to enable centralized server infrastructure and all server services (Caddy, Arr stack, Immich, Paperless, etc.). When false, all server modules are disabled.";
     };
 
     adminUser = mkOption {
