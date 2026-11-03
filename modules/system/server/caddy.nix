@@ -35,7 +35,10 @@
 
   # Local and Tailscale domains for plaintext / HTTP reverse proxying
   plainSubdomainDomains =
-    [hostName]
+    [
+      hostName
+      "${hostName}.local"
+    ]
     ++ lib.optional (tailscaleFqdn != null) tailscaleFqdn;
 
   # 1. Plaintext Subdomain Virtual Hosts (e.g. adguard.lighthouse, jellyfin.lighthouse, etc.)
@@ -56,9 +59,16 @@
 
   plainSubdomainVhosts = lib.foldl' lib.mergeAttrs {} (map mkPlainSubdomainVhost servicesList);
 
-  # 2. Main Landing Page Virtual Host for local plaintext HTTP access (localhost, 127.0.0.1, lighthouse)
+  # 2. Main Landing Page Virtual Host for local plaintext HTTP access (localhost, 127.0.0.1, lighthouse, haven.local, IP)
   plainDashboardVhost = let
-    dashboardHostsList = [(mkHttpHost "localhost") (mkHttpHost "127.0.0.1") (mkHttpHost hostName)];
+    dashboardHostsList =
+      [
+        (mkHttpHost "localhost")
+        (mkHttpHost "127.0.0.1")
+        (mkHttpHost hostName)
+        (mkHttpHost "${hostName}.local")
+      ]
+      ++ lib.optional (cfg.adguard.lanIp != null) (mkHttpHost cfg.adguard.lanIp);
     vhostKey = lib.concatStringsSep ", " dashboardHostsList;
   in {
     "${vhostKey}" = {
