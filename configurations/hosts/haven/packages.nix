@@ -87,7 +87,7 @@
         maxConnectionsPerTorrent = 25;
         maxActiveDownloads = 2;
         maxActiveTorrents = 4;
-        seedRatioLimit = 0.0;
+        seedRatioLimit = 1.0;
       };
 
       vpn = {
