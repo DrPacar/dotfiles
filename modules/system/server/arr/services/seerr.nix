@@ -72,7 +72,7 @@ in {
       radarr.Radarr = mkIf cfg.radarr.enable {
         port = cfg.radarr.port;
         apiKey = secretRef config.sops.secrets.arr_radarr_api_key.path;
-        activeProfileName = mkDefault "[SQP] SQP-1 (1080p)";
+        activeProfileName = mkDefault "Full HD (1080p) – Deutsch";
         activeDirectory = mkDefault cfg.paths.movies;
       };
 
@@ -80,7 +80,7 @@ in {
       sonarr.Sonarr = mkIf cfg.sonarr.enable {
         port = cfg.sonarr.port;
         apiKey = secretRef config.sops.secrets.arr_sonarr_api_key.path;
-        activeProfileName = mkDefault "WEB-1080p (Alternative)";
+        activeProfileName = mkDefault "Full HD (1080p) – Deutsch";
         activeDirectory = mkDefault cfg.paths.tv;
       };
 
@@ -88,8 +88,8 @@ in {
       sonarr."Sonarr Anime" = mkIf (cfg.sonarr.enable && cfg.sonarr.anime.enable) {
         port = cfg.sonarr.anime.port;
         apiKey = secretRef config.sops.secrets.arr_sonarr_anime_api_key.path;
-        activeProfileName = mkDefault "HD-1080p";
-        activeAnimeProfileName = mkDefault "HD-1080p";
+        activeProfileName = mkDefault "Anime (1080p) – Japanisch (Sub)";
+        activeAnimeProfileName = mkDefault "Anime (1080p) – Japanisch (Sub)";
         animeSeriesType = mkDefault "anime";
         activeDirectory = mkDefault cfg.paths.anime;
         activeAnimeDirectory = mkDefault cfg.paths.anime;
