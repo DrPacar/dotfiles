@@ -62,6 +62,18 @@ in {
         description = "Enable Intro Skipper plugin for automatic intro/outro detection and skip button in Jellyfin.";
       };
     };
+
+    transcodingTempPath = mkOption {
+      type = types.str;
+      default = "/dev/shm/jellyfin-transcodes";
+      description = "Directory for temporary transcode chunks (RAM-backed tmpfs recommended).";
+    };
+
+    hlsSegmentDuration = mkOption {
+      type = types.int;
+      default = 3;
+      description = "Target HLS segment duration in seconds for rapid seeking and startup.";
+    };
   };
 
   config = mkIf (cfg.enable && cfg.jellyfin.enable) {
@@ -112,7 +124,24 @@ in {
       };
     };
 
-    nixflix.jellyfin = {
+    nixflix.jellyfin = let
+      jellyfinFfmpegWrapped = pkgs.symlinkJoin {
+        name = "jellyfin-ffmpeg-wrapped";
+        paths = [
+          (pkgs.writeShellScriptBin "ffmpeg" ''
+            args=("$@")
+            for ((i=0; i<''${#args[@]}; i++)); do
+              if [ "''${args[i]}" = "-hls_time" ]; then
+                ((i++))
+                args[i]="${toString cfg.jellyfin.hlsSegmentDuration}"
+              fi
+            done
+            exec ${pkgs.jellyfin-ffmpeg}/bin/ffmpeg "''${args[@]}"
+          '')
+          pkgs.jellyfin-ffmpeg
+        ];
+      };
+    in {
       enable = true;
       user = jellyfinUser;
       group = cfg.mediaGroup;
@@ -153,6 +182,9 @@ in {
       # Optimal encoding configuration varies between devices - be careful.
       # Configuration for: 12th Gen Intel(R) Core(TM) i7-12700K
       encoding = {
+        transcodingTempPath = cfg.jellyfin.transcodingTempPath;
+        encoderAppPathDisplay = "${jellyfinFfmpegWrapped}/bin/ffmpeg";
+
         enableHardwareEncoding = cfg.jellyfin.hardwareAcceleration != "none";
         hardwareAccelerationType = cfg.jellyfin.hardwareAcceleration;
         vaapiDevice = cfg.jellyfin.device;
