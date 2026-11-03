@@ -176,11 +176,6 @@
             priority = 30;
             "torrentBaseSettings.appMinimumSeeders" = 3;
           }
-          {
-            name = "Torrent Downloads";
-            priority = 30;
-            "torrentBaseSettings.appMinimumSeeders" = 3;
-          }
         ];
       };
 

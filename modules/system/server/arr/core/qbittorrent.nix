@@ -69,6 +69,12 @@ in {
       description = "Global maximum upload rate limit in KiB/s (0 for unlimited).";
     };
 
+    diskCacheSizeMiB = mkOption {
+      type = types.ints.unsigned;
+      default = 512;
+      description = "Disk write cache limit in MiB for qBittorrent/libtorrent (prevents excessive RAM consumption).";
+    };
+
     seedRatioLimit = mkOption {
       type = types.nullOr types.numbers.nonnegative;
       default = null;
@@ -132,6 +138,7 @@ in {
           # Bind strictly to the VPN interface so BitTorrent traffic NEVER leaves outside the VPN
           Interface = mkIf cfg.vpn.enable "wg0";
           InterfaceName = mkIf cfg.vpn.enable "wg0";
+          DiskCacheSize = cfg.qbittorrent.diskCacheSizeMiB;
           # Fallback path for manually added torrents without a category
           DefaultSavePath = "${cfg.paths.torrents}/default";
           # Enable Automatic Torrent Management (TMM) so categories use their explicit save paths
@@ -192,6 +199,8 @@ in {
       serviceConfig = {
         Restart = "on-failure";
         RestartSec = 5;
+        MemoryHigh = "2G";
+        MemoryMax = "4G";
         ExecStartPre = lib.mkAfter [
           (pkgs.writeShellScript "qbittorrent-inject-password" ''
             exec ${pkgs.python3}/bin/python3 ${../scripts/qbittorrent-sync.py} \
