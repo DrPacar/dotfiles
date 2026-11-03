@@ -31,7 +31,14 @@ def parse_args():
     return parser.parse_args()
 
 
-def api_request(url: str, api_key: str, method: str = "GET", data: Optional[Dict[str, Any]] = None) -> Any:
+def api_request(
+    url: str,
+    api_key: str,
+    method: str = "GET",
+    data: Optional[Dict[str, Any]] = None,
+    retries: int = 5,
+    delay: float = 2.0,
+) -> Any:
     headers = {
         "X-Api-Key": api_key.strip(),
         "Content-Type": "application/json",
@@ -39,11 +46,20 @@ def api_request(url: str, api_key: str, method: str = "GET", data: Optional[Dict
     }
     encoded_data = json.dumps(data).encode("utf-8") if data is not None else None
     req = urllib.request.Request(url, data=encoded_data, headers=headers, method=method)
-    with urllib.request.urlopen(req, timeout=10) as resp:
-        content = resp.read().decode("utf-8")
-        if content:
-            return json.loads(content)
-        return None
+    last_exc = None
+    for attempt in range(retries):
+        try:
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                content = resp.read().decode("utf-8")
+                if content:
+                    return json.loads(content)
+                return None
+        except (urllib.error.URLError, ConnectionResetError, TimeoutError) as exc:
+            last_exc = exc
+            if attempt < retries - 1:
+                time.sleep(delay)
+            else:
+                raise last_exc
 
 
 def wait_for_api(base_url: str, api_key: str, max_retries: int = 15, delay: float = 2.0) -> bool:
