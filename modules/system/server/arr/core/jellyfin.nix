@@ -180,7 +180,7 @@ in {
       };
 
       # Optimal encoding configuration varies between devices - be careful.
-      # Configuration for: 12th Gen Intel(R) Core(TM) i7-12700K
+      # Configuration for: Intel UHD Graphics 630 (Coffee Lake / 8th Gen)
       encoding = {
         transcodingTempPath = cfg.jellyfin.transcodingTempPath;
         encoderAppPathDisplay = "${jellyfinFfmpegWrapped}/bin/ffmpeg";
@@ -199,12 +199,11 @@ in {
           "vc1"
           "vp8"
           "vp9"
-          "av1"
         ];
         enableDecodingColorDepth10Hevc = true;
         enableDecodingColorDepth10Vp9 = true;
 
-        enableIntelLowPowerH264HwEncoder = true;
+        enableIntelLowPowerH264HwEncoder = false;
         enableIntelLowPowerHevcHwEncoder = false;
 
         enableTonemapping = true;
