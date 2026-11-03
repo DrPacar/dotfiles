@@ -82,12 +82,12 @@
 
       qbittorrent = {
         downloadRateLimitKiB = 0; # Unlimited (utilize full line speed)
-        uploadRateLimitKiB = 3000;
+        uploadRateLimitKiB = 100; # Minimal upload to prevent download choking while keeping upstream usage negligible
         maxConnections = 250;
         maxConnectionsPerTorrent = 60;
         maxActiveDownloads = 5;
         maxActiveTorrents = 10;
-        seedRatioLimit = 1.0;
+        seedRatioLimit = 0.0; # Stop seeding immediately on download completion
       };
 
       vpn = {

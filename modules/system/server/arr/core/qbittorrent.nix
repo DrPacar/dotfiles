@@ -85,6 +85,16 @@ in {
       '';
     };
 
+    maxSeedingMinutes = mkOption {
+      type = types.nullOr types.ints.unsigned;
+      default = null;
+      example = 60;
+      description = ''
+        Maximum seeding time in minutes before stopping seeding.
+        Defaults to null (unlimited seeding time).
+      '';
+    };
+
     openBitTorrentPort = mkOption {
       type = types.bool;
       default = false;
@@ -157,13 +167,17 @@ in {
             if cfg.qbittorrent.seedRatioLimit != null
             then cfg.qbittorrent.seedRatioLimit
             else -1;
+          GlobalMaxSeedingMinutes =
+            if cfg.qbittorrent.maxSeedingMinutes != null
+            then cfg.qbittorrent.maxSeedingMinutes
+            else -1;
           ShareLimitAction =
-            if cfg.qbittorrent.seedRatioLimit != null
+            if (cfg.qbittorrent.seedRatioLimit != null || cfg.qbittorrent.maxSeedingMinutes != null)
             then "Stop"
             else "Default";
           # Legacy fallback for older qBittorrent versions
           MaxRatioAction =
-            if cfg.qbittorrent.seedRatioLimit != null
+            if (cfg.qbittorrent.seedRatioLimit != null || cfg.qbittorrent.maxSeedingMinutes != null)
             then 0 # Stop
             else -1; # Disabled
           Port = cfg.qbittorrent.bitTorrentPort;
