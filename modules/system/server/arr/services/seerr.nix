@@ -65,7 +65,7 @@ in {
       };
 
       settings.users = {
-        defaultPermissions = 32; # REQUEST only; admin approval needed.
+        defaultPermissions = 48; # REQUEST (32) + REQUEST_ADVANCED (16); allows selecting quality profile per request
       };
 
       # Movies manager - only configure if Radarr is enabled

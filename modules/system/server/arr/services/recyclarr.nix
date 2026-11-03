@@ -19,8 +19,8 @@ in {
     nixflix.recyclarr = {
       enable = true;
 
-      # Both 1080p and 4K quality profiles are synced into Radarr and Sonarr so
-      # both tiers are available in their respective UIs and in Jellyseerr.
+      # Both 1080p, 4K, and German quality profiles are synced into Radarr and Sonarr so
+      # both language tiers are available in their respective UIs and in Jellyseerr.
       # The active request profile defaults (1080p) are configured in seerr.nix.
       config = {
         radarr.radarr = mkIf cfg.radarr.enable {
@@ -35,6 +35,10 @@ in {
               reset_unmatched_scores.enabled = true;
               min_format_score = 180;
             }
+            {
+              trash_id = "2b90e905c99490edc7c7a5787443748b"; # [German] HD Bluray + WEB
+              reset_unmatched_scores.enabled = true;
+            }
           ];
         };
 
@@ -48,15 +52,20 @@ in {
               trash_id = "dfa5eaae7894077ad6449169b6eb03e0"; # WEB-2160p (Alternative)
               reset_unmatched_scores.enabled = true;
             }
+            {
+              trash_id = "dca7e5e9e99c703bcbdaaa471dd40e98"; # [German] HD Bluray + WEB
+              reset_unmatched_scores.enabled = true;
+            }
           ];
         };
       };
 
-      # Ensure both 1080p, 4K, and anime profiles are protected if profile cleanup is ever enabled
+      # Ensure both 1080p, 4K, German, and anime profiles are protected if profile cleanup is ever enabled
       cleanupUnmanagedProfiles.managedProfiles =
         [
           "[SQP] SQP-1 (1080p)"
           "[SQP] SQP-1 (2160p)"
+          "[German] HD Bluray + WEB"
           "WEB-1080p (Alternative)"
           "WEB-2160p (Alternative)"
         ]
