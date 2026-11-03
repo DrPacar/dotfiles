@@ -190,6 +190,7 @@ in {
 
       path = with pkgs; [
         bash
+        python3
         libnatpmp
         curl
         iptables
