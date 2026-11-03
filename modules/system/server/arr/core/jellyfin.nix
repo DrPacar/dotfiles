@@ -146,7 +146,7 @@ in {
       user = jellyfinUser;
       group = cfg.mediaGroup;
       network.internalHttpPort = cfg.jellyfin.port;
-      openFirewall = false;
+      openFirewall = true;
       apiKey = secretRef config.sops.secrets.arr_jellyfin_api_key.path;
 
       users.${cfg.jellyfin.adminUser} = {
