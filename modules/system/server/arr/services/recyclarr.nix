@@ -111,17 +111,21 @@ in {
         };
       };
 
-      # Ensure all managed profiles are protected if profile cleanup is ever enabled
-      cleanupUnmanagedProfiles.managedProfiles =
-        [
-          "Full HD (1080p) – Deutsch"
-          "Full HD (1080p) – Englisch"
-          "4K (2160p) – Deutsch"
-          "4K (2160p) – Englisch"
-        ]
-        ++ optional cfg.sonarr.anime.enable "Anime (1080p) – Japanisch (Sub)"
-        ++ optional cfg.sonarr.anime.enable "Anime (1080p) – Deutsch (Dub)"
-        ++ optional cfg.sonarr.anime.enable "Anime (1080p) – Englisch (Dub)";
+      # Automatically clean up old, unmanaged quality profiles (Any, SD, 720p, etc.)
+      # to keep the Jellyseerr dropdown clean and clutter-free.
+      cleanupUnmanagedProfiles = {
+        enable = true;
+        managedProfiles =
+          [
+            "Full HD (1080p) – Deutsch"
+            "Full HD (1080p) – Englisch"
+            "4K (2160p) – Deutsch"
+            "4K (2160p) – Englisch"
+          ]
+          ++ optional cfg.sonarr.anime.enable "Anime (1080p) – Japanisch (Sub)"
+          ++ optional cfg.sonarr.anime.enable "Anime (1080p) – Deutsch (Dub)"
+          ++ optional cfg.sonarr.anime.enable "Anime (1080p) – Englisch (Dub)";
+      };
     };
 
     # Automatically wait for network & DNS at boot, preventing failures when Wi-Fi connects after systemd startup
