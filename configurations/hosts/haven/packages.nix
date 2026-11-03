@@ -129,9 +129,25 @@
 
           # Movies & TV Shows
           {
+            name = "1337x";
+            priority = 20;
+            tags = ["flaresolverr"];
+            "torrentBaseSettings.appMinimumSeeders" = 3;
+          }
+          {
             name = "EZTV";
             priority = 20;
             tags = ["flaresolverr"];
+            "torrentBaseSettings.appMinimumSeeders" = 3;
+          }
+          {
+            name = "Knaben";
+            priority = 20;
+            "torrentBaseSettings.appMinimumSeeders" = 3;
+          }
+          {
+            name = "TorrentsCSV";
+            priority = 20;
             "torrentBaseSettings.appMinimumSeeders" = 3;
           }
           {
@@ -146,12 +162,22 @@
             "torrentBaseSettings.appMinimumSeeders" = 3;
           }
           {
+            name = "TorrentProject2";
+            priority = 25;
+            "torrentBaseSettings.appMinimumSeeders" = 3;
+          }
+          {
             name = "LimeTorrents";
             priority = 30;
             "torrentBaseSettings.appMinimumSeeders" = 3;
           }
           {
             name = "TorrentDownload";
+            priority = 30;
+            "torrentBaseSettings.appMinimumSeeders" = 3;
+          }
+          {
+            name = "Torrent Downloads";
             priority = 30;
             "torrentBaseSettings.appMinimumSeeders" = 3;
           }

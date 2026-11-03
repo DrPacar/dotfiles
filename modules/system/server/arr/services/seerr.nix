@@ -72,7 +72,7 @@ in {
       radarr.Radarr = mkIf cfg.radarr.enable {
         port = cfg.radarr.port;
         apiKey = secretRef config.sops.secrets.arr_radarr_api_key.path;
-        activeProfileName = mkDefault "Full HD (1080p) – Deutsch";
+        activeProfileName = mkDefault "Full HD (1080p) – Englisch";
         activeDirectory = mkDefault cfg.paths.movies;
       };
 
@@ -80,7 +80,7 @@ in {
       sonarr.Sonarr = mkIf cfg.sonarr.enable {
         port = cfg.sonarr.port;
         apiKey = secretRef config.sops.secrets.arr_sonarr_api_key.path;
-        activeProfileName = mkDefault "Full HD (1080p) – Deutsch";
+        activeProfileName = mkDefault "Full HD (1080p) – Englisch";
         activeDirectory = mkDefault cfg.paths.tv;
       };
 
