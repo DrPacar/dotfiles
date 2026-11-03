@@ -76,7 +76,7 @@
       mediaGid = 169;
 
       jellyfin = {
-        hardwareAcceleration = "qsv";
+        hardwareAcceleration = "vaapi";
         device = "/dev/dri/renderD128";
       };
 
