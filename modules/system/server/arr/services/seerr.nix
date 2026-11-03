@@ -88,8 +88,11 @@ in {
       sonarr."Sonarr Anime" = mkIf (cfg.sonarr.enable && cfg.sonarr.anime.enable) {
         port = cfg.sonarr.anime.port;
         apiKey = secretRef config.sops.secrets.arr_sonarr_anime_api_key.path;
-        activeProfileName = mkDefault "[Anime] Remux-1080p";
+        activeProfileName = mkDefault "HD-1080p";
+        activeAnimeProfileName = mkDefault "HD-1080p";
+        animeSeriesType = mkDefault "anime";
         activeDirectory = mkDefault cfg.paths.anime;
+        activeAnimeDirectory = mkDefault cfg.paths.anime;
       };
     };
   };

@@ -101,14 +101,60 @@
       prowlarr = {
         indexers = [
           # Anime
-          {name = "Nyaa.si";}
-          {name = "SubsPlease";}
+          {
+            name = "Nyaa.si";
+            priority = 10;
+            "torrentBaseSettings.appMinimumSeeders" = 3;
+          }
+          {
+            name = "Anime Tosho";
+            priority = 10;
+            "torrentBaseSettings.appMinimumSeeders" = 3;
+          }
+          {
+            name = "SubsPlease";
+            priority = 15;
+            "torrentBaseSettings.appMinimumSeeders" = 3;
+          }
+          {
+            name = "Tokyo Toshokan";
+            priority = 15;
+            "torrentBaseSettings.appMinimumSeeders" = 3;
+          }
+          {
+            name = "Shana Project";
+            priority = 15;
+            "torrentBaseSettings.appMinimumSeeders" = 3;
+          }
 
           # Movies & TV Shows
-          {name = "YTS";}
-          {name = "The Pirate Bay";}
-          {name = "LimeTorrents";}
-          {name = "TorrentDownload";}
+          {
+            name = "EZTV";
+            priority = 20;
+            tags = ["flaresolverr"];
+            "torrentBaseSettings.appMinimumSeeders" = 3;
+          }
+          {
+            name = "kickasstorrents.to";
+            priority = 25;
+            tags = ["flaresolverr"];
+            "torrentBaseSettings.appMinimumSeeders" = 3;
+          }
+          {
+            name = "The Pirate Bay";
+            priority = 25;
+            "torrentBaseSettings.appMinimumSeeders" = 3;
+          }
+          {
+            name = "LimeTorrents";
+            priority = 30;
+            "torrentBaseSettings.appMinimumSeeders" = 3;
+          }
+          {
+            name = "TorrentDownload";
+            priority = 30;
+            "torrentBaseSettings.appMinimumSeeders" = 3;
+          }
         ];
       };
 
