@@ -180,13 +180,29 @@ while true; do
     GATEWAY=$(detect_vpn_gateway)
   fi
 
-  # Request UDP and TCP port mappings from gateway via NAT-PMP (RFC 6886: -a 0 0 for dynamic external port)
-  out=$(natpmpc -a 0 0 udp "$LEASE_DURATION" -g "$GATEWAY" 2>&1) || true
-  tcp_out=$(natpmpc -a 0 0 tcp "$LEASE_DURATION" -g "$GATEWAY" 2>&1) || true
-  combined="$out"$'\n'"$tcp_out"
+  # Request UDP and TCP port mappings from gateway via NAT-PMP (RFC 6886)
+  PORT=$(python3 -c "
+import socket, struct
+try:
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.settimeout(2.5)
+    s.bind(('', 0))
+    s.sendto(struct.pack('!BBHHHI', 0, 1, 0, 0, 0, $LEASE_DURATION), ('$GATEWAY', 5351))
+    data, _ = s.recvfrom(1024)
+    p = struct.unpack('!BBHIHHI', data[:16])[5]
+    if p > 0:
+        s.sendto(struct.pack('!BBHHHI', 0, 2, 0, p, p, $LEASE_DURATION), ('$GATEWAY', 5351))
+        s.recvfrom(1024)
+        print(p)
+except Exception:
+    pass
+" 2>/dev/null || true)
 
-  # Parse mapped public port
-  PORT=$(echo "$combined" | grep -oP 'Mapped public port \K[0-9]+' | head -n 1 || true)
+  # Fallback to natpmpc if python failed
+  if [[ -z $PORT || $PORT == "0" ]]; then
+    out=$(natpmpc -a 0 0 udp "$LEASE_DURATION" -g "$GATEWAY" 2>&1) || true
+    PORT=$(echo "$out" | grep -oP 'Mapped public port \K[0-9]+' | head -n 1 || true)
+  fi
 
   if [[ -n $PORT && $PORT != "0" ]]; then
     if [[ $PORT != "$OLD_PORT" ]]; then

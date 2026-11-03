@@ -81,12 +81,12 @@
       };
 
       qbittorrent = {
-        downloadRateLimitKiB = 25000;
+        downloadRateLimitKiB = 0; # Unlimited (utilize full line speed)
         uploadRateLimitKiB = 3000;
-        maxConnections = 100;
-        maxConnectionsPerTorrent = 25;
-        maxActiveDownloads = 2;
-        maxActiveTorrents = 4;
+        maxConnections = 250;
+        maxConnectionsPerTorrent = 60;
+        maxActiveDownloads = 5;
+        maxActiveTorrents = 10;
         seedRatioLimit = 1.0;
       };
 
