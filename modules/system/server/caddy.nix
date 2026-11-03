@@ -48,6 +48,7 @@
     vhostKey = lib.concatStringsSep ", " hostsList;
   in {
     "${vhostKey}" = {
+      logFormat = lib.mkForce "output file /var/log/caddy/${s.subdomain}.log";
       extraConfig = ''
         reverse_proxy 127.0.0.1:${toString s.port} {
           header_up Host {host}
@@ -72,6 +73,7 @@
     vhostKey = lib.concatStringsSep ", " dashboardHostsList;
   in {
     "${vhostKey}" = {
+      logFormat = lib.mkForce "output file /var/log/caddy/dashboard.log";
       extraConfig = ''
         handle /api/* {
           reverse_proxy 127.0.0.1:9095
@@ -161,6 +163,7 @@
     httpKey = lib.concatStringsSep ", " httpHosts;
   in {
     "${httpsKey}" = {
+      logFormat = lib.mkForce "output file /var/log/caddy/${s.subdomain}-https.log";
       extraConfig = ''
         tls /var/lib/acme/${targetDomain}/cert.pem /var/lib/acme/${targetDomain}/key.pem
         reverse_proxy 127.0.0.1:${toString s.port} {
@@ -170,6 +173,7 @@
       '';
     };
     "${httpKey}" = {
+      logFormat = lib.mkForce "output file /var/log/caddy/${s.subdomain}-http-redir.log";
       extraConfig = ''
         redir https://${lib.head allSubNames}.${targetDomain}{uri} permanent
       '';
