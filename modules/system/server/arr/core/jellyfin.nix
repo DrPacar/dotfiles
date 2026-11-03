@@ -190,7 +190,7 @@ in {
         vaapiDevice = cfg.jellyfin.device;
         qsvDevice = cfg.jellyfin.device;
 
-        allowHevcEncoding = true;
+        allowHevcEncoding = false;
 
         hardwareDecodingCodecs = [
           "h264"
@@ -205,7 +205,7 @@ in {
         enableDecodingColorDepth10Vp9 = true;
 
         enableIntelLowPowerH264HwEncoder = true;
-        enableIntelLowPowerHevcHwEncoder = true;
+        enableIntelLowPowerHevcHwEncoder = false;
 
         enableTonemapping = true;
         enableVppTonemapping = true;
