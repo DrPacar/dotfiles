@@ -220,8 +220,11 @@ in {
           update_series_library = true;
           movie_library = ["Movies"];
           movie_library_ids = ["f137a2dd21bbc1b99aa5c0f6bf02a805"];
-          series_library = ["Shows"];
-          series_library_ids = ["a656b907eb3a73532e40e44b968d0225"];
+          series_library = ["Anime" "Shows"];
+          series_library_ids = [
+            "0c41907140d802bb58430fed7e2cd79e"
+            "a656b907eb3a73532e40e44b968d0225"
+          ];
           refresh_method = "immediate";
         };
       };

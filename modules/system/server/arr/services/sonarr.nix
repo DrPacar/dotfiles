@@ -11,7 +11,7 @@
 
   mkSonarrInstance = {
     user,
-    mediaDir,
+    mediaDirs,
     port,
     apiKeySecret,
   }: {
@@ -19,7 +19,7 @@
     inherit user;
     group = cfg.mediaGroup;
     openFirewall = false;
-    mediaDirs = [mediaDir];
+    inherit mediaDirs;
 
     settings = {
       server.bindaddress = cfg.network.bindAddress;
@@ -61,8 +61,8 @@ in {
     anime = {
       enable = mkOption {
         type = types.bool;
-        default = true;
-        description = "Enable separate Sonarr Anime instance for dedicated anime management.";
+        default = false;
+        description = "Enable separate Sonarr Anime instance for dedicated anime management (disabled by default in favor of unified Sonarr).";
       };
 
       port = mkOption {
@@ -96,18 +96,20 @@ in {
     ];
 
     nixflix = {
-      # Standard Sonarr instance
+      # Unified Sonarr instance (handles both standard TV and Anime with separate root directories)
       sonarr = mkSonarrInstance {
         user = "sonarr";
-        mediaDir = cfg.paths.tv;
+        mediaDirs =
+          [cfg.paths.tv]
+          ++ lib.optional (!cfg.sonarr.anime.enable) cfg.paths.anime;
         port = cfg.sonarr.port;
         apiKeySecret = config.sops.secrets.arr_sonarr_api_key;
       };
 
-      # Sonarr Anime instance
+      # Optional dedicated Sonarr Anime instance (disabled in unified mode)
       sonarr-anime = mkIf cfg.sonarr.anime.enable (mkSonarrInstance {
         user = "sonarr-anime";
-        mediaDir = cfg.paths.anime;
+        mediaDirs = [cfg.paths.anime];
         port = cfg.sonarr.anime.port;
         apiKeySecret = config.sops.secrets.arr_sonarr_anime_api_key;
       });

@@ -89,15 +89,18 @@ in {
         activeDirectory = mkDefault cfg.paths.movies;
       };
 
-      # TV Series instance - only configure if Sonarr is enabled
+      # Unified TV & Anime Series instance - only configure if Sonarr is enabled
       sonarr.Sonarr = mkIf cfg.sonarr.enable {
         port = cfg.sonarr.port;
         apiKey = secretRef config.sops.secrets.arr_sonarr_api_key.path;
         activeProfileName = mkDefault "Full HD (1080p) – Englisch";
         activeDirectory = mkDefault cfg.paths.tv;
+        activeAnimeProfileName = mkDefault "Anime (1080p) – Japanisch (Sub)";
+        activeAnimeDirectory = mkDefault cfg.paths.anime;
+        animeSeriesType = mkDefault "anime";
       };
 
-      # Anime instance - only configure if Sonarr Anime is enabled
+      # Optional dedicated Anime instance (disabled in unified mode)
       sonarr."Sonarr Anime" = mkIf (cfg.sonarr.enable && cfg.sonarr.anime.enable) {
         port = cfg.sonarr.anime.port;
         apiKey = secretRef config.sops.secrets.arr_sonarr_anime_api_key.path;
