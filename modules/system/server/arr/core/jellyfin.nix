@@ -98,7 +98,7 @@ in {
 
       customCss = mkOption {
         type = types.lines;
-        default = ''@import url("https://cdn.jsdelivr.net/gh/prayag17/JellyFlix@master/default.css");'';
+        default = ''@import url("https://cdn.jsdelivr.net/gh/lscambo13/ElegantFin@main/Theme/ElegantFin-jellyfin-theme-build-latest-minified.css");'';
         description = "Custom CSS to inject into Jellyfin web branding.";
       };
     };
