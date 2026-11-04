@@ -253,6 +253,10 @@ in {
             name = "Bazarr";
             port = cfg.bazarr.port;
           })
+          (lib.optionalAttrs (cfg.bazarr.enable && cfg.bazarr.anime.enable) {
+            name = "Bazarr Anime";
+            port = cfg.bazarr.anime.port;
+          })
           (lib.optionalAttrs cfg.seerr.enable {
             name = "Seerr";
             port = cfg.seerr.port;
@@ -318,7 +322,8 @@ in {
           arr_sonarr_anime_api_key.restartUnits =
             lib.optional (cfg.sonarr.enable && cfg.sonarr.anime.enable) "sonarr-anime-config.service"
             ++ lib.optional (cfg.prowlarr.enable && cfg.sonarr.enable && cfg.sonarr.anime.enable) "prowlarr-applications.service"
-            ++ lib.optional (cfg.seerr.enable && cfg.sonarr.enable && cfg.sonarr.anime.enable) "seerr-sonarr.service";
+            ++ lib.optional (cfg.seerr.enable && cfg.sonarr.enable && cfg.sonarr.anime.enable) "seerr-sonarr.service"
+            ++ lib.optional (cfg.bazarr.enable && cfg.bazarr.anime.enable) "bazarr-anime.service";
         }
         // lib.optionalAttrs cfg.radarr.enable {
           arr_radarr_api_key.restartUnits =
@@ -340,7 +345,8 @@ in {
         }
         // lib.optionalAttrs cfg.bazarr.enable {
           arr_bazarr_api_key.restartUnits =
-            lib.optional cfg.bazarr.enable "bazarr.service";
+            lib.optional cfg.bazarr.enable "bazarr.service"
+            ++ lib.optional (cfg.bazarr.enable && cfg.bazarr.anime.enable) "bazarr-anime.service";
         }
         // lib.optionalAttrs cfg.jellyfin.enable {
           arr_jellyfin_admin_password.restartUnits =
@@ -474,6 +480,9 @@ in {
           })
           (mkIf cfg.bazarr.enable {
             bazarr.serviceConfig.Slice = "arr.slice";
+          })
+          (mkIf (cfg.bazarr.enable && cfg.bazarr.anime.enable) {
+            bazarr-anime.serviceConfig.Slice = "arr.slice";
           })
           (mkIf cfg.seerr.enable {
             seerr.serviceConfig.Slice = "arr.slice";

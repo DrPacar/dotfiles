@@ -15,6 +15,7 @@
     "sonarr-anime"
     "prowlarr"
     "bazarr"
+    "bazarr-anime"
     "seerr"
   ];
 
@@ -29,6 +30,7 @@
         || (svc == "sonarr-anime" && cfg.sonarr.enable && cfg.sonarr.anime.enable)
         || (svc == "prowlarr" && cfg.prowlarr.enable)
         || (svc == "bazarr" && cfg.bazarr.enable)
+        || (svc == "bazarr-anime" && cfg.bazarr.enable && cfg.bazarr.anime.enable)
         || (svc == "seerr" && cfg.seerr.enable)
     )
     cfg.backup.services;

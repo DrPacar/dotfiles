@@ -188,6 +188,17 @@ in
     color = "#a6e3a1";
     icon = ''<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="8" y1="9" x2="16" y2="9"/><line x1="8" y1="13" x2="13" y2="13"/></svg>'';
   })
+  ++ (lib.optional (arrEnabled && arrCfg.bazarr.enable && arrCfg.bazarr.anime.enable) {
+    name = "Bazarr Anime";
+    serviceKey = "bazarr-anime";
+    subdomain = arrCfg.bazarr.anime.subdomain;
+    domain = arrCfg.domain;
+    port = arrCfg.bazarr.anime.port;
+    category = "Untertitel";
+    desc = "Automatischer Abgleich und Download von Anime-Untertiteln.";
+    color = "#cba6f7";
+    icon = ''<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="8" y1="9" x2="16" y2="9"/><line x1="8" y1="13" x2="13" y2="13"/></svg>'';
+  })
   ++ (lib.optional (arrEnabled && arrCfg.flaresolverr.enable) {
     name = "FlareSolverr";
     serviceKey = "flaresolverr";

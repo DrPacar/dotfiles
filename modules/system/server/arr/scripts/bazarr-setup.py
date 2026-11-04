@@ -2,8 +2,9 @@
 import json
 import os
 import sqlite3
+import sys
 
-db_dir = "/var/lib/bazarr/db"
+db_dir = sys.argv[1] if len(sys.argv) > 1 else "/var/lib/bazarr/db"
 db_path = os.path.join(db_dir, "bazarr.db")
 os.makedirs(db_dir, exist_ok=True)
 

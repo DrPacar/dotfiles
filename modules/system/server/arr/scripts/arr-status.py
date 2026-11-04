@@ -288,6 +288,7 @@ def render_rich_ui(console, data):
         "sonarr-anime": "Sonarr Anime",
         "prowlarr": "Prowlarr (Indexers)",
         "bazarr": "Bazarr (Subtitles)",
+        "bazarr-anime": "Bazarr Anime",
         "seerr": "Jellyseerr",
         "flaresolverr": "FlareSolverr",
         "recyclarr": "Recyclarr Sync",

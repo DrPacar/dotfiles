@@ -97,6 +97,12 @@ for svc in $SERVICES; do
       backup_sqlite /var/lib/bazarr/db/bazarr.db "$SVC_OUT/bazarr.db"
     fi
     ;;
+  bazarr-anime)
+    if [[ -d /var/lib/bazarr-anime ]]; then
+      [[ -d /var/lib/bazarr-anime/config ]] && cp -a /var/lib/bazarr-anime/config "$SVC_OUT/"
+      backup_sqlite /var/lib/bazarr-anime/db/bazarr.db "$SVC_OUT/bazarr.db"
+    fi
+    ;;
   seerr)
     if [[ -d /var/lib/seerr ]]; then
       [[ -f /var/lib/seerr/settings.json ]] && cp -a /var/lib/seerr/settings.json "$SVC_OUT/"

@@ -67,6 +67,12 @@
         subdomain = cfg.bazarr.subdomain;
         unit = "bazarr.service";
       };
+      bazarr-anime = {
+        enable = cfg.bazarr.enable && cfg.bazarr.anime.enable;
+        port = cfg.bazarr.anime.port;
+        subdomain = cfg.bazarr.anime.subdomain;
+        unit = "bazarr-anime.service";
+      };
       seerr = {
         enable = cfg.seerr.enable;
         port = cfg.seerr.port;
@@ -146,6 +152,7 @@
             qbit) svc="qbittorrent" ;;
             anime) svc="sonarr-anime" ;;
             indexer) svc="prowlarr" ;;
+            subtitles-anime|bazarr-anime) svc="bazarr-anime" ;;
             subtitles) svc="bazarr" ;;
             vpn) svc="${cfg.vpn.namespace}" ;;
             proxy) svc="qbittorrent-webui-proxy" ;;
@@ -165,6 +172,7 @@
             qbit) svc="qbittorrent" ;;
             anime) svc="sonarr-anime" ;;
             indexer) svc="prowlarr" ;;
+            subtitles-anime|bazarr-anime) svc="bazarr-anime" ;;
             subtitles) svc="bazarr" ;;
             vpn) svc="${cfg.vpn.namespace}" ;;
             proxy) svc="qbittorrent-webui-proxy" ;;
