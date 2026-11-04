@@ -9,7 +9,7 @@ in {
   config = mkIf (cfg.enable && cfg.recyclarr.enable && cfg.sonarr.enable) {
     nixflix.recyclarr.config = {
       sonarr.sonarr = {
-        quality_definition.type = "series";
+        quality_definition.type = "anime";
 
         quality_profiles = mkForce [
           {
