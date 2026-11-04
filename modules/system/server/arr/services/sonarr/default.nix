@@ -3,9 +3,9 @@
   lib,
   ...
 }: let
-  inherit (lib) mkOption mkIf types;
+  inherit (lib) mkIf;
   cfg = config.server.arr;
-  inherit (import ../_lib.nix) secretRef;
+  inherit (import ../../_lib.nix) secretRef;
 
   allowedHosts = lib.concatStringsSep "," cfg.network.allowedHosts;
 
@@ -39,46 +39,6 @@
     };
   };
 in {
-  options.server.arr.sonarr = {
-    enable = mkOption {
-      type = types.bool;
-      default = true;
-      description = "Enable Sonarr TV series manager.";
-    };
-
-    port = mkOption {
-      type = types.port;
-      default = 8989;
-      description = "Port for Sonarr web interface.";
-    };
-
-    subdomain = mkOption {
-      type = types.str;
-      default = "sonarr";
-      description = "Subdomain name for Sonarr reverse proxy routing.";
-    };
-
-    anime = {
-      enable = mkOption {
-        type = types.bool;
-        default = false;
-        description = "Enable separate Sonarr Anime instance for dedicated anime management (disabled by default in favor of unified Sonarr).";
-      };
-
-      port = mkOption {
-        type = types.port;
-        default = 8990;
-        description = "Port for Sonarr Anime web interface.";
-      };
-
-      subdomain = mkOption {
-        type = types.str;
-        default = "anime";
-        description = "Subdomain name for Sonarr Anime reverse proxy routing.";
-      };
-    };
-  };
-
   config = mkIf (cfg.enable && cfg.sonarr.enable) {
     assertions = [
       {
@@ -96,7 +56,6 @@ in {
     ];
 
     nixflix = {
-      # Unified Sonarr instance (handles both standard TV and Anime with separate root directories)
       sonarr = mkSonarrInstance {
         user = "sonarr";
         mediaDirs =
@@ -106,7 +65,6 @@ in {
         apiKeySecret = config.sops.secrets.arr_sonarr_api_key;
       };
 
-      # Optional dedicated Sonarr Anime instance (disabled in unified mode)
       sonarr-anime = mkIf cfg.sonarr.anime.enable (mkSonarrInstance {
         user = "sonarr-anime";
         mediaDirs = [cfg.paths.anime];
