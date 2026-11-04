@@ -22,12 +22,7 @@
     fileDate = cfg.sonarr.fileDate;
   };
 in {
-  config = mkIf (cfg.enable && cfg.sonarr.enable) (mkMerge [
-    {
-      nixflix.sonarr.config.mediaManagement = commonMediaManagement;
-    }
-    (mkIf cfg.sonarr.anime.enable {
-      nixflix.sonarr-anime.config.mediaManagement = commonMediaManagement;
-    })
-  ]);
+  config = mkIf (cfg.enable && cfg.sonarr.enable) {
+    nixflix.sonarr.config.mediaManagement = commonMediaManagement;
+  };
 }

@@ -49,12 +49,6 @@
         subdomain = cfg.sonarr.subdomain;
         unit = "sonarr.service";
       };
-      sonarr-anime = {
-        enable = cfg.sonarr.enable && cfg.sonarr.anime.enable;
-        port = cfg.sonarr.anime.port;
-        subdomain = cfg.sonarr.anime.subdomain;
-        unit = "sonarr-anime.service";
-      };
       prowlarr = {
         enable = cfg.prowlarr.enable;
         port = cfg.prowlarr.port;
@@ -66,12 +60,6 @@
         port = cfg.bazarr.port;
         subdomain = cfg.bazarr.subdomain;
         unit = "bazarr.service";
-      };
-      bazarr-anime = {
-        enable = cfg.bazarr.enable && cfg.bazarr.anime.enable;
-        port = cfg.bazarr.anime.port;
-        subdomain = cfg.bazarr.anime.subdomain;
-        unit = "bazarr-anime.service";
       };
       seerr = {
         enable = cfg.seerr.enable;
@@ -150,9 +138,7 @@
           case "$svc" in
             jellyseerr) svc="seerr" ;;
             qbit) svc="qbittorrent" ;;
-            anime) svc="sonarr-anime" ;;
             indexer) svc="prowlarr" ;;
-            subtitles-anime|bazarr-anime) svc="bazarr-anime" ;;
             subtitles) svc="bazarr" ;;
             vpn) svc="${cfg.vpn.namespace}" ;;
             proxy) svc="qbittorrent-webui-proxy" ;;
@@ -170,9 +156,7 @@
           case "$svc" in
             jellyseerr) svc="seerr" ;;
             qbit) svc="qbittorrent" ;;
-            anime) svc="sonarr-anime" ;;
             indexer) svc="prowlarr" ;;
-            subtitles-anime|bazarr-anime) svc="bazarr-anime" ;;
             subtitles) svc="bazarr" ;;
             vpn) svc="${cfg.vpn.namespace}" ;;
             proxy) svc="qbittorrent-webui-proxy" ;;

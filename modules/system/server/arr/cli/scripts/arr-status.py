@@ -285,10 +285,8 @@ def render_rich_ui(console, data):
         "qbittorrent": "qBittorrent",
         "radarr": "Radarr (Movies)",
         "sonarr": "Sonarr (TV & Anime)",
-        "sonarr-anime": "Sonarr Anime",
         "prowlarr": "Prowlarr (Indexers)",
         "bazarr": "Bazarr (Subtitles)",
-        "bazarr-anime": "Bazarr Anime",
         "seerr": "Jellyseerr",
         "flaresolverr": "FlareSolverr",
         "recyclarr": "Recyclarr Sync",
@@ -299,8 +297,6 @@ def render_rich_ui(console, data):
             continue
         svc = services[key]
         enabled = svc["enabled"]
-        if not enabled and key in ("sonarr-anime", "bazarr-anime"):
-            continue
         active = svc["active_state"]
         sub = svc["sub_state"]
         mem = format_bytes(svc["memory_bytes"]) if svc["memory_bytes"] else "-"

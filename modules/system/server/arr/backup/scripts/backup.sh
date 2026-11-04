@@ -72,12 +72,6 @@ for svc in $SERVICES; do
       backup_sqlite /var/lib/sonarr/sonarr.db "$SVC_OUT/sonarr.db"
     fi
     ;;
-  sonarr-anime)
-    if [[ -d /var/lib/sonarr-anime ]]; then
-      [[ -f /var/lib/sonarr-anime/config.xml ]] && cp -a /var/lib/sonarr-anime/config.xml "$SVC_OUT/"
-      backup_sqlite /var/lib/sonarr-anime/sonarr.db "$SVC_OUT/sonarr.db"
-    fi
-    ;;
   radarr)
     if [[ -d /var/lib/radarr ]]; then
       [[ -f /var/lib/radarr/config.xml ]] && cp -a /var/lib/radarr/config.xml "$SVC_OUT/"
@@ -95,12 +89,6 @@ for svc in $SERVICES; do
     if [[ -d /var/lib/bazarr ]]; then
       [[ -d /var/lib/bazarr/config ]] && cp -a /var/lib/bazarr/config "$SVC_OUT/"
       backup_sqlite /var/lib/bazarr/db/bazarr.db "$SVC_OUT/bazarr.db"
-    fi
-    ;;
-  bazarr-anime)
-    if [[ -d /var/lib/bazarr-anime ]]; then
-      [[ -d /var/lib/bazarr-anime/config ]] && cp -a /var/lib/bazarr-anime/config "$SVC_OUT/"
-      backup_sqlite /var/lib/bazarr-anime/db/bazarr.db "$SVC_OUT/bazarr.db"
     fi
     ;;
   seerr)

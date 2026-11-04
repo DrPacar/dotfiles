@@ -8,7 +8,6 @@
   inherit (import ../../_lib.nix) secretRef;
 
   bazarrUser = "bazarr";
-  animeEnabled = cfg.bazarr.anime.enable && cfg.sonarr.anime.enable;
 
   commonOpenSubtitles = {
     username = secretRef config.sops.secrets.arr_opensubtitles_username.path;
@@ -38,10 +37,6 @@ in {
         message = "arr.bazarr: config.sops.secrets.arr_sonarr_api_key must be defined when Sonarr is enabled.";
       }
       {
-        assertion = !animeEnabled || config.sops.secrets ? arr_sonarr_anime_api_key;
-        message = "arr.bazarr.anime: config.sops.secrets.arr_sonarr_anime_api_key must be defined when Bazarr Anime is enabled.";
-      }
-      {
         assertion = !cfg.radarr.enable || config.sops.secrets ? arr_radarr_api_key;
         message = "arr.bazarr: config.sops.secrets.arr_radarr_api_key must be defined when Radarr is enabled.";
       }
@@ -69,10 +64,9 @@ in {
       RestartSec = 15;
     };
 
-    sops.secrets.arr_jellyfin_api_key.restartUnits = mkIf cfg.jellyfin.enable (
-      ["bazarr.service"]
-      ++ lib.optional animeEnabled "bazarr-anime.service"
-    );
+    sops.secrets.arr_jellyfin_api_key.restartUnits = mkIf cfg.jellyfin.enable [
+      "bazarr.service"
+    ];
 
     # =========================================================================
     # Standard Bazarr Instance (Port 6767) - TV Shows & Movies

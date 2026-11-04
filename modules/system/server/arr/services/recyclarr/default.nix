@@ -18,11 +18,9 @@ in {
       after =
         ["network-online.target"]
         ++ lib.optional cfg.sonarr.enable "sonarr.service"
-        ++ lib.optional (cfg.sonarr.enable && cfg.sonarr.anime.enable) "sonarr-anime.service"
         ++ lib.optional cfg.radarr.enable "radarr.service";
       wants =
         lib.optional cfg.sonarr.enable "sonarr.service"
-        ++ lib.optional (cfg.sonarr.enable && cfg.sonarr.anime.enable) "sonarr-anime.service"
         ++ lib.optional cfg.radarr.enable "radarr.service"
         ++ lib.optional cfg.recyclarr.cleanupUnmanagedProfiles.enable "recyclarr-cleanup-profiles.service";
 

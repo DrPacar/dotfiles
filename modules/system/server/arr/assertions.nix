@@ -25,10 +25,6 @@ in {
           name = "Sonarr";
           port = cfg.sonarr.port;
         })
-        (lib.optionalAttrs (cfg.sonarr.enable && cfg.sonarr.anime.enable) {
-          name = "Sonarr Anime";
-          port = cfg.sonarr.anime.port;
-        })
         (lib.optionalAttrs cfg.prowlarr.enable {
           name = "Prowlarr";
           port = cfg.prowlarr.port;
@@ -36,10 +32,6 @@ in {
         (lib.optionalAttrs cfg.bazarr.enable {
           name = "Bazarr";
           port = cfg.bazarr.port;
-        })
-        (lib.optionalAttrs (cfg.bazarr.enable && cfg.bazarr.anime.enable) {
-          name = "Bazarr Anime";
-          port = cfg.bazarr.anime.port;
         })
         (lib.optionalAttrs cfg.seerr.enable {
           name = "Seerr";

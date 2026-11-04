@@ -26,14 +26,12 @@ in {
       allowedUDPPorts = [cfg.qbittorrent.bitTorrentPort];
     };
 
-    sops.secrets.arr_qbittorrent_password.restartUnits =
-      [
-        "qbittorrent.service"
-        "sonarr-downloadclients.service"
-        "radarr-downloadclients.service"
-        "prowlarr-downloadclients.service"
-      ]
-      ++ lib.optional (cfg.sonarr.enable && cfg.sonarr.anime.enable) "sonarr-anime-downloadclients.service";
+    sops.secrets.arr_qbittorrent_password.restartUnits = [
+      "qbittorrent.service"
+      "sonarr-downloadclients.service"
+      "radarr-downloadclients.service"
+      "prowlarr-downloadclients.service"
+    ];
 
     services.qbittorrent.extraArgs = lib.optional cfg.qbittorrent.confirmLegalNotice "--confirm-legal-notice";
 

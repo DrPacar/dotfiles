@@ -11,10 +11,8 @@
     "qbittorrent"
     "radarr"
     "sonarr"
-    "sonarr-anime"
     "prowlarr"
     "bazarr"
-    "bazarr-anime"
     "seerr"
   ];
 in {

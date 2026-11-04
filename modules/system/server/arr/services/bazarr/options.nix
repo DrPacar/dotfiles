@@ -73,25 +73,5 @@ in {
         description = "Maximum allowed timing offset in seconds during subtitle synchronization.";
       };
     };
-
-    anime = {
-      enable = mkOption {
-        type = types.bool;
-        default = cfg.sonarr.anime.enable;
-        description = "Enable companion Bazarr Anime instance for dedicated anime subtitle management.";
-      };
-
-      port = mkOption {
-        type = types.port;
-        default = 6768;
-        description = "Port for Bazarr Anime web interface.";
-      };
-
-      subdomain = mkOption {
-        type = types.str;
-        default = "bazarr-anime";
-        description = "Subdomain name for Bazarr Anime reverse proxy routing.";
-      };
-    };
   };
 }

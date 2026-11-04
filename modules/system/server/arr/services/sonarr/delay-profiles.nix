@@ -18,12 +18,7 @@
     }
   ];
 in {
-  config = mkIf (cfg.enable && cfg.sonarr.enable) (mkMerge [
-    {
-      nixflix.sonarr.config.delayProfiles = commonDelayProfiles;
-    }
-    (mkIf cfg.sonarr.anime.enable {
-      nixflix.sonarr-anime.config.delayProfiles = commonDelayProfiles;
-    })
-  ]);
+  config = mkIf (cfg.enable && cfg.sonarr.enable) {
+    nixflix.sonarr.config.delayProfiles = commonDelayProfiles;
+  };
 }

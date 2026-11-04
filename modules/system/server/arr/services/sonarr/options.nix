@@ -29,25 +29,5 @@ in {
       default = "localAirDate";
       description = "Set the file date on imported series episode files.";
     };
-
-    anime = {
-      enable = mkOption {
-        type = types.bool;
-        default = false;
-        description = "Enable separate Sonarr Anime instance for dedicated anime management (disabled by default in favor of unified Sonarr).";
-      };
-
-      port = mkOption {
-        type = types.port;
-        default = 8990;
-        description = "Port for Sonarr Anime web interface.";
-      };
-
-      subdomain = mkOption {
-        type = types.str;
-        default = "anime";
-        description = "Subdomain name for Sonarr Anime reverse proxy routing.";
-      };
-    };
   };
 }

@@ -15,10 +15,8 @@
         || (svc == "qbittorrent" && cfg.qbittorrent.enable)
         || (svc == "radarr" && cfg.radarr.enable)
         || (svc == "sonarr" && cfg.sonarr.enable)
-        || (svc == "sonarr-anime" && cfg.sonarr.enable && cfg.sonarr.anime.enable)
         || (svc == "prowlarr" && cfg.prowlarr.enable)
         || (svc == "bazarr" && cfg.bazarr.enable)
-        || (svc == "bazarr-anime" && cfg.bazarr.enable && cfg.bazarr.anime.enable)
         || (svc == "seerr" && cfg.seerr.enable)
     )
     cfg.backup.services;

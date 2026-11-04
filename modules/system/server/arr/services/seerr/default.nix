@@ -27,10 +27,6 @@ in {
         assertion = !cfg.sonarr.enable || config.sops.secrets ? arr_sonarr_api_key;
         message = "arr.seerr: config.sops.secrets.arr_sonarr_api_key must be defined when Sonarr is enabled.";
       }
-      {
-        assertion = !(cfg.sonarr.enable && cfg.sonarr.anime.enable) || config.sops.secrets ? arr_sonarr_anime_api_key;
-        message = "arr.seerr: config.sops.secrets.arr_sonarr_anime_api_key must be defined when Sonarr Anime is enabled.";
-      }
     ];
 
     nixflix.seerr = {
@@ -75,17 +71,6 @@ in {
         activeAnimeProfileName = mkDefault cfg.seerr.defaultAnimeProfile;
         activeAnimeDirectory = mkDefault cfg.paths.anime;
         animeSeriesType = mkDefault "anime";
-      };
-
-      # Optional dedicated Anime instance (disabled in unified mode)
-      sonarr."Sonarr Anime" = mkIf (cfg.sonarr.enable && cfg.sonarr.anime.enable) {
-        port = cfg.sonarr.anime.port;
-        apiKey = secretRef config.sops.secrets.arr_sonarr_anime_api_key.path;
-        activeProfileName = mkDefault cfg.seerr.defaultAnimeProfile;
-        activeAnimeProfileName = mkDefault cfg.seerr.defaultAnimeProfile;
-        animeSeriesType = mkDefault "anime";
-        activeDirectory = mkDefault cfg.paths.anime;
-        activeAnimeDirectory = mkDefault cfg.paths.anime;
       };
     };
 

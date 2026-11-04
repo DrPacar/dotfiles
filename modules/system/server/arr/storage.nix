@@ -66,13 +66,6 @@ in {
           user = "root";
           group = cfg.mediaGroup;
         };
-      }
-      // optionalAttrs (cfg.sonarr.enable && cfg.sonarr.anime.enable) {
-        "${cfg.paths.torrents}/sonarr-anime".d = {
-          mode = "2775";
-          user = "root";
-          group = cfg.mediaGroup;
-        };
         "${cfg.paths.anime}".d = {
           mode = "2775";
           user = "root";

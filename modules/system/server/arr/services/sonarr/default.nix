@@ -46,10 +46,6 @@ in {
         message = "arr.sonarr: config.sops.secrets.arr_sonarr_api_key must be defined in your secrets file.";
       }
       {
-        assertion = !cfg.sonarr.anime.enable || config.sops.secrets ? arr_sonarr_anime_api_key;
-        message = "arr.sonarr.anime: config.sops.secrets.arr_sonarr_anime_api_key must be defined in your secrets file when Sonarr Anime is enabled.";
-      }
-      {
         assertion = cfg.adminPasswordFile != null;
         message = "arr.sonarr: arr.adminPasswordFile must be set to configure Sonarr web authentication.";
       }
@@ -58,19 +54,13 @@ in {
     nixflix = {
       sonarr = mkSonarrInstance {
         user = "sonarr";
-        mediaDirs =
-          [cfg.paths.tv]
-          ++ lib.optional (!cfg.sonarr.anime.enable) cfg.paths.anime;
+        mediaDirs = [
+          cfg.paths.tv
+          cfg.paths.anime
+        ];
         port = cfg.sonarr.port;
         apiKeySecret = config.sops.secrets.arr_sonarr_api_key;
       };
-
-      sonarr-anime = mkIf cfg.sonarr.anime.enable (mkSonarrInstance {
-        user = "sonarr-anime";
-        mediaDirs = [cfg.paths.anime];
-        port = cfg.sonarr.anime.port;
-        apiKeySecret = config.sops.secrets.arr_sonarr_anime_api_key;
-      });
     };
   };
 }
