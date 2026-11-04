@@ -138,7 +138,7 @@ in
     domain = arrCfg.domain;
     port = arrCfg.sonarr.port;
     category = "Serien";
-    desc = "Tracking und automatische Downloads für TV-Serien.";
+    desc = "Tracking und automatische Downloads für TV-Serien und Anime.";
     color = "#94e2d5";
     icon = ''<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="15" rx="2" ry="2"/><polyline points="17 2 12 7 7 2"/></svg>'';
   })
@@ -184,7 +184,7 @@ in
     domain = arrCfg.domain;
     port = arrCfg.bazarr.port;
     category = "Untertitel";
-    desc = "Automatischer Abgleich und Download passender Untertitel.";
+    desc = "Automatischer Abgleich und Download passender Untertitel für Filme, Serien und Anime.";
     color = "#a6e3a1";
     icon = ''<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="8" y1="9" x2="16" y2="9"/><line x1="8" y1="13" x2="13" y2="13"/></svg>'';
   })
