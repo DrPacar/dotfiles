@@ -184,4 +184,10 @@
     enable = true;
     serverHost = "haven";
   };
+
+  # System-wide ProtonVPN tunnel with strict killswitch
+  networking.systemVPN = {
+    enable = true;
+    physicalInterface = "eno1";
+  };
 }
