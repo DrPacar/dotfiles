@@ -8,7 +8,6 @@
   inherit (import ../../_lib.nix) secretRef;
 in {
   config = mkIf (cfg.enable && cfg.jellyfin.enable) {
-    # Ensure default admin user is configured declaratively
     server.arr.jellyfin.users = {
       ${cfg.jellyfin.adminUser} = {
         isAdmin = true;
@@ -24,7 +23,6 @@ in {
       };
     };
 
-    # Transform server.arr.jellyfin.users into nixflix.jellyfin.users
     nixflix.jellyfin.users =
       mapAttrs (_name: u: {
         policy = {

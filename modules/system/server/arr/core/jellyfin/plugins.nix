@@ -18,8 +18,6 @@ in {
       "AniList".enable = cfg.jellyfin.plugins.animeMetadata;
     };
 
-    # Dynamic synchronization of OpenSubtitles credentials via API at runtime
-    # to avoid leaking passwords in cleartext in /nix/store
     systemd.services.jellyfin-opensubtitles-sync = mkIf cfg.jellyfin.plugins.openSubtitles {
       description = "Synchronize OpenSubtitles credentials to Jellyfin plugin";
       after = ["jellyfin.service" "jellyfin-plugins.service"];

@@ -9,17 +9,6 @@
   inherit (import ../../_lib.nix) secretRef;
   jellyfinUser = "jellyfin";
 in {
-  imports = [
-    ./options.nix
-    ./hardware.nix
-    ./encoding.nix
-    ./libraries.nix
-    ./users.nix
-    ./plugins.nix
-    ./branding.nix
-    ./system.nix
-  ];
-
   config = mkIf (cfg.enable && cfg.jellyfin.enable) {
     assertions = [
       {
@@ -35,7 +24,6 @@ in {
     sops.secrets.arr_jellyfin_admin_password.restartUnits = ["jellyfin.service"];
     sops.secrets.arr_jellyfin_api_key.restartUnits = ["jellyfin.service"];
 
-    # Synchronize admin credentials and API key directly into the SQLite database before startup
     systemd.services.jellyfin = let
       jellyfinSyncScript = pkgs.writeShellScript "jellyfin-sync-credentials" ''
         exec ${pkgs.python3}/bin/python3 ${./scripts/jellyfin-sync.py} \
@@ -53,7 +41,6 @@ in {
       };
     };
 
-    # Core Nixflix Jellyfin integration
     nixflix.jellyfin = {
       enable = true;
       user = jellyfinUser;
