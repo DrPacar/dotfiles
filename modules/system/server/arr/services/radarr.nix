@@ -64,6 +64,31 @@ in {
           password = secretRef cfg.adminPasswordFile;
         };
         apiKey = secretRef config.sops.secrets.arr_radarr_api_key.path;
+
+        mediaManagement = {
+          setPermissionsLinux = true;
+          chmodFolder = "775";
+          chownGroup = cfg.mediaGroup;
+          importExtraFiles = true;
+          extraFileExtensions = "srt";
+          copyUsingHardlinks = true;
+          deleteEmptyFolders = true;
+          rescanAfterRefresh = "always";
+          downloadPropersAndRepacks = "preferAndUpgrade";
+          autoUnmonitorPreviouslyDownloadedMovies = false;
+        };
+
+        delayProfiles = [
+          {
+            id = 1;
+            enableUsenet = false;
+            enableTorrent = true;
+            preferredProtocol = "torrent";
+            torrentDelay = 0;
+            bypassIfHighestQuality = true;
+            order = 1;
+          }
+        ];
       };
     };
   };

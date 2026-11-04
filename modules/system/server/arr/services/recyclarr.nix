@@ -24,6 +24,8 @@ in {
       # The active request profile defaults are configured in seerr.nix.
       config = {
         radarr.radarr = mkIf cfg.radarr.enable {
+          quality_definition.type = "movie";
+
           quality_profiles = mkForce [
             {
               name = "Full HD (1080p) – Deutsch";
