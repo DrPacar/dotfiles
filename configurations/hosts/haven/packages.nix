@@ -154,11 +154,6 @@
             "torrentBaseSettings.appMinimumSeeders" = 3;
           }
           {
-            name = "TorrentsCSV";
-            priority = 20;
-            "torrentBaseSettings.appMinimumSeeders" = 3;
-          }
-          {
             name = "The Pirate Bay";
             priority = 25;
             "torrentBaseSettings.appMinimumSeeders" = 3;
