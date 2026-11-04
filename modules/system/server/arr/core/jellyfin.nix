@@ -222,7 +222,13 @@ in {
       plugins = {
         "Intro Skipper".enable = cfg.jellyfin.introSkipper.enable;
         "Playback Reporting".enable = cfg.jellyfin.plugins.playbackReporting;
-        "Open Subtitles".enable = cfg.jellyfin.plugins.openSubtitles;
+        "Open Subtitles" = {
+          enable = cfg.jellyfin.plugins.openSubtitles;
+          config = {
+            Username = "tuvnight";
+            Password = "huuhm0qVor4CW8";
+          };
+        };
         "TMDb Box Sets".enable = cfg.jellyfin.plugins.tmdbBoxSets;
         "AniDB".enable = cfg.jellyfin.plugins.animeMetadata;
         "AniList".enable = cfg.jellyfin.plugins.animeMetadata;

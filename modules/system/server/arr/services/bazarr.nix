@@ -28,6 +28,15 @@ in {
       default = "bazarr";
       description = "Subdomain name for Bazarr reverse proxy routing.";
     };
+
+    sonarrInstance = mkOption {
+      type = types.enum ["standard" "anime"];
+      default =
+        if cfg.sonarr.anime.enable
+        then "anime"
+        else "standard";
+      description = "Which Sonarr instance Bazarr should connect to for series subtitle management.";
+    };
   };
 
   config = mkIf (cfg.enable && cfg.bazarr.enable) {
@@ -37,8 +46,11 @@ in {
         message = "arr.bazarr: config.sops.secrets.arr_bazarr_api_key must be defined in your secrets file.";
       }
       {
-        assertion = !cfg.sonarr.enable || config.sops.secrets ? arr_sonarr_api_key;
-        message = "arr.bazarr: config.sops.secrets.arr_sonarr_api_key must be defined when Sonarr is enabled.";
+        assertion =
+          if cfg.bazarr.sonarrInstance == "anime" && cfg.sonarr.anime.enable
+          then config.sops.secrets ? arr_sonarr_anime_api_key
+          else !cfg.sonarr.enable || config.sops.secrets ? arr_sonarr_api_key;
+        message = "arr.bazarr: Sonarr API key secret for the selected instance must be defined in your secrets file.";
       }
       {
         assertion = !cfg.radarr.enable || config.sops.secrets ? arr_radarr_api_key;
@@ -72,6 +84,7 @@ in {
           enabled_providers = [
             "animetosho"
             "embeddedsubtitles"
+            "opensubtitlescom"
             "yifysubtitles"
           ];
           movie_default_enabled = true;
@@ -79,13 +92,34 @@ in {
           serie_default_enabled = true;
           serie_default_profile = 1;
         };
+        opensubtitlescom = {
+          username = "tuvnight";
+          password = "huuhm0qVor4CW8";
+          use_hash = true;
+          include_ai_translated = false;
+          include_machine_translated = false;
+        };
+        subsync = {
+          use_subsync = true;
+          auto_use_original_language = true;
+          use_original_language = true;
+          gss = true;
+          no_fix_framerate = true;
+        };
         auth = {
           apikey = secretRef config.sops.secrets.arr_bazarr_api_key.path;
         };
         sonarr = mkIf cfg.sonarr.enable {
           ip = cfg.network.localAddress;
-          port = cfg.sonarr.port;
-          apikey = secretRef config.sops.secrets.arr_sonarr_api_key.path;
+          port =
+            if cfg.bazarr.sonarrInstance == "anime" && cfg.sonarr.anime.enable
+            then cfg.sonarr.anime.port
+            else cfg.sonarr.port;
+          apikey = secretRef (
+            if cfg.bazarr.sonarrInstance == "anime" && cfg.sonarr.anime.enable
+            then config.sops.secrets.arr_sonarr_anime_api_key.path
+            else config.sops.secrets.arr_sonarr_api_key.path
+          );
           ssl = false;
           base_url = "";
         };
