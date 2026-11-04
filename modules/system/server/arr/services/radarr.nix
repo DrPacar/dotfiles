@@ -76,6 +76,7 @@ in {
           rescanAfterRefresh = "always";
           downloadPropersAndRepacks = "preferAndUpgrade";
           autoUnmonitorPreviouslyDownloadedMovies = false;
+          fileDate = "cinemas";
         };
 
         delayProfiles = [
