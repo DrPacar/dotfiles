@@ -102,7 +102,7 @@ in {
         ExecStartPost = [
           "+${pkgs.writeShellScript "system-vpn-post-up" ''
             # Prioritize Tailscale overlay routing (100.64.0.0/10) before WireGuard default routing table 51820
-            ${pkgs.iproute2}/bin/ip rule add to 100.64.0.0/10 lookup 52 priority 5200 2>/dev/null || true
+            ${pkgs.iproute2}/bin/ip rule add to 100.64.0.0/10 lookup 52 priority 5000 2>/dev/null || true
             ${pkgs.iproute2}/bin/ip route add 100.64.0.0/10 dev tailscale0 2>/dev/null || true
             ${optionalString config.services.tailscale.enable "${pkgs.systemd}/bin/systemctl try-restart tailscaled.service 2>/dev/null || true"}
           ''}"
@@ -110,7 +110,7 @@ in {
 
         ExecStopPost = [
           "+${pkgs.writeShellScript "system-vpn-post-down" ''
-            ${pkgs.iproute2}/bin/ip rule del to 100.64.0.0/10 lookup 52 priority 5200 2>/dev/null || true
+            ${pkgs.iproute2}/bin/ip rule del to 100.64.0.0/10 lookup 52 priority 5000 2>/dev/null || true
             ${pkgs.iproute2}/bin/ip route del 100.64.0.0/10 dev tailscale0 2>/dev/null || true
             for conf in "${cfg.wgConfFile}" "${config.sops.secrets.arr_wireguard_conf.path or ""}"; do
               if [ -f "$conf" ]; then
