@@ -491,9 +491,11 @@ in {
           })
           (mkIf cfg.bazarr.enable {
             bazarr.serviceConfig.Slice = "arr.slice";
+            bazarr-setup-profile.serviceConfig.Slice = "arr.slice";
           })
           (mkIf (cfg.bazarr.enable && cfg.bazarr.anime.enable) {
             bazarr-anime.serviceConfig.Slice = "arr.slice";
+            bazarr-anime-setup-profile.serviceConfig.Slice = "arr.slice";
           })
           (mkIf cfg.seerr.enable {
             seerr.serviceConfig.Slice = "arr.slice";
