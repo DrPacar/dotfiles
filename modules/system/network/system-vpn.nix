@@ -4,7 +4,7 @@
   pkgs,
   ...
 }: let
-  inherit (lib) mkIf mkEnableOption mkOption types concatMapStringsSep;
+  inherit (lib) mkIf mkEnableOption mkOption types concatMapStringsSep optionalString;
   cfg = config.networking.systemVPN;
 in {
   options.networking.systemVPN = {
@@ -98,11 +98,20 @@ in {
           ''}"
         ];
 
-        # Inform tailscale of network interface changes upon startup
-        ExecStartPost = lib.optional config.services.tailscale.enable "+${pkgs.systemd}/bin/systemctl try-restart tailscaled.service";
+        # Inform tailscale of network interface changes upon startup and prioritize Tailscale routing
+        ExecStartPost = [
+          "+${pkgs.writeShellScript "system-vpn-post-up" ''
+            # Prioritize Tailscale overlay routing (100.64.0.0/10) before WireGuard default routing table 51820
+            ${pkgs.iproute2}/bin/ip rule add to 100.64.0.0/10 lookup 52 priority 5200 2>/dev/null || true
+            ${pkgs.iproute2}/bin/ip route add 100.64.0.0/10 dev tailscale0 2>/dev/null || true
+            ${optionalString config.services.tailscale.enable "${pkgs.systemd}/bin/systemctl try-restart tailscaled.service 2>/dev/null || true"}
+          ''}"
+        ];
 
         ExecStopPost = [
           "+${pkgs.writeShellScript "system-vpn-post-down" ''
+            ${pkgs.iproute2}/bin/ip rule del to 100.64.0.0/10 lookup 52 priority 5200 2>/dev/null || true
+            ${pkgs.iproute2}/bin/ip route del 100.64.0.0/10 dev tailscale0 2>/dev/null || true
             for conf in "${cfg.wgConfFile}" "${config.sops.secrets.arr_wireguard_conf.path or ""}"; do
               if [ -f "$conf" ]; then
                 EP=$(${pkgs.gnugrep}/bin/grep -iE "^[[:space:]]*Endpoint" "$conf" | head -n 1 | ${pkgs.gnused}/bin/sed -E 's/.*=[[:space:]]*\[?([^]:[:space:]]+).*/\1/' || true)
