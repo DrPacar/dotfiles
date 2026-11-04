@@ -37,6 +37,24 @@ in {
       description = "Suppress qBittorrent interactive legal notice warning on startup (--confirm-legal-notice).";
     };
 
+    announceToAllTrackers = mkOption {
+      type = types.bool;
+      default = true;
+      description = "Announce to all trackers in all tiers simultaneously for faster peer discovery on public torrents.";
+    };
+
+    pieceExtentAffinity = mkOption {
+      type = types.bool;
+      default = true;
+      description = "Favor downloading contiguous pieces to optimize sequential disk writes and reduce fragmentation.";
+    };
+
+    coalesceReadWrite = mkOption {
+      type = types.bool;
+      default = true;
+      description = "Batch and coalesce disk read/write operations to reduce filesystem I/O overhead.";
+    };
+
     maxActiveDownloads = mkOption {
       type = types.ints.unsigned;
       default = 3;

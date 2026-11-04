@@ -25,6 +25,9 @@ MAX_ACTIVE_DOWNLOADS=2
 MAX_ACTIVE_TORRENTS=4
 DL_LIMIT_KIB=25000
 UP_LIMIT_KIB=3000
+ANNOUNCE_TO_ALL_TRACKERS="true"
+PIECE_EXTENT_AFFINITY="true"
+COALESCE_READ_WRITE="true"
 
 # --- Argument Parsing ---
 while [[ $# -gt 0 ]]; do
@@ -79,6 +82,18 @@ while [[ $# -gt 0 ]]; do
     ;;
   --upload-limit-kib)
     UP_LIMIT_KIB="${2:-3000}"
+    shift 2
+    ;;
+  --announce-to-all-trackers)
+    ANNOUNCE_TO_ALL_TRACKERS="${2:-true}"
+    shift 2
+    ;;
+  --piece-extent-affinity)
+    PIECE_EXTENT_AFFINITY="${2:-true}"
+    shift 2
+    ;;
+  --coalesce-read-write)
+    COALESCE_READ_WRITE="${2:-true}"
     shift 2
     ;;
   *)
@@ -218,7 +233,7 @@ except Exception:
       iptables -C INPUT -p udp --dport "$PORT" -j ACCEPT 2>/dev/null || iptables -I INPUT -p udp --dport "$PORT" -j ACCEPT
 
       # Update qBittorrent preferences over WebUI API
-      PAYLOAD="json={\"listen_port\": $PORT, \"upnp\": false, \"current_network_interface\": \"wg0\", \"max_connec\": $MAX_CONNECTIONS, \"max_connec_per_torrent\": $MAX_CONNECTIONS_PER_TORRENT, \"max_active_downloads\": $MAX_ACTIVE_DOWNLOADS, \"max_active_torrents\": $MAX_ACTIVE_TORRENTS, \"dl_limit\": $((DL_LIMIT_KIB * 1024)), \"up_limit\": $((UP_LIMIT_KIB * 1024))}"
+      PAYLOAD="json={\"listen_port\": $PORT, \"upnp\": false, \"current_network_interface\": \"wg0\", \"max_connec\": $MAX_CONNECTIONS, \"max_connec_per_torrent\": $MAX_CONNECTIONS_PER_TORRENT, \"max_active_downloads\": $MAX_ACTIVE_DOWNLOADS, \"max_active_torrents\": $MAX_ACTIVE_TORRENTS, \"dl_limit\": $((DL_LIMIT_KIB * 1024)), \"up_limit\": $((UP_LIMIT_KIB * 1024)), \"announce_to_all_trackers\": $ANNOUNCE_TO_ALL_TRACKERS, \"announce_to_all_tiers\": $ANNOUNCE_TO_ALL_TRACKERS, \"enable_piece_extent_affinity\": $PIECE_EXTENT_AFFINITY, \"enable_coalesce_read_write\": $COALESCE_READ_WRITE, \"category_changed_tmm_enabled\": true}"
 
       STATUS=$(curl -s -o /dev/null -w "%{http_code}" -b "$COOKIE_FILE" -X POST "$WEBUI_URL/api/v2/app/setPreferences" --data-urlencode "$PAYLOAD" || true)
 

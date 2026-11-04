@@ -47,43 +47,50 @@ in {
       };
 
       serverConfig = {
-        BitTorrent.Session = {
-          # Bind strictly to the VPN interface so BitTorrent traffic NEVER leaves outside the VPN
-          Interface = mkIf cfg.vpn.enable "wg0";
-          InterfaceName = mkIf cfg.vpn.enable "wg0";
-          DiskCacheSize = cfg.qbittorrent.diskCacheSizeMiB;
-          # Fallback path for manually added torrents without a category
-          DefaultSavePath = "${cfg.paths.torrents}/default";
-          # Enable Automatic Torrent Management (TMM) so categories use their explicit save paths
-          DisableAutoTMMByDefault = false;
-          QueueingSystemEnabled = true;
-          # Do not let stalled/slow downloads block the active queue
-          IgnoreSlowTorrentsForQueueing = true;
-          MaxActiveDownloads = cfg.qbittorrent.maxActiveDownloads;
-          MaxActiveTorrents = cfg.qbittorrent.maxActiveTorrents;
-          MaxConnections = cfg.qbittorrent.maxConnections;
-          MaxConnectionsPerTorrent = cfg.qbittorrent.maxConnectionsPerTorrent;
-          GlobalDownloadRateLimit = cfg.qbittorrent.downloadRateLimitKiB;
-          GlobalUploadRateLimit = cfg.qbittorrent.uploadRateLimitKiB;
-          # Modern qBittorrent 4.6+/5.x seeding share limits
-          GlobalMaxRatio =
-            if cfg.qbittorrent.seedRatioLimit != null
-            then cfg.qbittorrent.seedRatioLimit
-            else -1;
-          GlobalMaxSeedingMinutes =
-            if cfg.qbittorrent.maxSeedingMinutes != null
-            then cfg.qbittorrent.maxSeedingMinutes
-            else -1;
-          ShareLimitAction =
-            if (cfg.qbittorrent.seedRatioLimit != null || cfg.qbittorrent.maxSeedingMinutes != null)
-            then "Stop"
-            else "Default";
-          # Legacy fallback for older qBittorrent versions
-          MaxRatioAction =
-            if (cfg.qbittorrent.seedRatioLimit != null || cfg.qbittorrent.maxSeedingMinutes != null)
-            then 0 # Stop
-            else -1; # Disabled
-          Port = cfg.qbittorrent.bitTorrentPort;
+        BitTorrent = {
+          Session = {
+            # Bind strictly to the VPN interface so BitTorrent traffic NEVER leaves outside the VPN
+            Interface = mkIf cfg.vpn.enable "wg0";
+            InterfaceName = mkIf cfg.vpn.enable "wg0";
+            DiskCacheSize = cfg.qbittorrent.diskCacheSizeMiB;
+            # Fallback path for manually added torrents without a category
+            DefaultSavePath = "${cfg.paths.torrents}/default";
+            # Enable Automatic Torrent Management (TMM) so categories use their explicit save paths
+            DisableAutoTMMByDefault = false;
+            QueueingSystemEnabled = true;
+            # Do not let stalled/slow downloads block the active queue
+            IgnoreSlowTorrentsForQueueing = true;
+            AnnounceToAllTrackers = cfg.qbittorrent.announceToAllTrackers;
+            AnnounceToAllTiers = cfg.qbittorrent.announceToAllTrackers;
+            PieceExtentAffinity = cfg.qbittorrent.pieceExtentAffinity;
+            CoalesceReadWrite = cfg.qbittorrent.coalesceReadWrite;
+            MaxActiveDownloads = cfg.qbittorrent.maxActiveDownloads;
+            MaxActiveTorrents = cfg.qbittorrent.maxActiveTorrents;
+            MaxConnections = cfg.qbittorrent.maxConnections;
+            MaxConnectionsPerTorrent = cfg.qbittorrent.maxConnectionsPerTorrent;
+            GlobalDownloadRateLimit = cfg.qbittorrent.downloadRateLimitKiB;
+            GlobalUploadRateLimit = cfg.qbittorrent.uploadRateLimitKiB;
+            # Modern qBittorrent 4.6+/5.x seeding share limits
+            GlobalMaxRatio =
+              if cfg.qbittorrent.seedRatioLimit != null
+              then cfg.qbittorrent.seedRatioLimit
+              else -1;
+            GlobalMaxSeedingMinutes =
+              if cfg.qbittorrent.maxSeedingMinutes != null
+              then cfg.qbittorrent.maxSeedingMinutes
+              else -1;
+            ShareLimitAction =
+              if (cfg.qbittorrent.seedRatioLimit != null || cfg.qbittorrent.maxSeedingMinutes != null)
+              then "Stop"
+              else "Default";
+            # Legacy fallback for older qBittorrent versions
+            MaxRatioAction =
+              if (cfg.qbittorrent.seedRatioLimit != null || cfg.qbittorrent.maxSeedingMinutes != null)
+              then 0 # Stop
+              else -1; # Disabled
+            Port = cfg.qbittorrent.bitTorrentPort;
+          };
+          "Session\\DisableAutoTMMTriggers\\CategorySavePathChanged" = false;
         };
 
         Network = {
@@ -102,8 +109,8 @@ in {
             AuthSubnetWhitelist = "127.0.0.1/32";
             Username = cfg.qbittorrent.username;
           };
-          # Legacy fallback for pre-4.6 qBittorrent
           Connection = {
+            ResolvePeerCountries = true;
             UPnP = false;
           };
         };

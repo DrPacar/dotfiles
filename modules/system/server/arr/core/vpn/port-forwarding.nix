@@ -59,7 +59,22 @@ in {
             --max-active-downloads "${toString cfg.qbittorrent.maxActiveDownloads}" \
             --max-active-torrents "${toString cfg.qbittorrent.maxActiveTorrents}" \
             --download-limit-kib "${toString cfg.qbittorrent.downloadRateLimitKiB}" \
-            --upload-limit-kib "${toString cfg.qbittorrent.uploadRateLimitKiB}"
+            --upload-limit-kib "${toString cfg.qbittorrent.uploadRateLimitKiB}" \
+            --announce-to-all-trackers "${
+            if cfg.qbittorrent.announceToAllTrackers
+            then "true"
+            else "false"
+          }" \
+            --piece-extent-affinity "${
+            if cfg.qbittorrent.pieceExtentAffinity
+            then "true"
+            else "false"
+          }" \
+            --coalesce-read-write "${
+            if cfg.qbittorrent.coalesceReadWrite
+            then "true"
+            else "false"
+          }"
         '';
       };
     };
