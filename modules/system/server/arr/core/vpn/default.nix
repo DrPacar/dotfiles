@@ -55,8 +55,16 @@ in {
         ];
         ExecStartPost = [
           "+${pkgs.writeShellScript "vpn-post-up-fixes" ''
-            # Ensure internal VPN gateway / DNS (10.2.0.1) is always routed directly through the tunnel
-            ${pkgs.iproute2}/bin/ip -n ${cfg.vpn.namespace} route add 10.2.0.1/32 dev ${cfg.vpn.namespace}0 2>/dev/null || true
+            # Ensure internal VPN gateway / DNS is always routed directly through the tunnel
+            ${
+              if cfg.vpn.portForwarding.gateway != null
+              then ''
+                ${pkgs.iproute2}/bin/ip -n ${cfg.vpn.namespace} route add ${cfg.vpn.portForwarding.gateway}/32 dev ${cfg.vpn.namespace}0 2>/dev/null || true
+              ''
+              else ''
+                ${pkgs.iproute2}/bin/ip -n ${cfg.vpn.namespace} route add 10.2.0.1/32 dev ${cfg.vpn.namespace}0 2>/dev/null || true
+              ''
+            }
             # Allow fallback public DNS (Cloudflare 1.1.1.1) in firewall to bypass NetShield tracker blocking
             ${pkgs.iptables}/bin/ip netns exec ${cfg.vpn.namespace} ${pkgs.iptables}/bin/iptables -I dns-fw 1 -p udp -d 1.1.1.1 -j ACCEPT 2>/dev/null || true
             ${pkgs.iptables}/bin/ip netns exec ${cfg.vpn.namespace} ${pkgs.iptables}/bin/iptables -I dns-fw 1 -p tcp -d 1.1.1.1 -j ACCEPT 2>/dev/null || true
