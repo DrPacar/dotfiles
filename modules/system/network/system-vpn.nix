@@ -98,20 +98,52 @@ in {
           ''}"
         ];
 
-        # Inform tailscale of network interface changes upon startup and prioritize Tailscale routing
+        # Prioritize local LAN and Tailscale overlay routing before WireGuard default routing
         ExecStartPost = [
           "+${pkgs.writeShellScript "system-vpn-post-up" ''
-            # Prioritize Tailscale overlay routing (100.64.0.0/10) before WireGuard default routing table 51820
-            ${pkgs.iproute2}/bin/ip rule add to 100.64.0.0/10 lookup 52 priority 5000 2>/dev/null || true
+            # Clean up auto-generated wg-quick IPv4 rules
+            while ${pkgs.iproute2}/bin/ip rule del not fwmark 0xca6c lookup 51820 2>/dev/null; do :; done
+            while ${pkgs.iproute2}/bin/ip rule del table main suppress_prefixlength 0 2>/dev/null; do :; done
+            while ${pkgs.iproute2}/bin/ip rule del to 100.64.0.0/10 lookup 52 2>/dev/null; do :; done
+            while ${pkgs.iproute2}/bin/ip rule del from 100.64.0.0/10 lookup 52 2>/dev/null; do :; done
+
+            # Clean up auto-generated wg-quick IPv6 rules
+            while ${pkgs.iproute2}/bin/ip -6 rule del not fwmark 0xca6c lookup 51820 2>/dev/null; do :; done
+            while ${pkgs.iproute2}/bin/ip -6 rule del table main suppress_prefixlength 0 2>/dev/null; do :; done
+            while ${pkgs.iproute2}/bin/ip -6 rule del to fd7a:115c:a1e0::/48 lookup 52 2>/dev/null; do :; done
+            while ${pkgs.iproute2}/bin/ip -6 rule del from fd7a:115c:a1e0::/48 lookup 52 2>/dev/null; do :; done
+
+            # Install deterministic IPv4 rules in strict order:
+            # 1. Main table routes with non-zero prefix length (LAN, host routes like VPN endpoints)
+            ${pkgs.iproute2}/bin/ip rule add lookup main suppress_prefixlength 0 priority 5000 2>/dev/null || true
+            # 2. Tailscale overlay traffic (CGNAT range 100.64.0.0/10)
+            ${pkgs.iproute2}/bin/ip rule add to 100.64.0.0/10 lookup 52 priority 5010 2>/dev/null || true
+            ${pkgs.iproute2}/bin/ip rule add from 100.64.0.0/10 lookup 52 priority 5011 2>/dev/null || true
             ${pkgs.iproute2}/bin/ip route add 100.64.0.0/10 dev tailscale0 2>/dev/null || true
-            ${optionalString config.services.tailscale.enable "${pkgs.systemd}/bin/systemctl try-restart tailscaled.service 2>/dev/null || true"}
+            # 3. WireGuard system VPN default route for all other egress
+            ${pkgs.iproute2}/bin/ip rule add not fwmark 0xca6c lookup 51820 priority 5020 2>/dev/null || true
+
+            # Install deterministic IPv6 rules:
+            ${pkgs.iproute2}/bin/ip -6 rule add lookup main suppress_prefixlength 0 priority 5000 2>/dev/null || true
+            ${pkgs.iproute2}/bin/ip -6 rule add to fd7a:115c:a1e0::/48 lookup 52 priority 5010 2>/dev/null || true
+            ${pkgs.iproute2}/bin/ip -6 rule add from fd7a:115c:a1e0::/48 lookup 52 priority 5011 2>/dev/null || true
+            ${pkgs.iproute2}/bin/ip -6 rule add not fwmark 0xca6c lookup 51820 priority 5020 2>/dev/null || true
           ''}"
         ];
 
         ExecStopPost = [
           "+${pkgs.writeShellScript "system-vpn-post-down" ''
-            ${pkgs.iproute2}/bin/ip rule del to 100.64.0.0/10 lookup 52 priority 5000 2>/dev/null || true
+            ${pkgs.iproute2}/bin/ip rule del lookup main suppress_prefixlength 0 priority 5000 2>/dev/null || true
+            ${pkgs.iproute2}/bin/ip rule del to 100.64.0.0/10 lookup 52 priority 5010 2>/dev/null || true
+            ${pkgs.iproute2}/bin/ip rule del from 100.64.0.0/10 lookup 52 priority 5011 2>/dev/null || true
+            ${pkgs.iproute2}/bin/ip rule del not fwmark 0xca6c lookup 51820 priority 5020 2>/dev/null || true
             ${pkgs.iproute2}/bin/ip route del 100.64.0.0/10 dev tailscale0 2>/dev/null || true
+
+            ${pkgs.iproute2}/bin/ip -6 rule del lookup main suppress_prefixlength 0 priority 5000 2>/dev/null || true
+            ${pkgs.iproute2}/bin/ip -6 rule del to fd7a:115c:a1e0::/48 lookup 52 priority 5010 2>/dev/null || true
+            ${pkgs.iproute2}/bin/ip -6 rule del from fd7a:115c:a1e0::/48 lookup 52 priority 5011 2>/dev/null || true
+            ${pkgs.iproute2}/bin/ip -6 rule del not fwmark 0xca6c lookup 51820 priority 5020 2>/dev/null || true
+
             for conf in "${cfg.wgConfFile}" "${config.sops.secrets.arr_wireguard_conf.path or ""}"; do
               if [ -f "$conf" ]; then
                 EP=$(${pkgs.gnugrep}/bin/grep -iE "^[[:space:]]*Endpoint" "$conf" | head -n 1 | ${pkgs.gnused}/bin/sed -E 's/.*=[[:space:]]*\[?([^]:[:space:]]+).*/\1/' || true)
