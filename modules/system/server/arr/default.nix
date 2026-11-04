@@ -500,6 +500,7 @@ in {
           })
           (mkIf (cfg.recyclarr.enable && (cfg.radarr.enable || cfg.sonarr.enable)) {
             recyclarr.serviceConfig.Slice = "arr.slice";
+            recyclarr-cleanup-profiles.serviceConfig.Slice = "arr.slice";
           })
           (mkIf cfg.flaresolverr.enable {
             flaresolverr.serviceConfig.Slice = "arr.slice";
