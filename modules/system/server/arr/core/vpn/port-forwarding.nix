@@ -46,7 +46,7 @@ in {
         MemoryHigh = "64M";
         MemoryMax = "128M";
         ExecStart = ''
-          ${pkgs.bash}/bin/bash ${../../scripts/protonvpn-port-forward.sh} \
+          ${pkgs.bash}/bin/bash ${./scripts/protonvpn-port-forward.sh} \
             --webui-host "${namespaceAddress}" \
             --webui-port "${toString cfg.qbittorrent.webuiPort}" \
             --webui-user "${cfg.qbittorrent.username}" \

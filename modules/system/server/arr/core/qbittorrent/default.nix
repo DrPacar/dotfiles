@@ -128,7 +128,7 @@ in {
         MemoryMax = "4G";
         ExecStartPre = lib.mkAfter [
           (pkgs.writeShellScript "qbittorrent-inject-password" ''
-            exec ${pkgs.python3}/bin/python3 ${../../scripts/qbittorrent-sync.py} \
+            exec ${pkgs.python3}/bin/python3 ${./scripts/qbittorrent-sync.py} \
               --pass-file "${config.sops.secrets.arr_qbittorrent_password.path}" \
               --group "${cfg.mediaGroup}"
           '')

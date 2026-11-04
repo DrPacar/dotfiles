@@ -118,7 +118,7 @@ in {
       };
 
       script = ''
-        exec ${pkgs.python3}/bin/python3 ${../../scripts/bazarr-setup.py} /var/lib/bazarr-anime/db
+        exec ${pkgs.python3}/bin/python3 ${./scripts/bazarr-setup.py} /var/lib/bazarr-anime/db
       '';
     };
 

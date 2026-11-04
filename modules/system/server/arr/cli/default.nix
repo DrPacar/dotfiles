@@ -4,7 +4,7 @@
   lib,
   ...
 }: let
-  inherit (lib) mkOption mkIf types;
+  inherit (lib) mkIf;
   cfg = config.server.arr;
 
   arrConfigJson = pkgs.writeText "arr-config.json" (builtins.toJSON {
@@ -200,15 +200,6 @@
     '';
   };
 in {
-  options.server.arr.cli = {
-    enable = mkOption {
-      type = types.bool;
-      default = true;
-      example = false;
-      description = "Whether to install the arr-status and arr CLI utilities in environment.systemPackages.";
-    };
-  };
-
   config = mkIf (cfg.enable && cfg.cli.enable) {
     environment.systemPackages = [
       arrStatusPkg

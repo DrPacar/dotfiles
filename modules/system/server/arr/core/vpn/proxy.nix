@@ -26,7 +26,7 @@ in {
         ExecStartPre = [
           "+${pkgs.writeShellScript "cleanup-stale-nat" ''
             export PATH="${lib.makeBinPath [pkgs.iptables pkgs.coreutils]}:$PATH"
-            exec ${pkgs.bash}/bin/bash ${../../scripts/cleanup-stale-nat.sh} "${namespaceAddress}" "${toString cfg.qbittorrent.webuiPort}"
+            exec ${pkgs.bash}/bin/bash ${./scripts/cleanup-stale-nat.sh} "${namespaceAddress}" "${toString cfg.qbittorrent.webuiPort}"
           ''}"
         ];
         ExecStart = "${pkgs.socat}/bin/socat TCP-LISTEN:${toString cfg.qbittorrent.webuiPort},bind=${cfg.network.bindAddress},fork,reuseaddr TCP:${namespaceAddress}:${toString cfg.qbittorrent.webuiPort}";

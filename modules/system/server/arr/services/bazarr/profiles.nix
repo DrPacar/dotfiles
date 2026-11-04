@@ -24,7 +24,7 @@ in {
       };
 
       script = ''
-        exec ${pkgs.python3}/bin/python3 ${../../scripts/bazarr-setup.py} /var/lib/bazarr/db
+        exec ${pkgs.python3}/bin/python3 ${./scripts/bazarr-setup.py} /var/lib/bazarr/db
       '';
     };
   };

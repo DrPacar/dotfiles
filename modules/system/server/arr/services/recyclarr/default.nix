@@ -34,7 +34,7 @@ in {
 
       serviceConfig = {
         ExecStartPre = lib.mkBefore [
-          "${pkgs.bash}/bin/bash ${../../scripts/wait-for-internet.sh} --service-name recyclarr --url https://github.com --timeout 60"
+          "${pkgs.bash}/bin/bash ${./scripts/wait-for-internet.sh} --service-name recyclarr --url https://github.com --timeout 60"
         ];
         Restart = "on-failure";
         RestartSec = 15;

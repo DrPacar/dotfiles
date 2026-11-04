@@ -4,20 +4,8 @@
   lib,
   ...
 }: let
-  inherit (lib) mkOption mkIf types optionalAttrs;
+  inherit (lib) mkIf optionalAttrs;
   cfg = config.server.arr;
-
-  allSupportedServices = [
-    "jellyfin"
-    "qbittorrent"
-    "radarr"
-    "sonarr"
-    "sonarr-anime"
-    "prowlarr"
-    "bazarr"
-    "bazarr-anime"
-    "seerr"
-  ];
 
   # Filter services that are selected in the backup list AND currently enabled in the arr stack
   activeBackupServices =
@@ -48,43 +36,6 @@
     text = builtins.readFile ./scripts/backup.sh;
   };
 in {
-  options.server.arr.backup = {
-    enable = mkOption {
-      type = types.bool;
-      default = true;
-      example = false;
-      description = "Whether to enable automated, lightweight backups for Arr stack databases and configurations.";
-    };
-
-    destDir = mkOption {
-      type = types.str;
-      default = "${cfg.dataDir}/backups";
-      description = "Directory where compressed backup archives are stored.";
-    };
-
-    calendar = mkOption {
-      type = types.str;
-      default = "*-*-* 03:00:00";
-      example = "daily";
-      description = "Systemd OnCalendar event expression defining backup execution frequency.";
-    };
-
-    retentionDays = mkOption {
-      type = types.ints.positive;
-      default = 14;
-      description = "Number of days to keep backup archives before automatic pruning.";
-    };
-
-    services = mkOption {
-      type = types.listOf (types.enum allSupportedServices);
-      default = allSupportedServices;
-      description = ''
-        List of services to back up.
-        Only services that are both in this list AND actually enabled in arr will be backed up.
-      '';
-    };
-  };
-
   config = mkIf (cfg.enable && cfg.backup.enable) {
     # Ensure backup directory exists with shared media group permissions
     systemd.tmpfiles.settings."10-arr-backup" = {
