@@ -24,6 +24,7 @@ conn.execute("""
 items = json.dumps([
     {"id": 1, "language": "de", "hi": "False", "forced": "False", "audio_exclude": "False", "audio_only_include": "False"},
     {"id": 2, "language": "en", "hi": "False", "forced": "False", "audio_exclude": "False", "audio_only_include": "False"},
+    {"id": 3, "language": "de", "hi": "False", "forced": "True", "audio_exclude": "False", "audio_only_include": "False"},
 ])
 
 conn.execute("""

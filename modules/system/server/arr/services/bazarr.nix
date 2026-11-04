@@ -44,10 +44,17 @@ in {
         assertion = !cfg.radarr.enable || config.sops.secrets ? arr_radarr_api_key;
         message = "arr.bazarr: config.sops.secrets.arr_radarr_api_key must be defined when Radarr is enabled.";
       }
+      {
+        assertion = !cfg.jellyfin.enable || config.sops.secrets ? arr_jellyfin_api_key;
+        message = "arr.bazarr: config.sops.secrets.arr_jellyfin_api_key must be defined when Jellyfin is enabled.";
+      }
     ];
 
     # Ensure Bazarr writes subtitle files with group-writable permissions (rw-rw-r--)
     systemd.services.bazarr.serviceConfig.UMask = "0002";
+
+    sops.secrets.arr_jellyfin_api_key.restartUnits =
+      mkIf cfg.jellyfin.enable ["bazarr.service"];
 
     services.bazarr = {
       enable = true;
@@ -61,12 +68,11 @@ in {
           port = cfg.bazarr.port;
           use_sonarr = cfg.sonarr.enable;
           use_radarr = cfg.radarr.enable;
+          use_jellyfin = cfg.jellyfin.enable;
           enabled_providers = [
             "animetosho"
             "embeddedsubtitles"
             "yifysubtitles"
-            "subdl"
-            "subsource"
           ];
           movie_default_enabled = true;
           movie_default_profile = 1;
@@ -89,6 +95,20 @@ in {
           apikey = secretRef config.sops.secrets.arr_radarr_api_key.path;
           ssl = false;
           base_url = "";
+        };
+        jellyfin = mkIf cfg.jellyfin.enable {
+          ip = cfg.network.localAddress;
+          port = cfg.jellyfin.port;
+          ssl = false;
+          url = "http://${cfg.network.localAddress}:${toString cfg.jellyfin.port}";
+          apikey = secretRef config.sops.secrets.arr_jellyfin_api_key.path;
+          update_movie_library = true;
+          update_series_library = true;
+          movie_library = ["Movies"];
+          movie_library_ids = ["f137a2dd21bbc1b99aa5c0f6bf02a805"];
+          series_library = ["Anime" "Shows"];
+          series_library_ids = ["0c41907140d802bb58430fed7e2cd79e" "a656b907eb3a73532e40e44b968d0225"];
+          refresh_method = "immediate";
         };
       };
     };
