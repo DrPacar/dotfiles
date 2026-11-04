@@ -499,6 +499,13 @@ in {
           })
           (mkIf cfg.seerr.enable {
             seerr.serviceConfig.Slice = "arr.slice";
+            seerr-env.serviceConfig.Slice = "arr.slice";
+            seerr-jellyfin.serviceConfig.Slice = "arr.slice";
+            seerr-libraries.serviceConfig.Slice = "arr.slice";
+            seerr-radarr.serviceConfig.Slice = "arr.slice";
+            seerr-setup.serviceConfig.Slice = "arr.slice";
+            seerr-sonarr.serviceConfig.Slice = "arr.slice";
+            seerr-user-settings.serviceConfig.Slice = "arr.slice";
           })
           (mkIf (cfg.recyclarr.enable && (cfg.radarr.enable || cfg.sonarr.enable)) {
             recyclarr.serviceConfig.Slice = "arr.slice";

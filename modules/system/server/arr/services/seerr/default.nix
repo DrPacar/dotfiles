@@ -1,33 +1,12 @@
 {
   config,
   lib,
-  pkgs,
   ...
 }: let
-  inherit (lib) mkOption mkIf mkDefault types;
+  inherit (lib) mkIf mkDefault;
   cfg = config.server.arr;
-  inherit (import ../_lib.nix) secretRef;
+  inherit (import ../../_lib.nix) secretRef;
 in {
-  options.server.arr.seerr = {
-    enable = mkOption {
-      type = types.bool;
-      default = true;
-      description = "Enable Seerr (Jellyseerr) media request interface.";
-    };
-
-    port = mkOption {
-      type = types.port;
-      default = 5055;
-      description = "Port for Seerr web interface.";
-    };
-
-    subdomain = mkOption {
-      type = types.str;
-      default = "seerr";
-      description = "Subdomain name for Seerr reverse proxy routing.";
-    };
-  };
-
   config = mkIf (cfg.enable && cfg.seerr.enable) {
     warnings = lib.optional (!cfg.jellyfin.enable) "arr.seerr: Jellyseerr uses Jellyfin as its authentication backend. If local Jellyfin is disabled, ensure you connect an external Jellyfin server in the Seerr setup wizard.";
 
@@ -66,17 +45,15 @@ in {
       };
 
       settings.users = {
-        # REQUEST (32) + REQUEST_ADVANCED (16) + AUTO_APPROVE_MOVIE (64) + AUTO_APPROVE_TV (8) = 120
-        # Automatically approves 1080p movie & TV requests within quota; 4K remains approval-required.
-        defaultPermissions = 120;
+        defaultPermissions = cfg.seerr.defaultPermissions;
         defaultQuotas = {
           movie = {
-            quotaLimit = 3;
-            quotaDays = 7;
+            quotaLimit = cfg.seerr.defaultQuotas.movie.quotaLimit;
+            quotaDays = cfg.seerr.defaultQuotas.movie.quotaDays;
           };
           tv = {
-            quotaLimit = 1;
-            quotaDays = 7;
+            quotaLimit = cfg.seerr.defaultQuotas.tv.quotaLimit;
+            quotaDays = cfg.seerr.defaultQuotas.tv.quotaDays;
           };
         };
       };
@@ -85,7 +62,7 @@ in {
       radarr.Radarr = mkIf cfg.radarr.enable {
         port = cfg.radarr.port;
         apiKey = secretRef config.sops.secrets.arr_radarr_api_key.path;
-        activeProfileName = mkDefault "Full HD (1080p) – Englisch";
+        activeProfileName = mkDefault cfg.seerr.defaultMovieProfile;
         activeDirectory = mkDefault cfg.paths.movies;
       };
 
@@ -93,9 +70,9 @@ in {
       sonarr.Sonarr = mkIf cfg.sonarr.enable {
         port = cfg.sonarr.port;
         apiKey = secretRef config.sops.secrets.arr_sonarr_api_key.path;
-        activeProfileName = mkDefault "Full HD (1080p) – Englisch";
+        activeProfileName = mkDefault cfg.seerr.defaultSeriesProfile;
         activeDirectory = mkDefault cfg.paths.tv;
-        activeAnimeProfileName = mkDefault "Anime (1080p) – Japanisch (Sub)";
+        activeAnimeProfileName = mkDefault cfg.seerr.defaultAnimeProfile;
         activeAnimeDirectory = mkDefault cfg.paths.anime;
         animeSeriesType = mkDefault "anime";
       };
@@ -104,47 +81,22 @@ in {
       sonarr."Sonarr Anime" = mkIf (cfg.sonarr.enable && cfg.sonarr.anime.enable) {
         port = cfg.sonarr.anime.port;
         apiKey = secretRef config.sops.secrets.arr_sonarr_anime_api_key.path;
-        activeProfileName = mkDefault "Anime (1080p) – Japanisch (Sub)";
-        activeAnimeProfileName = mkDefault "Anime (1080p) – Japanisch (Sub)";
+        activeProfileName = mkDefault cfg.seerr.defaultAnimeProfile;
+        activeAnimeProfileName = mkDefault cfg.seerr.defaultAnimeProfile;
         animeSeriesType = mkDefault "anime";
         activeDirectory = mkDefault cfg.paths.anime;
         activeAnimeDirectory = mkDefault cfg.paths.anime;
       };
     };
 
-    # Declarative ntfy webhook configuration for Jellyseerr
-    systemd.services.seerr-notifications = mkIf (config.server.notify.enable or false) {
-      description = "Configure Seerr ntfy webhook notifications";
-      after = ["seerr-setup.service" "seerr.service"];
-      requires = ["seerr-setup.service" "seerr.service"];
-      wantedBy = ["multi-user.target"];
-
+    systemd.services.seerr = {
       serviceConfig = {
-        Type = "oneshot";
-        RemainAfterExit = true;
+        Slice = "arr.slice";
+        MemoryHigh = "768M";
+        MemoryMax = "1200M";
+        Restart = "on-failure";
+        RestartSec = 15;
       };
-
-      script = let
-        notifyPort = toString (config.server.notify.port or 2586);
-        notifyTopic = config.server.notify.topic or "media";
-        seerrDomain =
-          if cfg.domain != null
-          then "https://${cfg.seerr.subdomain}.${cfg.domain}"
-          else "http://${config.networking.hostName}:${toString cfg.seerr.port}";
-      in ''
-        for i in $(seq 1 30); do
-          if [ -f /run/seerr/api-key-header ]; then
-            break
-          fi
-          sleep 1
-        done
-
-        ${pkgs.curl}/bin/curl -s -X POST \
-          --header @"/run/seerr/api-key-header" \
-          -H "Content-Type: application/json" \
-          -d '{"enabled":true,"types":130,"options":{"webhookUrl":"http://127.0.0.1:${notifyPort}","jsonPayload":"{\"topic\":\"${notifyTopic}\",\"title\":\"🍿 Jellyseerr: {{subject}}\",\"message\":\"{{message}}\",\"click\":\"${seerrDomain}/requests\",\"actions\":[{\"action\":\"view\",\"label\":\"In Jellyseerr öffnen\",\"url\":\"${seerrDomain}/requests\"}]}"}}' \
-          "http://127.0.0.1:${toString cfg.seerr.port}/api/v1/settings/notifications/webhook"
-      '';
     };
   };
 }
