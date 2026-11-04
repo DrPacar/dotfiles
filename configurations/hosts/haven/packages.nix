@@ -78,6 +78,14 @@
       jellyfin = {
         hardwareAcceleration = "vaapi";
         device = "/dev/dri/renderD128";
+
+        users.Gollum = {
+          isAdmin = false;
+          mutable = true;
+          audioLanguage = "ger";
+          subtitleLanguage = "ger";
+          subtitleMode = "OnlyForced";
+        };
       };
 
       qbittorrent = {

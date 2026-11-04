@@ -37,7 +37,10 @@ in {
           enableAllFolders = true;
           enableAllDevices = true;
         };
-        password = mkIf (u.passwordSecret != null) (secretRef u.passwordSecret);
+        password =
+          if (u.passwordSecret != null)
+          then (secretRef u.passwordSecret)
+          else "";
         mutable = u.mutable;
         configuration = {
           displayCollectionsView = u.displayCollectionsView;
