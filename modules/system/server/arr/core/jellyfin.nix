@@ -63,6 +63,32 @@ in {
       };
     };
 
+    plugins = {
+      playbackReporting = mkOption {
+        type = types.bool;
+        default = true;
+        description = "Enable Playback Reporting plugin for watch statistics and dashboards.";
+      };
+
+      openSubtitles = mkOption {
+        type = types.bool;
+        default = true;
+        description = "Enable OpenSubtitles plugin for on-the-fly subtitle searches in the player.";
+      };
+
+      tmdbBoxSets = mkOption {
+        type = types.bool;
+        default = true;
+        description = "Enable TMDb Box Sets plugin to automatically group movie collections.";
+      };
+
+      animeMetadata = mkOption {
+        type = types.bool;
+        default = true;
+        description = "Enable AniDB and AniList plugins for rich anime metadata.";
+      };
+    };
+
     transcodingTempPath = mkOption {
       type = types.str;
       default = "/dev/shm/jellyfin-transcodes";
@@ -156,6 +182,11 @@ in {
 
       plugins = {
         "Intro Skipper".enable = cfg.jellyfin.introSkipper.enable;
+        "Playback Reporting".enable = cfg.jellyfin.plugins.playbackReporting;
+        "Open Subtitles".enable = cfg.jellyfin.plugins.openSubtitles;
+        "TMDb Box Sets".enable = cfg.jellyfin.plugins.tmdbBoxSets;
+        "AniDB".enable = cfg.jellyfin.plugins.animeMetadata;
+        "AniList".enable = cfg.jellyfin.plugins.animeMetadata;
       };
 
       libraries = {
