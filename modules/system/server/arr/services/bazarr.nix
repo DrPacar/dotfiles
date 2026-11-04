@@ -27,8 +27,8 @@
     );
 
   commonOpenSubtitles = {
-    username = "tuvnight";
-    password = "huuhm0qVor4CW8";
+    username = secretRef config.sops.secrets.arr_opensubtitles_username.path;
+    password = secretRef config.sops.secrets.arr_opensubtitles_password.path;
     use_hash = true;
     include_ai_translated = false;
     include_machine_translated = false;
@@ -152,6 +152,14 @@ in {
       {
         assertion = !cfg.jellyfin.enable || config.sops.secrets ? arr_jellyfin_api_key;
         message = "arr.bazarr: config.sops.secrets.arr_jellyfin_api_key must be defined when Jellyfin is enabled.";
+      }
+      {
+        assertion = !cfg.bazarr.enable || config.sops.secrets ? arr_opensubtitles_username;
+        message = "arr.bazarr: config.sops.secrets.arr_opensubtitles_username must be defined in your secrets file.";
+      }
+      {
+        assertion = !cfg.bazarr.enable || config.sops.secrets ? arr_opensubtitles_password;
+        message = "arr.bazarr: config.sops.secrets.arr_opensubtitles_password must be defined in your secrets file.";
       }
     ];
 

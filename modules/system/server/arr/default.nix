@@ -297,6 +297,8 @@ in {
             ++ lib.optional cfg.radarr.enable "arr_radarr_api_key"
             ++ lib.optional cfg.prowlarr.enable "arr_prowlarr_api_key"
             ++ lib.optional cfg.bazarr.enable "arr_bazarr_api_key"
+            ++ lib.optional (cfg.bazarr.enable || cfg.jellyfin.enable) "arr_opensubtitles_username"
+            ++ lib.optional (cfg.bazarr.enable || cfg.jellyfin.enable) "arr_opensubtitles_password"
             ++ lib.optional cfg.seerr.enable "arr_seerr_api_key"
             ++ lib.optional cfg.jellyfin.enable "arr_jellyfin_api_key"
             ++ lib.optional cfg.jellyfin.enable "arr_jellyfin_admin_password"
@@ -347,6 +349,14 @@ in {
           arr_bazarr_api_key.restartUnits =
             lib.optional cfg.bazarr.enable "bazarr.service"
             ++ lib.optional (cfg.bazarr.enable && cfg.bazarr.anime.enable) "bazarr-anime.service";
+        }
+        // lib.optionalAttrs (cfg.bazarr.enable || cfg.jellyfin.enable) {
+          arr_opensubtitles_password.restartUnits =
+            lib.optional cfg.bazarr.enable "bazarr.service"
+            ++ lib.optional cfg.jellyfin.enable "jellyfin-opensubtitles-sync.service";
+          arr_opensubtitles_username.restartUnits =
+            lib.optional cfg.bazarr.enable "bazarr.service"
+            ++ lib.optional cfg.jellyfin.enable "jellyfin-opensubtitles-sync.service";
         }
         // lib.optionalAttrs cfg.jellyfin.enable {
           arr_jellyfin_admin_password.restartUnits =
