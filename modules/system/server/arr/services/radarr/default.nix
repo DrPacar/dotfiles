@@ -3,33 +3,13 @@
   lib,
   ...
 }: let
-  inherit (lib) mkOption mkIf types;
+  inherit (lib) mkIf;
   cfg = config.server.arr;
-  inherit (import ../_lib.nix) secretRef;
+  inherit (import ../../_lib.nix) secretRef;
 
   radarrUser = "radarr";
   allowedHosts = lib.concatStringsSep "," cfg.network.allowedHosts;
 in {
-  options.server.arr.radarr = {
-    enable = mkOption {
-      type = types.bool;
-      default = true;
-      description = "Enable Radarr movie manager.";
-    };
-
-    port = mkOption {
-      type = types.port;
-      default = 7878;
-      description = "Port for Radarr web interface.";
-    };
-
-    subdomain = mkOption {
-      type = types.str;
-      default = "radarr";
-      description = "Subdomain name for Radarr reverse proxy routing.";
-    };
-  };
-
   config = mkIf (cfg.enable && cfg.radarr.enable) {
     assertions = [
       {
@@ -64,32 +44,6 @@ in {
           password = secretRef cfg.adminPasswordFile;
         };
         apiKey = secretRef config.sops.secrets.arr_radarr_api_key.path;
-
-        mediaManagement = {
-          setPermissionsLinux = true;
-          chmodFolder = "775";
-          chownGroup = cfg.mediaGroup;
-          importExtraFiles = true;
-          extraFileExtensions = "srt";
-          copyUsingHardlinks = true;
-          deleteEmptyFolders = true;
-          rescanAfterRefresh = "always";
-          downloadPropersAndRepacks = "preferAndUpgrade";
-          autoUnmonitorPreviouslyDownloadedMovies = false;
-          fileDate = "cinemas";
-        };
-
-        delayProfiles = [
-          {
-            id = 1;
-            enableUsenet = false;
-            enableTorrent = true;
-            preferredProtocol = "torrent";
-            torrentDelay = 0;
-            bypassIfHighestQuality = true;
-            order = 1;
-          }
-        ];
       };
     };
   };
