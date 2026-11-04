@@ -89,6 +89,20 @@ in {
       };
     };
 
+    theme = {
+      enable = mkOption {
+        type = types.bool;
+        default = true;
+        description = "Enable modern custom CSS theme for Jellyfin.";
+      };
+
+      customCss = mkOption {
+        type = types.lines;
+        default = ''@import url("https://cdn.jsdelivr.net/gh/prayag17/JellyFlix@master/default.css");'';
+        description = "Custom CSS to inject into Jellyfin web branding.";
+      };
+    };
+
     transcodingTempPath = mkOption {
       type = types.str;
       default = "/dev/shm/jellyfin-transcodes";
@@ -187,6 +201,10 @@ in {
         "TMDb Box Sets".enable = cfg.jellyfin.plugins.tmdbBoxSets;
         "AniDB".enable = cfg.jellyfin.plugins.animeMetadata;
         "AniList".enable = cfg.jellyfin.plugins.animeMetadata;
+      };
+
+      branding = {
+        customCss = mkIf cfg.jellyfin.theme.enable cfg.jellyfin.theme.customCss;
       };
 
       libraries = {
