@@ -4,110 +4,10 @@
   lib,
   ...
 }: let
-  inherit (lib) mkOption mkIf mkForce types;
+  inherit (lib) mkIf mkForce;
   cfg = config.server.arr;
-  inherit (import ../_lib.nix) secretRef;
+  inherit (import ../../_lib.nix) secretRef;
 in {
-  options.server.arr.qbittorrent = {
-    enable = mkOption {
-      type = types.bool;
-      default = true;
-      description = "Enable qBittorrent download client.";
-    };
-
-    webuiPort = mkOption {
-      type = types.port;
-      default = 8080;
-      description = "Port for qBittorrent WebUI.";
-    };
-
-    subdomain = mkOption {
-      type = types.str;
-      default = "qbit";
-      description = "Subdomain name for qBittorrent WebUI reverse proxy routing.";
-    };
-
-    username = mkOption {
-      type = types.str;
-      default = cfg.adminUser;
-      description = "Username for qBittorrent WebUI authentication.";
-    };
-
-    maxActiveDownloads = mkOption {
-      type = types.ints.unsigned;
-      default = 3;
-      description = "Maximum number of simultaneous active downloads (prevents network and disk queue congestion).";
-    };
-
-    maxActiveTorrents = mkOption {
-      type = types.ints.unsigned;
-      default = 5;
-      description = "Maximum number of active torrents including downloads and uploads.";
-    };
-
-    maxConnections = mkOption {
-      type = types.ints.unsigned;
-      default = 200;
-      description = "Global maximum number of simultaneous peer connections (prevents Wi-Fi and router NAT table exhaustion).";
-    };
-
-    maxConnectionsPerTorrent = mkOption {
-      type = types.ints.unsigned;
-      default = 50;
-      description = "Maximum number of simultaneous connections per torrent.";
-    };
-
-    downloadRateLimitKiB = mkOption {
-      type = types.ints.unsigned;
-      default = 0;
-      description = "Global maximum download rate limit in KiB/s (0 for unlimited).";
-    };
-
-    uploadRateLimitKiB = mkOption {
-      type = types.ints.unsigned;
-      default = 0;
-      description = "Global maximum upload rate limit in KiB/s (0 for unlimited).";
-    };
-
-    diskCacheSizeMiB = mkOption {
-      type = types.ints.unsigned;
-      default = 512;
-      description = "Disk write cache limit in MiB for qBittorrent/libtorrent (prevents excessive RAM consumption).";
-    };
-
-    seedRatioLimit = mkOption {
-      type = types.nullOr types.numbers.nonnegative;
-      default = null;
-      example = 0.0;
-      description = ''
-        Maximum share ratio before stopping seeding.
-        Defaults to null (unlimited seeding). Set to 0.0 to stop seeding immediately on completion.
-      '';
-    };
-
-    maxSeedingMinutes = mkOption {
-      type = types.nullOr types.ints.unsigned;
-      default = null;
-      example = 60;
-      description = ''
-        Maximum seeding time in minutes before stopping seeding.
-        Defaults to null (unlimited seeding time).
-      '';
-    };
-
-    openBitTorrentPort = mkOption {
-      type = types.bool;
-      default = false;
-      description = "Whether to open incoming BitTorrent listen port in the host firewall (only applies when VPN is disabled).";
-    };
-
-    bitTorrentPort = mkOption {
-      type = types.port;
-      default = 6881;
-      description = "Incoming BitTorrent peer listening port (inside the VPN namespace if VPN is enabled).";
-    };
-  };
-
   config = mkIf (cfg.enable && cfg.qbittorrent.enable) {
     assertions = [
       {
@@ -134,6 +34,8 @@ in {
         "prowlarr-downloadclients.service"
       ]
       ++ lib.optional (cfg.sonarr.enable && cfg.sonarr.anime.enable) "sonarr-anime-downloadclients.service";
+
+    services.qbittorrent.extraArgs = lib.optional cfg.qbittorrent.confirmLegalNotice "--confirm-legal-notice";
 
     nixflix.torrentClients.qbittorrent = {
       enable = true;
@@ -212,13 +114,14 @@ in {
     # Keeps plaintext secrets strictly out of the world-readable nix store.
     systemd.services.qbittorrent = {
       serviceConfig = {
+        Slice = "arr.slice";
         Restart = "on-failure";
         RestartSec = 5;
         MemoryHigh = "2G";
         MemoryMax = "4G";
         ExecStartPre = lib.mkAfter [
           (pkgs.writeShellScript "qbittorrent-inject-password" ''
-            exec ${pkgs.python3}/bin/python3 ${../scripts/qbittorrent-sync.py} \
+            exec ${pkgs.python3}/bin/python3 ${../../scripts/qbittorrent-sync.py} \
               --pass-file "${config.sops.secrets.arr_qbittorrent_password.path}" \
               --group "${cfg.mediaGroup}"
           '')

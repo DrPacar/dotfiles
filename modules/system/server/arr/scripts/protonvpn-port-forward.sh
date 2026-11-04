@@ -232,7 +232,7 @@ except Exception:
       OLD_PORT="$PORT"
     fi
   else
-    log_warn "Failed to obtain port from NAT-PMP gateway $GATEWAY. Output: $(echo "$combined" | tr '\n' ' ')"
+    log_warn "Failed to obtain port from NAT-PMP gateway $GATEWAY. Output: $(echo "${out:-no response}" | tr '\n' ' ')"
     # Re-detect gateway in case network shifted
     GATEWAY=$(detect_vpn_gateway)
     sleep 10 &
