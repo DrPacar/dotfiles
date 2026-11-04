@@ -72,8 +72,8 @@ in {
 
     # Ensure systemd service handles pre/post routing cleanly
     systemd.services."wg-quick-${cfg.interfaceName}" = {
-      wants = ["network-online.target"];
-      after = ["network-online.target"];
+      wants = ["network-online.target"] ++ lib.optional config.services.tailscale.enable "tailscaled.service";
+      after = ["network-online.target"] ++ lib.optional config.services.tailscale.enable "tailscaled.service";
 
       serviceConfig = {
         Restart = "on-failure";
@@ -83,18 +83,34 @@ in {
         ExecStartPre = [
           "+${pkgs.writeShellScript "system-vpn-pre-up" ''
             set -euo pipefail
-            GW=$(${pkgs.iproute2}/bin/ip route show default dev ${cfg.physicalInterface} 2>/dev/null | awk '/via/ {print $3}' | head -n 1 || true)
+            GW=$(${pkgs.iproute2}/bin/ip route show default dev ${cfg.physicalInterface} 2>/dev/null | ${pkgs.gawk}/bin/awk '/via/ {print $3}' | head -n 1 || true)
             if [ -n "$GW" ]; then
               # Route VPN server endpoints directly through physical gateway so WireGuard handshakes never loop or nest
               for conf in "${cfg.wgConfFile}" "${config.sops.secrets.arr_wireguard_conf.path or ""}"; do
                 if [ -f "$conf" ]; then
-                  EP=$(grep -iE "^[[:space:]]*Endpoint" "$conf" | head -n 1 | sed -E 's/.*=[[:space:]]*\[?([^]:[:space:]]+).*/\1/' || true)
+                  EP=$(${pkgs.gnugrep}/bin/grep -iE "^[[:space:]]*Endpoint" "$conf" | head -n 1 | ${pkgs.gnused}/bin/sed -E 's/.*=[[:space:]]*\[?([^]:[:space:]]+).*/\1/' || true)
                   if [ -n "$EP" ]; then
                     ${pkgs.iproute2}/bin/ip route add "$EP/32" via "$GW" dev "${cfg.physicalInterface}" 2>/dev/null || true
                   fi
                 fi
               done
             fi
+          ''}"
+        ];
+
+        # Inform tailscale of network interface changes upon startup
+        ExecStartPost = lib.optional config.services.tailscale.enable "+${pkgs.systemd}/bin/systemctl try-restart tailscaled.service";
+
+        ExecStopPost = [
+          "+${pkgs.writeShellScript "system-vpn-post-down" ''
+            for conf in "${cfg.wgConfFile}" "${config.sops.secrets.arr_wireguard_conf.path or ""}"; do
+              if [ -f "$conf" ]; then
+                EP=$(${pkgs.gnugrep}/bin/grep -iE "^[[:space:]]*Endpoint" "$conf" | head -n 1 | ${pkgs.gnused}/bin/sed -E 's/.*=[[:space:]]*\[?([^]:[:space:]]+).*/\1/' || true)
+                if [ -n "$EP" ]; then
+                  ${pkgs.iproute2}/bin/ip route del "$EP/32" 2>/dev/null || true
+                fi
+              fi
+            done
           ''}"
         ];
       };
