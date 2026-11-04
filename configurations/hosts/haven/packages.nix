@@ -151,12 +151,6 @@
             "torrentBaseSettings.appMinimumSeeders" = 3;
           }
           {
-            name = "kickasstorrents.to";
-            priority = 25;
-            tags = ["flaresolverr"];
-            "torrentBaseSettings.appMinimumSeeders" = 3;
-          }
-          {
             name = "The Pirate Bay";
             priority = 25;
             "torrentBaseSettings.appMinimumSeeders" = 3;

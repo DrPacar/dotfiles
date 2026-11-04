@@ -190,8 +190,33 @@ in {
       apiKey = secretRef config.sops.secrets.arr_jellyfin_api_key.path;
 
       users.${cfg.jellyfin.adminUser} = {
-        policy.isAdministrator = true;
+        policy = {
+          isAdministrator = true;
+          enableCollectionManagement = true;
+        };
         password = secretRef config.sops.secrets.arr_jellyfin_admin_password.path;
+        mutable = false;
+        configuration = {
+          displayCollectionsView = true;
+          audioLanguagePreference = "ger";
+          playDefaultAudioTrack = false;
+          subtitleLanguagePreference = "ger";
+          subtitleMode = "OnlyForced";
+          rememberAudioSelections = true;
+          rememberSubtitleSelections = true;
+          enableNextEpisodeAutoPlay = true;
+        };
+      };
+
+      system = {
+        enableGroupingMoviesIntoCollections = true;
+        trickplayOptions = {
+          enableHwAcceleration = cfg.jellyfin.hardwareAcceleration != "none";
+          enableHwEncoding = cfg.jellyfin.hardwareAcceleration != "none";
+          processThreads = 2;
+          processPriority = "BelowNormal";
+          scanBehavior = "NonBlocking";
+        };
       };
 
       plugins = {
@@ -210,20 +235,17 @@ in {
       libraries = {
         Movies = {
           collectionType = "movies";
-          paths = [cfg.paths.movies];
+          paths = lib.mkForce [cfg.paths.movies];
           enableRealtimeMonitor = cfg.jellyfin.realtimeMonitor;
         };
         Shows = {
-          enableRealtimeMonitor = cfg.jellyfin.realtimeMonitor;
-        };
-        Series = {
           collectionType = "tvshows";
-          paths = [cfg.paths.tv];
+          paths = lib.mkForce [cfg.paths.tv];
           enableRealtimeMonitor = cfg.jellyfin.realtimeMonitor;
         };
         Anime = {
           collectionType = "tvshows";
-          paths = [cfg.paths.anime];
+          paths = lib.mkForce [cfg.paths.anime];
           enableRealtimeMonitor = cfg.jellyfin.realtimeMonitor;
         };
       };
