@@ -190,10 +190,8 @@
   };
 
   # System-wide ProtonVPN tunnel with strict killswitch
-  # Disabled temporarily to prevent IP/session collision with arr.vpn (both used 154.47.19.212 @ 10.2.0.2).
-  # Can be re-enabled as soon as system_wireguard_conf points to a separate ProtonVPN server.
   networking.systemVPN = {
-    enable = false;
+    enable = true;
     physicalInterface = "eno1";
   };
 }
