@@ -62,14 +62,16 @@
 
   # 2. Main Landing Page Virtual Host for local plaintext HTTP access (localhost, 127.0.0.1, lighthouse, haven.local, IP)
   plainDashboardVhost = let
-    dashboardHostsList =
+    dashboardHostsList = lib.unique (
       [
         (mkHttpHost "localhost")
         (mkHttpHost "127.0.0.1")
         (mkHttpHost hostName)
         (mkHttpHost "${hostName}.local")
+        (mkHttpHost "192.168.0.2")
       ]
-      ++ lib.optional (cfg.adguard.lanIp != null) (mkHttpHost cfg.adguard.lanIp);
+      ++ lib.optional (cfg.adguard.lanIp != null) (mkHttpHost cfg.adguard.lanIp)
+    );
     vhostKey = lib.concatStringsSep ", " dashboardHostsList;
   in {
     "${vhostKey}" = {

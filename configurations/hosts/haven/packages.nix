@@ -29,7 +29,7 @@
 
     adguard = {
       enable = true;
-      lanIp = "192.168.0.2";
+      lanIp = "100.64.0.1";
     };
 
     vaultwarden = {
