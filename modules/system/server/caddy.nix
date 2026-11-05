@@ -53,6 +53,7 @@
         reverse_proxy 127.0.0.1:${toString s.port} {
           header_up Host {host}
           header_up X-Real-IP {remote_host}
+          flush_interval -1
         }
       '';
     };
@@ -171,6 +172,7 @@
         reverse_proxy 127.0.0.1:${toString s.port} {
           header_up Host {host}
           header_up X-Real-IP {remote_host}
+          flush_interval -1
         }
       '';
     };
@@ -247,6 +249,9 @@ in {
       enable = true;
       globalConfig = ''
         auto_https off
+        servers {
+          protocols h1 h2
+        }
       '';
       virtualHosts = mkMerge [
         plainDashboardVhost
