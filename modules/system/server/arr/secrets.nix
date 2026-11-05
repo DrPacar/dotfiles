@@ -20,6 +20,7 @@ in {
           ++ lib.optional (cfg.bazarr.enable || cfg.jellyfin.enable) "arr_opensubtitles_password"
           ++ lib.optional cfg.seerr.enable "arr_seerr_api_key"
           ++ lib.optional cfg.jellyfin.enable "arr_jellyfin_api_key"
+          ++ ["services_password"]
           ++ lib.optional cfg.jellyfin.enable "arr_jellyfin_admin_password"
           ++ lib.optional cfg.qbittorrent.enable "arr_qbittorrent_password"
         ) (_name: {
@@ -76,6 +77,14 @@ in {
           ++ lib.optional cfg.radarr.enable "radarr-config.service"
           ++ lib.optional cfg.prowlarr.enable "prowlarr-config.service";
       })
+      {
+        services_password.restartUnits =
+          lib.optional cfg.jellyfin.enable "jellyfin.service"
+          ++ lib.optional cfg.qbittorrent.enable "qbittorrent.service"
+          ++ lib.optional cfg.sonarr.enable "sonarr-config.service"
+          ++ lib.optional cfg.radarr.enable "radarr-config.service"
+          ++ lib.optional cfg.prowlarr.enable "prowlarr-config.service";
+      }
     ];
   };
 }

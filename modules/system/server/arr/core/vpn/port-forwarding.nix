@@ -50,7 +50,7 @@ in {
             --webui-host "${namespaceAddress}" \
             --webui-port "${toString cfg.qbittorrent.webuiPort}" \
             --webui-user "${cfg.qbittorrent.username}" \
-            --pass-file "${config.sops.secrets.arr_qbittorrent_password.path}" \
+            --pass-file "${config.sops.secrets.services_password.path}" \
             ${lib.optionalString (cfg.vpn.portForwarding.gateway != null) "--gateway \"${cfg.vpn.portForwarding.gateway}\""} \
             --lease-duration "${toString cfg.vpn.portForwarding.leaseDuration}" \
             --refresh-interval "${toString cfg.vpn.portForwarding.refreshInterval}" \

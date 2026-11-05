@@ -12,8 +12,8 @@ in {
   config = mkIf (cfg.enable && cfg.jellyfin.enable) {
     assertions = [
       {
-        assertion = config.sops.secrets ? arr_jellyfin_admin_password;
-        message = "arr.jellyfin: config.sops.secrets.arr_jellyfin_admin_password must be defined in your secrets file.";
+        assertion = config.sops.secrets ? services_password;
+        message = "arr.jellyfin: config.sops.secrets.services_password must be defined in your secrets file.";
       }
       {
         assertion = config.sops.secrets ? arr_jellyfin_api_key;
@@ -21,13 +21,13 @@ in {
       }
     ];
 
-    sops.secrets.arr_jellyfin_admin_password.restartUnits = ["jellyfin.service"];
+    sops.secrets.services_password.restartUnits = ["jellyfin.service"];
     sops.secrets.arr_jellyfin_api_key.restartUnits = ["jellyfin.service"];
 
     systemd.services.jellyfin = let
       jellyfinSyncScript = pkgs.writeShellScript "jellyfin-sync-credentials" ''
         exec ${pkgs.python3}/bin/python3 ${./scripts/jellyfin-sync.py} \
-          --pass-file "${config.sops.secrets.arr_jellyfin_admin_password.path}" \
+          --pass-file "${config.sops.secrets.services_password.path}" \
           --key-file "${config.sops.secrets.arr_jellyfin_api_key.path}" \
           --admin-user "${cfg.jellyfin.adminUser}" \
           --media-group "${cfg.mediaGroup}"

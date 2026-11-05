@@ -15,8 +15,8 @@ in {
         message = "arr.qbittorrent: maxActiveTorrents must be greater than or equal to maxActiveDownloads";
       }
       {
-        assertion = config.sops.secrets ? arr_qbittorrent_password;
-        message = "arr.qbittorrent: config.sops.secrets.arr_qbittorrent_password must be defined in your secrets file.";
+        assertion = config.sops.secrets ? services_password;
+        message = "arr.qbittorrent: config.sops.secrets.services_password must be defined in your secrets file.";
       }
     ];
 
@@ -26,7 +26,7 @@ in {
       allowedUDPPorts = [cfg.qbittorrent.bitTorrentPort];
     };
 
-    sops.secrets.arr_qbittorrent_password.restartUnits = [
+    sops.secrets.services_password.restartUnits = [
       "qbittorrent.service"
       "sonarr-downloadclients.service"
       "radarr-downloadclients.service"
@@ -39,7 +39,7 @@ in {
       enable = true;
       inherit (cfg.qbittorrent) webuiPort;
       downloadsDir = mkForce "${cfg.dataDir}/torrents";
-      password = secretRef config.sops.secrets.arr_qbittorrent_password.path;
+      password = secretRef config.sops.secrets.services_password.path;
       vpn = {
         inherit (cfg.vpn) enable namespace;
       };
@@ -127,7 +127,7 @@ in {
         ExecStartPre = lib.mkAfter [
           (pkgs.writeShellScript "qbittorrent-inject-password" ''
             exec ${pkgs.python3}/bin/python3 ${./scripts/qbittorrent-sync.py} \
-              --pass-file "${config.sops.secrets.arr_qbittorrent_password.path}" \
+              --pass-file "${config.sops.secrets.services_password.path}" \
               --group "${cfg.mediaGroup}"
           '')
         ];

@@ -57,7 +57,7 @@ in {
 
     passwordSecret = mkOption {
       type = types.path;
-      default = config.sops.secrets.arr_admin_password.path;
+      default = config.sops.secrets.services_password.path;
       description = "Path to SOPS secret file containing the admin password.";
     };
 
@@ -78,12 +78,12 @@ in {
     # Ensure SOPS secret is available
     assertions = [
       {
-        assertion = config.sops.secrets ? arr_admin_password;
-        message = "server.adguard: config.sops.secrets.arr_admin_password must be defined in your secrets file.";
+        assertion = config.sops.secrets ? services_password;
+        message = "server.adguard: config.sops.secrets.services_password must be defined in your secrets file.";
       }
     ];
 
-    sops.secrets.arr_admin_password = {
+    sops.secrets.services_password = {
       restartUnits = ["adguardhome-admin-sync.service" "adguardhome.service"];
     };
 

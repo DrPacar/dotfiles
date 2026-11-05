@@ -11,7 +11,7 @@ in {
     server.arr.jellyfin.users = {
       ${cfg.jellyfin.adminUser} = {
         isAdmin = true;
-        passwordSecret = config.sops.secrets.arr_jellyfin_admin_password.path;
+        passwordSecret = config.sops.secrets.services_password.path;
         mutable = mkDefault false;
         displayCollectionsView = true;
         audioLanguage = "ger";

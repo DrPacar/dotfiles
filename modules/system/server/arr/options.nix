@@ -119,7 +119,7 @@ in {
 
     adminPasswordFile = mkOption {
       type = types.nullOr types.path;
-      default = config.sops.secrets.arr_jellyfin_admin_password.path or null;
+      default = config.sops.secrets.services_password.path or null;
       description = "Master administrator password file path for Arr applications.";
     };
 
