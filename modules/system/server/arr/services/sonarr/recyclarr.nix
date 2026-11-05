@@ -96,6 +96,7 @@ in {
             name = "Anime (1080p) – Japanisch (Sub)";
             trash_id = "20e0fc959f1f1704bed501f23bdae76f"; # [Anime] Remux-1080p
             reset_unmatched_scores.enabled = true;
+            min_format_score = 0;
             qualities = [
               {name = "Bluray-1080p";}
               {
@@ -137,6 +138,7 @@ in {
             name = "Anime (1080p) – Englisch (Dub)";
             trash_id = "20e0fc959f1f1704bed501f23bdae76f"; # [Anime] Remux-1080p
             reset_unmatched_scores.enabled = true;
+            min_format_score = 0;
             qualities = [
               {name = "Bluray-1080p";}
               {
