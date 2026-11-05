@@ -100,6 +100,7 @@ in {
         ExecStart = "${pkgs.beszel}/bin/beszel-agent";
         Restart = "on-failure";
         RestartSec = 5;
+        StateDirectory = "beszel-agent";
         EnvironmentFile = mkIf (cfg.beszel.agent.environmentFile != null) cfg.beszel.agent.environmentFile;
       };
     };

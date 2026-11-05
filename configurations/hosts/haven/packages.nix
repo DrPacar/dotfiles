@@ -60,6 +60,10 @@
     beszel = {
       enable = true;
       subdomain = "system";
+      agent = {
+        enable = true;
+        key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJFrzLbqGz43KlbxIRvAfN2RNebwFiUyeESCFToKXgLu";
+      };
     };
 
     notify = {
