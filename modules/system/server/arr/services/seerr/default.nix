@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  pkgs,
   ...
 }: let
   inherit (lib) mkIf mkDefault;
@@ -82,6 +83,30 @@ in {
         Restart = "on-failure";
         RestartSec = 15;
       };
+    };
+
+    systemd.services.seerr-sonarr = mkIf cfg.sonarr.enable {
+      postStart = ''
+        BASE_URL="http://127.0.0.1:${toString cfg.seerr.port}"
+        if [ -f /run/seerr/api-key-header ]; then
+          SERVERS=$(${pkgs.curl}/bin/curl -sf --header @"/run/seerr/api-key-header" "$BASE_URL/api/v1/settings/sonarr" || true)
+          if [ -n "$SERVERS" ]; then
+            echo "$SERVERS" | ${pkgs.jq}/bin/jq -c ".[]" | while read -r server; do
+              ID=$(echo "$server" | ${pkgs.jq}/bin/jq -r ".id")
+              CURRENT=$(echo "$server" | ${pkgs.jq}/bin/jq -r ".monitorNewItems // empty")
+              if [ "$CURRENT" != "none" ]; then
+                echo "Setting monitorNewItems to none on Sonarr server $ID..."
+                UPDATED=$(echo "$server" | ${pkgs.jq}/bin/jq "del(.id) | .monitorNewItems = \"none\"")
+                ${pkgs.curl}/bin/curl -sf -X PUT \
+                  --header @"/run/seerr/api-key-header" \
+                  -H "Content-Type: application/json" \
+                  -d "$UPDATED" \
+                  "$BASE_URL/api/v1/settings/sonarr/$ID" >/dev/null || true
+              fi
+            done
+          fi
+        fi
+      '';
     };
   };
 }
