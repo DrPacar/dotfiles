@@ -21,8 +21,6 @@ in {
           ++ lib.optional cfg.seerr.enable "arr_seerr_api_key"
           ++ lib.optional cfg.jellyfin.enable "arr_jellyfin_api_key"
           ++ ["services_password"]
-          ++ lib.optional cfg.jellyfin.enable "arr_jellyfin_admin_password"
-          ++ lib.optional cfg.qbittorrent.enable "arr_qbittorrent_password"
         ) (_name: {
           group = lib.mkForce cfg.mediaGroup;
           mode = lib.mkForce "0440";
@@ -69,13 +67,6 @@ in {
         arr_opensubtitles_username.restartUnits =
           lib.optional cfg.bazarr.enable "bazarr.service"
           ++ lib.optional cfg.jellyfin.enable "jellyfin-opensubtitles-sync.service";
-      })
-      (lib.optionalAttrs cfg.jellyfin.enable {
-        arr_jellyfin_admin_password.restartUnits =
-          lib.optional cfg.jellyfin.enable "jellyfin.service"
-          ++ lib.optional cfg.sonarr.enable "sonarr-config.service"
-          ++ lib.optional cfg.radarr.enable "radarr-config.service"
-          ++ lib.optional cfg.prowlarr.enable "prowlarr-config.service";
       })
       {
         services_password.restartUnits =
