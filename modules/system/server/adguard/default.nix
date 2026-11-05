@@ -39,7 +39,7 @@ in {
     lanIp = mkOption {
       type = types.nullOr types.str;
       default = null;
-      example = "192.168.0.214";
+      example = "192.168.0.2";
       description = "Local LAN IP of the server for split-horizon DNS rewrites (*.domain -> lanIp). Set to null to disable.";
     };
 
