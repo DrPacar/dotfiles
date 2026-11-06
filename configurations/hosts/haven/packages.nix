@@ -166,16 +166,6 @@
             priority = 25;
             "torrentBaseSettings.appMinimumSeeders" = 3;
           }
-          {
-            name = "LimeTorrents";
-            priority = 30;
-            "torrentBaseSettings.appMinimumSeeders" = 3;
-          }
-          {
-            name = "TorrentDownload";
-            priority = 30;
-            "torrentBaseSettings.appMinimumSeeders" = 3;
-          }
         ];
       };
 
