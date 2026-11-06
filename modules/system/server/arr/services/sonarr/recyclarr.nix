@@ -16,7 +16,7 @@ in {
               name = "Bluray-1080p";
               min = 5;
               preferred = 45;
-              max = 135;
+              max = 200;
             }
             {
               name = "Bluray-1080p Remux";
