@@ -16,6 +16,7 @@ in {
       "TMDb Box Sets".enable = cfg.jellyfin.plugins.tmdbBoxSets;
       "AniDB".enable = cfg.jellyfin.plugins.animeMetadata;
       "AniList".enable = cfg.jellyfin.plugins.animeMetadata;
+      "Simkl".enable = cfg.jellyfin.plugins.simkl;
     };
 
     systemd.services.jellyfin-opensubtitles-sync = mkIf cfg.jellyfin.plugins.openSubtitles {
