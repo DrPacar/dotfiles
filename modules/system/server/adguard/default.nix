@@ -39,8 +39,27 @@ in {
     lanIp = mkOption {
       type = types.nullOr types.str;
       default = null;
+      example = "192.168.0.2";
+      description = "Server LAN IP for local network split-horizon DNS rewrites (*.domain -> lanIp). Set to null to disable.";
+    };
+
+    tailscaleIp = mkOption {
+      type = types.nullOr types.str;
+      default = null;
       example = "100.64.0.1";
-      description = "Server IP for split-horizon / Tailscale DNS rewrites (*.domain -> lanIp). Set to null to disable.";
+      description = "Server Tailscale IP for VPN client split-horizon DNS rewrites (*.domain -> tailscaleIp). Set to null to disable.";
+    };
+
+    lanSubnet = mkOption {
+      type = types.str;
+      default = "192.168.0.0/24";
+      description = "CIDR subnet for local LAN clients.";
+    };
+
+    tailscaleSubnet = mkOption {
+      type = types.str;
+      default = "100.64.0.0/10";
+      description = "CIDR subnet for Tailscale clients.";
     };
 
     routerIp = mkOption {
@@ -148,36 +167,57 @@ in {
             "::1/128"
           ];
         };
-        filtering = mkIf (cfg.adguard.lanIp != null && cfg.domain != null) {
+        filtering = {
           protection_enabled = true;
           filtering_enabled = true;
           rewrites_enabled = true;
-          rewrites =
-            [
-              {
-                domain = "*.${cfg.domain}";
-                answer = cfg.adguard.lanIp;
-                enabled = true;
-              }
-              {
-                domain = cfg.domain;
-                answer = cfg.adguard.lanIp;
-                enabled = true;
-              }
-            ]
-            ++ lib.optionals (arrDomain != null && arrDomain != cfg.domain) [
-              {
-                domain = "*.${arrDomain}";
-                answer = cfg.adguard.lanIp;
-                enabled = true;
-              }
-              {
-                domain = arrDomain;
-                answer = cfg.adguard.lanIp;
-                enabled = true;
-              }
-            ];
+          rewrites = let
+            singleIp =
+              if cfg.adguard.tailscaleIp == null && cfg.adguard.lanIp != null
+              then cfg.adguard.lanIp
+              else if cfg.adguard.lanIp == null && cfg.adguard.tailscaleIp != null
+              then cfg.adguard.tailscaleIp
+              else null;
+          in
+            lib.optionals (singleIp != null && cfg.domain != null) (
+              [
+                {
+                  domain = "*.${cfg.domain}";
+                  answer = singleIp;
+                  enabled = true;
+                }
+                {
+                  domain = cfg.domain;
+                  answer = singleIp;
+                  enabled = true;
+                }
+              ]
+              ++ lib.optionals (arrDomain != null && arrDomain != cfg.domain) [
+                {
+                  domain = "*.${arrDomain}";
+                  answer = singleIp;
+                  enabled = true;
+                }
+                {
+                  domain = arrDomain;
+                  answer = singleIp;
+                  enabled = true;
+                }
+              ]
+            );
         };
+        user_rules = let
+          extraDomains = lib.optionals (arrDomain != null && !lib.hasSuffix ".${cfg.domain}" arrDomain && arrDomain != cfg.domain) [arrDomain];
+          domains = [cfg.domain] ++ extraDomains;
+          mkRules = domain: [
+            "||${domain}^$dnsrewrite=NOERROR;A;${cfg.adguard.tailscaleIp},client=${cfg.adguard.tailscaleSubnet}|fd7a:115c:a1e0::/48"
+            "||${domain}^$dnsrewrite=NOERROR;A;${cfg.adguard.lanIp},client=${cfg.adguard.lanSubnet}"
+            "||${domain}^$dnsrewrite=NOERROR;A;${cfg.adguard.lanIp},client=127.0.0.1"
+          ];
+        in
+          lib.optionals (cfg.adguard.tailscaleIp != null && cfg.adguard.lanIp != null && cfg.domain != null) (
+            lib.concatMap mkRules domains
+          );
         filters = [
           {
             enabled = true;

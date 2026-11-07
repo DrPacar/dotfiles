@@ -72,6 +72,7 @@
         (mkHttpHost "192.168.0.2")
       ]
       ++ lib.optional (cfg.adguard.lanIp != null) (mkHttpHost cfg.adguard.lanIp)
+      ++ lib.optional (cfg.adguard.tailscaleIp != null) (mkHttpHost cfg.adguard.tailscaleIp)
     );
     vhostKey = lib.concatStringsSep ", " dashboardHostsList;
   in {
