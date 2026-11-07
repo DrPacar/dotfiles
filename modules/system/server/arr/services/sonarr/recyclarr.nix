@@ -175,6 +175,21 @@ in {
         custom_formats = [
           {
             trash_ids = [
+              "47435ece6b99a0b477caf360e79ba0bb" # x265 (HD)
+            ];
+            assign_scores_to = [
+              {
+                name = "Full HD (1080p) – Englisch";
+                score = 0; # Do not ban x265 (HD) season packs when x264 is unavailable
+              }
+              {
+                name = "Full HD (1080p) – Deutsch";
+                score = 0;
+              }
+            ];
+          }
+          {
+            trash_ids = [
               "9b27ab6498ec0f31a3353992e19434ca" # DV (w/o HDR fallback)
             ];
             assign_scores_to = [
