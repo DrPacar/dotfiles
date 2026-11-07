@@ -17,6 +17,7 @@ in {
       "AniDB".enable = cfg.jellyfin.plugins.animeMetadata;
       "AniList".enable = cfg.jellyfin.plugins.animeMetadata;
       "Simkl".enable = cfg.jellyfin.plugins.simkl;
+      "Jellyfin Enhanced".enable = cfg.jellyfin.plugins.jellyfinEnhanced;
     };
 
     systemd.services.jellyfin-opensubtitles-sync = mkIf cfg.jellyfin.plugins.openSubtitles {

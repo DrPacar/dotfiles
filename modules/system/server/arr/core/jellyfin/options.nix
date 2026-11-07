@@ -232,6 +232,12 @@ in {
         default = true;
         description = "Enable Simkl plugin for watch history tracking and scrobbling.";
       };
+
+      jellyfinEnhanced = mkOption {
+        type = types.bool;
+        default = true;
+        description = "Enable Jellyfin Enhanced plugin for quality of life improvements and Spoiler Guard.";
+      };
     };
 
     theme = {
