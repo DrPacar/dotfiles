@@ -21,7 +21,7 @@ in {
           name = "Full HD (1080p) – Englisch";
           trash_id = "0896c29d74de619df168d23b98104b22"; # [SQP] SQP-1 (1080p)
           reset_unmatched_scores.enabled = true;
-          min_format_score = 180;
+          min_format_score = 0;
         }
         {
           name = "4K (2160p) – Deutsch";
@@ -33,11 +33,26 @@ in {
           name = "4K (2160p) – Englisch";
           trash_id = "5128baeb2b081b72126bc8482b2a86a0"; # [SQP] SQP-1 (2160p)
           reset_unmatched_scores.enabled = true;
-          min_format_score = 180;
+          min_format_score = 0;
         }
       ];
 
       custom_formats = [
+        {
+          trash_ids = [
+            "dc98083864ea246d05a42df0d05f81cc" # x265 (HD)
+          ];
+          assign_scores_to = [
+            {
+              name = "Full HD (1080p) – Englisch";
+              score = 0;
+            }
+            {
+              name = "Full HD (1080p) – Deutsch";
+              score = 0;
+            }
+          ];
+        }
         {
           trash_ids = [
             "923b6abef9b17f937fab56cfcf89e1f1" # DV (w/o HDR fallback)
