@@ -19,6 +19,8 @@
   networking.networkmanager = {
     enable = true;
     wifi.powersave = false;
+    wifi.macAddress = "permanent";
+    wifi.scanRandMacAddress = false;
   };
   systemd.services.NetworkManager-wait-online.enable = false;
 
