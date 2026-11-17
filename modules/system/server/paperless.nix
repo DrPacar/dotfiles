@@ -74,6 +74,14 @@ in {
   };
 
   config = mkIf (cfg.enable && cfg.paperless.enable) {
+    nixpkgs.overlays = [
+      (_final: prev: {
+        paperless-ngx = prev.paperless-ngx.overrideAttrs (old: {
+          pythonRelaxDeps = (old.pythonRelaxDeps or []) ++ ["torch"];
+        });
+      })
+    ];
+
     services.paperless = {
       enable = true;
       address = "127.0.0.1";
