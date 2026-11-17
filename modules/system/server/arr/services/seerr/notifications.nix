@@ -8,7 +8,7 @@
   cfg = config.server.arr;
 in {
   config = mkIf (cfg.enable && cfg.seerr.enable && (config.server.notify.enable or false)) {
-    systemd.services.seerr-notifications = {
+    systemd.services.seerr-ntfy-webhook = {
       description = "Configure Seerr ntfy webhook notifications";
       after = ["seerr-setup.service" "seerr.service"];
       requires = ["seerr-setup.service" "seerr.service"];
