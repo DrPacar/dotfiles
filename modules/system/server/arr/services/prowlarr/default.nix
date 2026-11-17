@@ -35,7 +35,7 @@ in {
 
       config = {
         hostConfig = {
-          bindAddress = cfg.network.bindAddress;
+          bindAddress = cfg.network.localAddress;
           port = cfg.prowlarr.port;
           authenticationMethod = "forms";
           authenticationRequired = "disabledForLocalAddresses";

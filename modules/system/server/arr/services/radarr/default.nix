@@ -36,7 +36,7 @@ in {
 
       config = {
         hostConfig = {
-          bindAddress = cfg.network.bindAddress;
+          bindAddress = cfg.network.localAddress;
           port = cfg.radarr.port;
           authenticationMethod = "forms";
           authenticationRequired = "disabledForLocalAddresses";

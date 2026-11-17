@@ -28,7 +28,7 @@
 
     config = {
       hostConfig = {
-        bindAddress = cfg.network.bindAddress;
+        bindAddress = cfg.network.localAddress;
         inherit port;
         authenticationMethod = "forms";
         authenticationRequired = "disabledForLocalAddresses";
