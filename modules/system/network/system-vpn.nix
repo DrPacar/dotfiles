@@ -185,6 +185,7 @@ in {
       iptables -A vpn-killswitch -o ${cfg.physicalInterface} -d 224.0.0.0/4 -j ACCEPT
       iptables -A vpn-killswitch -o ${cfg.physicalInterface} -d 255.255.255.255/32 -j ACCEPT
       iptables -A vpn-killswitch -o ${cfg.physicalInterface} -p udp --dport 67:68 --sport 67:68 -j ACCEPT
+      iptables -A vpn-killswitch -o ${cfg.physicalInterface} -p icmp -j ACCEPT
 
       # Allow Tailscale daemon egress directly on physical interface
       iptables -A vpn-killswitch -m cgroup --path system.slice/tailscaled.service -j ACCEPT
@@ -214,6 +215,7 @@ in {
       ip6tables -A vpn-killswitch -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
       ip6tables -A vpn-killswitch -o ${cfg.physicalInterface} -d fe80::/10 -j ACCEPT
       ip6tables -A vpn-killswitch -o ${cfg.physicalInterface} -d ff00::/8 -j ACCEPT
+      ip6tables -A vpn-killswitch -o ${cfg.physicalInterface} -p ipv6-icmp -j ACCEPT
       ip6tables -A vpn-killswitch -m cgroup --path system.slice/tailscaled.service -j ACCEPT
       ip6tables -A vpn-killswitch -o ${cfg.physicalInterface} -j REJECT --reject-with icmp6-adm-prohibited
     '';
