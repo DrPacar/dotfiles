@@ -22,6 +22,13 @@
         float = true;
       }
       {
+        match.class = "^(org\\.yazi\\.filepicker|yazi-picker)$";
+        float = true;
+        center = true;
+        size = "1100 700";
+        dim_around = true;
+      }
+      {
         match.title = "^(Picture-in-Picture)$";
         float = true;
         pin = true;

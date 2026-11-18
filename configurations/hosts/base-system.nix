@@ -65,8 +65,17 @@
 
   xdg.portal = {
     enable = true;
-    config.common.default = "*";
-    extraPortals = [pkgs.xdg-desktop-portal-gtk];
+    config = {
+      common.default = "*";
+      hyprland = {
+        default = ["hyprland" "gtk"];
+        "org.freedesktop.impl.portal.FileChooser" = "termfilechooser";
+      };
+    };
+    extraPortals = [
+      pkgs.xdg-desktop-portal-gtk
+      pkgs.xdg-desktop-portal-termfilechooser
+    ];
   };
 
   # Audio

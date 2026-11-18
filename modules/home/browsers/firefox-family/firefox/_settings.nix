@@ -14,6 +14,7 @@
   "browser.menu.showViewImageInfo" = true;
   "findbar.highlightAll" = true;
   "layout.word_select.eat_space_to_next_word" = false;
+  "widget.use-xdg-desktop-portal.file-picker" = 1;
 
   # Fullscreen Notice Adjustments
   "full-screen-api.warning.timeout" = 0;

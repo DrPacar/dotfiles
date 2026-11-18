@@ -30,6 +30,7 @@
   "browser.tabs.warnOnClose" = false;
   "full-screen-api.warning.timeout" = 0;
   "browser.compactmode.show" = true;
+  "widget.use-xdg-desktop-portal.file-picker" = 1;
 
   # Devtools
   "devtools.jsonview.enabled" = true;
