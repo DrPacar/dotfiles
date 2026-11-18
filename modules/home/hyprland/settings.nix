@@ -38,6 +38,7 @@
 
     render = {
       direct_scanout = false;
+      cm_auto_hdr = 0;
     };
 
     xwayland = {
