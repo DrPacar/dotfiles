@@ -85,11 +85,23 @@ in {
       };
     };
 
+    systemd.services.seerr-env = {
+      postStart = ''
+        if [ -f "${config.sops.secrets.arr_seerr_api_key.path}" ]; then
+          echo "X-Api-Key: $(cat "${config.sops.secrets.arr_seerr_api_key.path}")" > /run/seerr/api-key-header
+          chown seerr:seerr /run/seerr/api-key-header
+          chmod 0400 /run/seerr/api-key-header
+        fi
+      '';
+    };
+
     systemd.services.seerr-sonarr = mkIf cfg.sonarr.enable {
       postStart = ''
         BASE_URL="http://127.0.0.1:${toString cfg.seerr.port}"
-        if [ -f /run/seerr/api-key-header ]; then
-          SERVERS=$(${pkgs.curl}/bin/curl -sf --header @"/run/seerr/api-key-header" "$BASE_URL/api/v1/settings/sonarr" || true)
+        API_KEY_FILE="${config.sops.secrets.arr_seerr_api_key.path}"
+        if [ -f "$API_KEY_FILE" ]; then
+          API_KEY=$(cat "$API_KEY_FILE")
+          SERVERS=$(${pkgs.curl}/bin/curl -sf -H "X-Api-Key: $API_KEY" "$BASE_URL/api/v1/settings/sonarr" || true)
           if [ -n "$SERVERS" ]; then
             echo "$SERVERS" | ${pkgs.jq}/bin/jq -c ".[]" | while read -r server; do
               ID=$(echo "$server" | ${pkgs.jq}/bin/jq -r ".id")
@@ -98,7 +110,7 @@ in {
                 echo "Setting monitorNewItems to none on Sonarr server $ID..."
                 UPDATED=$(echo "$server" | ${pkgs.jq}/bin/jq "del(.id) | .monitorNewItems = \"none\"")
                 ${pkgs.curl}/bin/curl -sf -X PUT \
-                  --header @"/run/seerr/api-key-header" \
+                  -H "X-Api-Key: $API_KEY" \
                   -H "Content-Type: application/json" \
                   -d "$UPDATED" \
                   "$BASE_URL/api/v1/settings/sonarr/$ID" >/dev/null || true

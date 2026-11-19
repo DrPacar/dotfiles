@@ -27,19 +27,25 @@ in {
           if cfg.domain != null
           then "https://${cfg.seerr.subdomain}.${cfg.domain}"
           else "http://${config.networking.hostName}:${toString cfg.seerr.port}";
+        apiKeyFile = config.sops.secrets.arr_seerr_api_key.path;
       in ''
         for i in $(seq 1 30); do
-          if [ -f /run/seerr/api-key-header ]; then
+          if [ -f "${apiKeyFile}" ] && ${pkgs.curl}/bin/curl -sf "http://127.0.0.1:${toString cfg.seerr.port}/api/v1/status" >/dev/null 2>&1; then
             break
           fi
           sleep 1
         done
 
-        ${pkgs.curl}/bin/curl -s -X POST \
-          --header @"/run/seerr/api-key-header" \
-          -H "Content-Type: application/json" \
-          -d '{"enabled":true,"types":130,"options":{"webhookUrl":"http://127.0.0.1:${notifyPort}","jsonPayload":"{\"topic\":\"${notifyTopic}\",\"title\":\"🍿 Jellyseerr: {{subject}}\",\"message\":\"{{message}}\",\"click\":\"${seerrDomain}/requests\",\"actions\":[{\"action\":\"view\",\"label\":\"In Jellyseerr öffnen\",\"url\":\"${seerrDomain}/requests\"}]}"}}' \
-          "http://127.0.0.1:${toString cfg.seerr.port}/api/v1/settings/notifications/webhook"
+        if [ -f "${apiKeyFile}" ]; then
+          API_KEY=$(cat "${apiKeyFile}")
+          ${pkgs.curl}/bin/curl -sf -X POST \
+            -H "X-Api-Key: $API_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{"enabled":true,"types":130,"options":{"webhookUrl":"http://127.0.0.1:${notifyPort}","jsonPayload":"{\"topic\":\"${notifyTopic}\",\"title\":\"🍿 Jellyseerr: {{subject}}\",\"message\":\"{{message}}\",\"click\":\"${seerrDomain}/requests\",\"actions\":[{\"action\":\"view\",\"label\":\"In Jellyseerr öffnen\",\"url\":\"${seerrDomain}/requests\"}]}"}}' \
+            "http://127.0.0.1:${toString cfg.seerr.port}/api/v1/settings/notifications/webhook" || true
+        else
+          echo "Warning: Seerr API key secret ${apiKeyFile} not found, skipping webhook setup" >&2
+        fi
       '';
     };
   };
