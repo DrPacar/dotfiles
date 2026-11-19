@@ -1,0 +1,254 @@
+====================================================================================================
+ BIOS CONFIGURATION  -  Lenovo ThinkCentre M720q
+====================================================================================================
+ Model        : Lenovo ThinkCentre M720q (10T8S6JG00)
+ BIOS Version : M1UKT79A (03/12/2026)
+ EC Version   : M1UCT18A
+ Updated      : 2026-11-19
+ Status       : Applied & Saved
+
+ Notice
+   Unique hardware identifiers (Serial Number, UUID, MAC Address, OS License Keys) have been
+   redacted for public repository use.
+
+ Legend
+   [Value]   Configurable BIOS setting
+   Value     Read-only / status display
+   # ...     Note / explanation
+   (empty)   Field is blank in BIOS
+
+ Contents
+   1. MAIN
+   2. DEVICES
+   3. ADVANCED
+   4. POWER
+   5. SECURITY
+   6. STARTUP
+
+====================================================================================================
+ 1. MAIN
+====================================================================================================
+
+--- Main -------------------------------------------------------------------------------------------
+  Machine Type and Model                        10T8S6JG00
+  System Brand ID                               ThinkCentre M720q
+  System Serial Number                          <REDACTED>
+  Asset Tag                                     (empty)
+  System UUID                                   <REDACTED>
+  Ethernet MAC Address                          <REDACTED>
+  Embedded Controller Version                   M1UCT18A
+  BIOS Revision Level                           M1UKT79A
+  Boot Block Revision Level                     1.79
+  BIOS Date (MM/DD/YYYY)                        03/12/2026
+  Preinstalled OS License                       <REDACTED>
+  OA3 License Key ID                            <REDACTED>
+  OA2.1 Marker                                  Y
+  Language                                      [English]
+
+--- Main > System Summary --------------------------------------------------------------------------
+  CPU Type                                      Intel(R) Core(TM) i3-8100T CPU @ 3.10GHz
+  CPU Speed                                     3.10 GHz
+  CPU Core Count                                4
+  Installed Memory                              16384 MB                            # 16 GB RAM
+  Memory Bus Speed                              2400 MHz
+  Active Video                                  IGD                                 # Integrated Intel Graphics
+  Onboard Audio                                 Disabled
+  Onboard Ethernet                              Enabled
+  CPU Fan                                       Operating
+  M.2 Drive 1                                   Samsung SSD 980 500GB
+  SATA Drive 1                                  None
+
+====================================================================================================
+ 2. DEVICES
+====================================================================================================
+
+--- Devices > Serial Port Setup --------------------------------------------------------------------
+  Serial Port1 Address                          [Disabled]
+
+--- Devices > USB Setup ----------------------------------------------------------------------------
+  USB Support                                   [Enabled]
+  USB Legacy Support                            [Enabled]
+  USB Enumeration Delay                         [Disabled]
+  Front USB Ports                               [Enabled]
+    USB Port 1                                  [Enabled]
+    USB Port 2                                  [Enabled]
+  Rear USB Ports                                [Enabled]
+    USB Port 3                                  [Enabled]
+    USB Port 4                                  [Enabled]
+    USB Port 5                                  [Enabled]
+    USB Port 6                                  [Enabled]
+
+--- Devices > ATA Drive Setup ----------------------------------------------------------------------
+  SATA Controller                               [Disabled]                          # No SATA drives installed
+  Hard Disk Pre-delay                           [Disabled]
+
+--- Devices > Video Setup --------------------------------------------------------------------------
+  Select Active Video                           [IGD]
+  Pre-Allocated Memory Size                     [128MB]
+  Total Graphics Memory                         [Maximum]
+
+--- Devices > Audio Setup --------------------------------------------------------------------------
+  Onboard Audio Controller                      [Disabled]
+
+--- Devices > Network Setup ------------------------------------------------------------------------
+  Onboard Ethernet Controller                   [Enabled]
+  PXE Option ROM                                [Disabled]
+  PXE IPV4 Network Stack                        [Disabled]
+  PXE IPV6 Network Stack                        [Disabled]
+  TFTP Window Size                              [4]
+
+--- Devices > PCI Express Configuration ------------------------------------------------------------
+  ASPM Support                                  [Auto]
+  PCIe 8x Slot Speed                            [Auto]
+
+====================================================================================================
+ 3. ADVANCED
+====================================================================================================
+
+--- Advanced ---------------------------------------------------------------------------------------
+  Intel(R) SIPP Support                         [Disabled]                          # Stable IT Platform Program
+  Dust Shield Alert                             [Disabled]
+
+--- Advanced > CPU Setup ---------------------------------------------------------------------------
+  EIST Support                                  [Enabled]                           # Enhanced Intel SpeedStep
+  Core Multi-Processing                         [Enabled]                           # All CPU cores active
+  Intel(R) Virtualization Technology            [Enabled]                           # VT-x
+  VT-d                                          [Enabled]                           # Directed I/O virtualization
+  C1E Support                                   [Enabled]                           # Enhanced Halt State
+  C State Support                               [C1C3C6C7C8C10]                     # Deep CPU sleep states
+
+  CPU ID                                        906EB
+  Microcode Revision (MM/DD/YYYY)               000000F4 (02/23/2023)
+
+--- Advanced > Intel(R) Manageability --------------------------------------------------------------
+  ME Firmware Version                           12.0.35.1427
+  Manageability Type                            None
+
+--- Advanced > Intel(R) Software Guard Extensions --------------------------------------------------
+  Intel(R) SGX Control                          [Disabled]
+
+====================================================================================================
+ 4. POWER
+====================================================================================================
+
+--- Power ------------------------------------------------------------------------------------------
+  After Power Loss                              [Power On]                          # Auto-boot on AC power restore
+  Enhanced Power Saving Mode                    [Disabled]
+  Smart Power On                                [Disabled]
+
+--- Power > Intelligent Cooling Engine (ICE) -------------------------------------------------------
+  ICE Performance Mode                          [Better Acoustic Performance]
+  ICE Thermal Alert                             [Enabled]
+
+--- Power > Automatic Power On ---------------------------------------------------------------------
+  Wake on LAN                                   [Disabled]
+  Wake from Serial Port Ring                    [Disabled]
+  Wake Up on Alarm                              [Disabled]
+    Startup Sequence                            [Primary]                           # Inactive
+    Alarm Time (HH:MM:SS)                       [00:00:00]                          # Inactive
+    Alarm Date (MM/DD/YYYY)                     [01/01/2017]                        # Inactive
+    Alarm Day of Week                           [Sunday]                            # Inactive
+
+====================================================================================================
+ 5. SECURITY
+====================================================================================================
+
+--- Security ---------------------------------------------------------------------------------------
+  Administrator Password                        Not Installed
+  Power-On Password                             Not Installed
+
+  Allow Flashing BIOS to a Previous Version     [Yes]                               # BIOS downgrade permitted
+  Require Admin. Pass. when Flashing            [No]
+  Windows UEFI Firmware Update                  [Disabled]
+  Require POP on System Boot                    [No]                                # POP = Power-On Password
+  Require POP on Restart                        [No]
+  Require Admin. Pass. for F12 Boot             [No]
+  Smart USB Protection                          [Disabled]
+
+  Device Guard                                  [Disabled]
+  Chassis Intrusion Detection                   [Disabled]
+  Configuration Change Detection                [Disabled]
+  Password Count Exceeded Error                 [Enabled]                           # Triggers POST error 0199
+
+--- Security > Hard Disk Password ------------------------------------------------------------------
+  M.2 Drive 1 Password                          [Disabled]
+  Require HDP on System Boot                    [No]                                # HDP = Hard Disk Password
+
+--- Security > TCG Feature Setup -------------------------------------------------------------------
+  TCG Security Device State                     Discrete TPM 2.0
+
+  TCG Security Device                           [Discrete TPM]
+    Security Chip 2.0                           [Enabled]
+    Clear TCG Security Feature                  [No]
+
+--- Security > Secure Boot -------------------------------------------------------------------------
+  System Mode                                   Deployed Mode
+  Secure Boot                                   [Disabled]
+
+--- Security > Network Offline Locker Setup --------------------------------------------------------
+  Network Offline Locker                        [Disabled]
+
+--- Security > Computrace Module Activation --------------------------------------------------------
+  Current Setting                               [Disabled]
+  Current State                                 Not Activated
+
+====================================================================================================
+ 6. STARTUP
+====================================================================================================
+
+--- Startup ----------------------------------------------------------------------------------------
+  CSM                                           [Disabled]                          # Compatibility Support Module
+  Boot Mode                                     UEFI Only
+  Boot Up Num-Lock Status                       [On]
+  Option Keys Display                           [Enabled]
+  Option Keys Display Style                     [Normal]
+
+--- Startup > Primary Boot Sequence ----------------------------------------------------------------
+  Boot Order:
+    1. M.2 Drive 1: Samsung SSD 980 500GB
+         - Samsung SSD 980 500GB
+         - UEFI OS
+    2. USB HDD                                                                      # No device
+
+  Excluded from Boot Order:
+    - Network 1                                                                     # PXE disabled
+    - SATA 1                                                                        # No device
+    - Network 2                                                                     # No device
+    - Network 3                                                                     # No device
+    - Network 4                                                                     # No device
+    - USB CDROM                                                                     # No device
+    - Other Device                                                                  # No device
+
+--- Startup > Automatic Boot Sequence --------------------------------------------------------------
+  Boot Order:
+    1. M.2 Drive 1: Samsung SSD 980 500GB
+         - Samsung SSD 980 500GB
+         - UEFI OS
+    2. SATA 1                                                                       # No device
+    3. Other Device                                                                 # No device
+
+  Excluded from Boot Order:
+    - Network 1                                                                     # PXE disabled
+    - Network 2                                                                     # No device
+    - Network 3                                                                     # No device
+    - Network 4                                                                     # No device
+    - USB HDD                                                                       # No device
+    - USB CDROM                                                                     # No device
+
+--- Startup > Error Boot Sequence ------------------------------------------------------------------
+  Boot Order:
+    1. M.2 Drive 1: Samsung SSD 980 500GB
+         - Samsung SSD 980 500GB
+         - UEFI OS
+    2. SATA 1                                                                       # No device
+    3. Other Device                                                                 # No device
+
+  Excluded from Boot Order:
+    - Network 1                                                                     # PXE disabled
+    - Network 2                                                                     # No device
+    - Network 3                                                                     # No device
+    - Network 4                                                                     # No device
+    - USB HDD                                                                       # No device
+    - USB CDROM                                                                     # No device
+
+====================================================================================================
