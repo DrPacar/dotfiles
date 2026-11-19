@@ -1,4 +1,5 @@
 {
+  config,
   pkgs,
   lib,
   mod,
@@ -184,5 +185,8 @@
   networking.systemVPN = {
     enable = true;
     physicalInterface = "eno1";
+    extraWgConfigFiles = [
+      config.sops.secrets.arr_wireguard_conf.path
+    ];
   };
 }

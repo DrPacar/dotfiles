@@ -4,8 +4,18 @@
   pkgs,
   ...
 }: let
-  inherit (lib) mkIf mkEnableOption mkOption types concatMapStringsSep optionalString;
+  inherit
+    (lib)
+    mkIf
+    mkEnableOption
+    mkOption
+    types
+    concatMapStringsSep
+    optionalString
+    ;
   cfg = config.networking.systemVPN;
+  allWgConfigs = (lib.optional (cfg.wgConfFile != null) cfg.wgConfFile) ++ cfg.extraWgConfigFiles;
+  wgConfigListStr = concatMapStringsSep " " (f: "\"${toString f}\"") allWgConfigs;
 in {
   options.networking.systemVPN = {
     enable = mkEnableOption "system-wide WireGuard VPN with strict killswitch";
@@ -23,9 +33,16 @@ in {
     };
 
     wgConfFile = mkOption {
-      type = types.path;
-      default = config.sops.secrets.system_wireguard_conf.path;
+      type = types.nullOr (types.either types.path types.str);
+      default = config.sops.secrets.system_wireguard_conf.path or null;
       description = "Path to WireGuard configuration file (managed via sops-nix).";
+    };
+
+    extraWgConfigFiles = mkOption {
+      type = types.listOf (types.either types.path types.str);
+      default = [];
+      example = lib.literalExpression "[ config.sops.secrets.arr_wireguard_conf.path ]";
+      description = "Additional WireGuard configuration files whose server endpoints should be directly routed through the physical gateway to prevent VPN-in-VPN loops.";
     };
 
     lanSubnets = mkOption {
@@ -49,8 +66,8 @@ in {
   config = mkIf cfg.enable {
     assertions = [
       {
-        assertion = config.sops.secrets ? system_wireguard_conf;
-        message = "networking.systemVPN: config.sops.secrets.system_wireguard_conf must be defined in your secrets file.";
+        assertion = cfg.wgConfFile != null;
+        message = "networking.systemVPN: networking.systemVPN.wgConfFile must be set (or config.sops.secrets.system_wireguard_conf must exist).";
       }
     ];
 
@@ -72,8 +89,17 @@ in {
 
     # Ensure systemd service handles pre/post routing cleanly
     systemd.services."wg-quick-${cfg.interfaceName}" = {
-      wants = ["network-online.target"] ++ lib.optional config.services.tailscale.enable "tailscaled.service";
-      after = ["network-online.target"] ++ lib.optional config.services.tailscale.enable "tailscaled.service";
+      # Only starts after physical network and (optional) tailscale is running
+      wants =
+        [
+          "network-online.target"
+        ]
+        ++ lib.optional config.services.tailscale.enable "tailscaled.service";
+      after =
+        [
+          "network-online.target"
+        ]
+        ++ lib.optional config.services.tailscale.enable "tailscaled.service";
 
       serviceConfig = {
         Restart = "on-failure";
@@ -83,10 +109,11 @@ in {
         ExecStartPre = [
           "+${pkgs.writeShellScript "system-vpn-pre-up" ''
             set -euo pipefail
+            # Looks up the local Gateway address
             GW=$(${pkgs.iproute2}/bin/ip route show default dev ${cfg.physicalInterface} 2>/dev/null | ${pkgs.gawk}/bin/awk '/via/ {print $3}' | head -n 1 || true)
             if [ -n "$GW" ]; then
-              # Route VPN server endpoints directly through physical gateway so WireGuard handshakes never loop or nest
-              for conf in "${cfg.wgConfFile}" "${config.sops.secrets.arr_wireguard_conf.path or ""}"; do
+              # Routes wireguard VPN Endpoints through the local network
+              for conf in ${wgConfigListStr}; do
                 if [ -f "$conf" ]; then
                   EP=$(${pkgs.gnugrep}/bin/grep -iE "^[[:space:]]*Endpoint" "$conf" | head -n 1 | ${pkgs.gnused}/bin/sed -E 's/.*=[[:space:]]*\[?([^]:[:space:]]+).*/\1/' || true)
                   if [ -n "$EP" ]; then
@@ -144,7 +171,7 @@ in {
             ${pkgs.iproute2}/bin/ip -6 rule del from fd7a:115c:a1e0::/48 lookup 52 priority 5011 2>/dev/null || true
             ${pkgs.iproute2}/bin/ip -6 rule del not fwmark 0xca6c lookup 51820 priority 5020 2>/dev/null || true
 
-            for conf in "${cfg.wgConfFile}" "${config.sops.secrets.arr_wireguard_conf.path or ""}"; do
+            for conf in ${wgConfigListStr}; do
               if [ -f "$conf" ]; then
                 EP=$(${pkgs.gnugrep}/bin/grep -iE "^[[:space:]]*Endpoint" "$conf" | head -n 1 | ${pkgs.gnused}/bin/sed -E 's/.*=[[:space:]]*\[?([^]:[:space:]]+).*/\1/' || true)
                 if [ -n "$EP" ]; then
