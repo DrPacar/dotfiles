@@ -14,17 +14,32 @@
     ../base-system.nix
   ];
 
-  networking.hostName = "haven";
-  networking.nameservers = [
-    "1.1.1.1"
-    "1.0.0.1"
-  ];
-
-  networking.networkmanager = {
-    enable = true;
-    wifi.powersave = false;
+  networking = {
+    hostName = "haven";
+    useNetworkd = true;
+    useDHCP = false;
+    networkmanager.enable = false;
+    nameservers = [
+      "1.1.1.1"
+      "1.0.0.1"
+    ];
   };
-  systemd.services.NetworkManager-wait-online.enable = false;
+
+  systemd.network = {
+    enable = true;
+    networks."10-lan" = {
+      matchConfig.Name = "eno1";
+      networkConfig = {
+        DHCP = "yes";
+        IgnoreCarrierLoss = "3s";
+      };
+      dhcpV4Config = {
+        UseDNS = false; # Keep static Cloudflare nameservers (1.1.1.1) to avoid loops with local AdGuard
+        RouteMetric = 100;
+      };
+    };
+    wait-online.extraArgs = ["--interface=eno1"];
+  };
 
   # Headless server: disable desktop / audio services from base-system.nix
   services.pipewire.enable = lib.mkForce false;
