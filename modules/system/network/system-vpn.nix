@@ -14,8 +14,19 @@
     optionalString
     ;
   cfg = config.networking.systemVPN;
+
+  # Convert '+' to '*' for NetworkManager unmanaged interface patterns
+  nmIface = iface: "interface-name:${builtins.replaceStrings ["+"] ["*"] iface}";
+  # Convert '*' to '+' for iptables interface patterns
+  iptablesIface = iface: builtins.replaceStrings ["*"] ["+"] iface;
+
   allWgConfigs = (lib.optional (cfg.wgConfFile != null) cfg.wgConfFile) ++ cfg.extraWgConfigFiles;
   wgConfigListStr = concatMapStringsSep " " (f: "\"${toString f}\"") allWgConfigs;
+
+  allowedInterfaces =
+    ["lo" cfg.interfaceName]
+    ++ lib.optional (config.services.tailscale.enable or false) cfg.tailscaleInterface
+    ++ (map iptablesIface cfg.extraTunnelInterfaces);
 in {
   options.networking.systemVPN = {
     enable = mkEnableOption "system-wide WireGuard VPN with strict killswitch";
@@ -24,6 +35,19 @@ in {
       type = types.str;
       default = "wg-system";
       description = "Interface name for the host system WireGuard VPN.";
+    };
+
+    extraTunnelInterfaces = mkOption {
+      type = types.listOf types.str;
+      default = [];
+      example = ["wg-br" "veth-+" "wg0"];
+      description = "Additional WireGuard or virtual tunnel interface names permitted through the killswitch and kept unmanaged by NetworkManager.";
+    };
+
+    tailscaleInterface = mkOption {
+      type = types.str;
+      default = config.services.tailscale.interfaceName or "tailscale0";
+      description = "Interface name used by Tailscale.";
     };
 
     physicalInterface = mkOption {
@@ -74,12 +98,11 @@ in {
     environment.systemPackages = [pkgs.wireguard-tools];
 
     # Tell NetworkManager to leave WireGuard and virtual interfaces unmanaged
-    networking.networkmanager.unmanaged = [
-      "interface-name:${cfg.interfaceName}"
-      "interface-name:wg0"
-      "interface-name:wg-br"
-      "interface-name:veth-*"
-    ];
+    networking.networkmanager.unmanaged = map nmIface (
+      [cfg.interfaceName]
+      ++ lib.optional (config.services.tailscale.enable or false) cfg.tailscaleInterface
+      ++ cfg.extraTunnelInterfaces
+    );
 
     # System-wide WireGuard connection via wg-quick
     networking.wg-quick.interfaces.${cfg.interfaceName} = {
@@ -146,7 +169,9 @@ in {
             # 2. Tailscale overlay traffic (CGNAT range 100.64.0.0/10)
             ${pkgs.iproute2}/bin/ip rule add to 100.64.0.0/10 lookup 52 priority 5010 2>/dev/null || true
             ${pkgs.iproute2}/bin/ip rule add from 100.64.0.0/10 lookup 52 priority 5011 2>/dev/null || true
-            ${pkgs.iproute2}/bin/ip route add 100.64.0.0/10 dev tailscale0 2>/dev/null || true
+            ${optionalString (config.services.tailscale.enable or false) ''
+              ${pkgs.iproute2}/bin/ip route add 100.64.0.0/10 dev ${cfg.tailscaleInterface} 2>/dev/null || true
+            ''}
             # 3. WireGuard system VPN default route for all other egress
             ${pkgs.iproute2}/bin/ip rule add not fwmark 0xca6c lookup 51820 priority 5020 2>/dev/null || true
 
@@ -164,7 +189,9 @@ in {
             ${pkgs.iproute2}/bin/ip rule del to 100.64.0.0/10 lookup 52 priority 5010 2>/dev/null || true
             ${pkgs.iproute2}/bin/ip rule del from 100.64.0.0/10 lookup 52 priority 5011 2>/dev/null || true
             ${pkgs.iproute2}/bin/ip rule del not fwmark 0xca6c lookup 51820 priority 5020 2>/dev/null || true
-            ${pkgs.iproute2}/bin/ip route del 100.64.0.0/10 dev tailscale0 2>/dev/null || true
+            ${optionalString (config.services.tailscale.enable or false) ''
+              ${pkgs.iproute2}/bin/ip route del 100.64.0.0/10 dev ${cfg.tailscaleInterface} 2>/dev/null || true
+            ''}
 
             ${pkgs.iproute2}/bin/ip -6 rule del lookup main suppress_prefixlength 0 priority 5000 2>/dev/null || true
             ${pkgs.iproute2}/bin/ip -6 rule del to fd7a:115c:a1e0::/48 lookup 52 priority 5010 2>/dev/null || true
@@ -194,12 +221,11 @@ in {
       iptables -F vpn-killswitch 2>/dev/null || iptables -N vpn-killswitch
       iptables -C OUTPUT -j vpn-killswitch 2>/dev/null || iptables -A OUTPUT -j vpn-killswitch
 
-      # Allow loopback, VPN tunnel, Tailscale, and Netns bridge
-      iptables -A vpn-killswitch -o lo -j ACCEPT
-      iptables -A vpn-killswitch -o ${cfg.interfaceName} -j ACCEPT
-      iptables -A vpn-killswitch -o tailscale0 -j ACCEPT
-      iptables -A vpn-killswitch -o wg-br -j ACCEPT
-      iptables -A vpn-killswitch -o veth-+ -j ACCEPT
+      # Allow loopback, VPN tunnel, Tailscale, and extra tunnel interfaces
+      ${concatMapStringsSep "\n" (iface: ''
+          iptables -A vpn-killswitch -o ${iface} -j ACCEPT
+        '')
+        allowedInterfaces}
 
       # Allow established / related connections
       iptables -A vpn-killswitch -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
@@ -215,9 +241,11 @@ in {
       iptables -A vpn-killswitch -o ${cfg.physicalInterface} -p icmp -j ACCEPT
 
       # Allow Tailscale daemon egress directly on physical interface
-      iptables -A vpn-killswitch -m cgroup --path system.slice/tailscaled.service -j ACCEPT
-      iptables -A vpn-killswitch -o ${cfg.physicalInterface} -p udp --sport 41641 -j ACCEPT
-      iptables -A vpn-killswitch -o ${cfg.physicalInterface} -p udp --dport 41641 -j ACCEPT
+      ${optionalString (config.services.tailscale.enable or false) ''
+        iptables -A vpn-killswitch -m cgroup --path system.slice/tailscaled.service -j ACCEPT
+        iptables -A vpn-killswitch -o ${cfg.physicalInterface} -p udp --sport 41641 -j ACCEPT
+        iptables -A vpn-killswitch -o ${cfg.physicalInterface} -p udp --dport 41641 -j ACCEPT
+      ''}
 
       # Allow WireGuard VPN Handshakes on physical interface (both System VPN and Arr VPN)
       ${concatMapStringsSep "\n" (port: ''
@@ -234,16 +262,17 @@ in {
       ip6tables -F vpn-killswitch 2>/dev/null || ip6tables -N vpn-killswitch
       ip6tables -C OUTPUT -j vpn-killswitch 2>/dev/null || ip6tables -A OUTPUT -j vpn-killswitch
 
-      ip6tables -A vpn-killswitch -o lo -j ACCEPT
-      ip6tables -A vpn-killswitch -o ${cfg.interfaceName} -j ACCEPT
-      ip6tables -A vpn-killswitch -o tailscale0 -j ACCEPT
-      ip6tables -A vpn-killswitch -o wg-br -j ACCEPT
-      ip6tables -A vpn-killswitch -o veth-+ -j ACCEPT
+      ${concatMapStringsSep "\n" (iface: ''
+          ip6tables -A vpn-killswitch -o ${iface} -j ACCEPT
+        '')
+        allowedInterfaces}
       ip6tables -A vpn-killswitch -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
       ip6tables -A vpn-killswitch -o ${cfg.physicalInterface} -d fe80::/10 -j ACCEPT
       ip6tables -A vpn-killswitch -o ${cfg.physicalInterface} -d ff00::/8 -j ACCEPT
       ip6tables -A vpn-killswitch -o ${cfg.physicalInterface} -p ipv6-icmp -j ACCEPT
-      ip6tables -A vpn-killswitch -m cgroup --path system.slice/tailscaled.service -j ACCEPT
+      ${optionalString (config.services.tailscale.enable or false) ''
+        ip6tables -A vpn-killswitch -m cgroup --path system.slice/tailscaled.service -j ACCEPT
+      ''}
       ip6tables -A vpn-killswitch -o ${cfg.physicalInterface} -j REJECT --reject-with icmp6-adm-prohibited
     '';
 

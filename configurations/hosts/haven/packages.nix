@@ -188,5 +188,10 @@
     extraWgConfigFiles = [
       config.sops.secrets.arr_wireguard_conf.path
     ];
+    extraTunnelInterfaces = [
+      "wg-br"
+      "veth-+"
+      "wg0"
+    ];
   };
 }
