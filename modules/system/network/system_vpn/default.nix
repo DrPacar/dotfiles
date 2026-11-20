@@ -27,6 +27,125 @@
     ["lo" cfg.interfaceName]
     ++ lib.optional (config.services.tailscale.enable or false) cfg.tailscaleInterface
     ++ (map iptablesIface cfg.extraTunnelInterfaces);
+
+  # Helper and lifecycle scripts
+  preUpScript = pkgs.writeShellApplication {
+    name = "system-vpn-pre-up";
+    runtimeInputs = with pkgs; [
+      iproute2
+      gawk
+      gnugrep
+      gnused
+      coreutils
+      glibc
+    ];
+    text = builtins.readFile ./scripts/pre-up.sh;
+  };
+
+  postUpScript = pkgs.writeShellApplication {
+    name = "system-vpn-post-up";
+    runtimeInputs = with pkgs; [
+      iproute2
+    ];
+    text = builtins.readFile ./scripts/post-up.sh;
+  };
+
+  postDownScript = pkgs.writeShellApplication {
+    name = "system-vpn-post-down";
+    runtimeInputs = with pkgs; [
+      iproute2
+      coreutils
+    ];
+    text = builtins.readFile ./scripts/post-down.sh;
+  };
+
+  watchdogScript = pkgs.writeShellApplication {
+    name = "system-vpn-watchdog";
+    runtimeInputs = with pkgs; [
+      systemd
+      wireguard-tools
+      iputils
+      gawk
+      coreutils
+    ];
+    text = ''
+      IFACE="${cfg.interfaceName}"
+      PING_TARGET="${cfg.watchdog.pingTarget}"
+      MAX_AGE="${toString cfg.watchdog.maxHandshakeAge}"
+      ${builtins.readFile ./scripts/watchdog.sh}
+    '';
+  };
+
+  vpnStatusScript = pkgs.writeShellApplication {
+    name = "vpn-status";
+    runtimeInputs = with pkgs; [
+      systemd
+      wireguard-tools
+      iproute2
+      iptables
+      curl
+      gawk
+      gnugrep
+      gnused
+      coreutils
+    ];
+    text = ''
+      IFACE="${cfg.interfaceName}"
+      PHYS_IFACE="${cfg.physicalInterface}"
+      BYPASS_GROUP="${
+        if cfg.bypass.enable
+        then cfg.bypass.group
+        else ""
+      }"
+      ${builtins.readFile ./scripts/vpn-status.sh}
+    '';
+  };
+
+  vpnBypassScript = pkgs.writeShellApplication {
+    name = "vpn-bypass";
+    runtimeInputs = with pkgs; [
+      shadow
+      glibc
+      coreutils
+    ];
+    text = ''
+      BYPASS_GROUP="${cfg.bypass.group}"
+      ${builtins.readFile ./scripts/vpn-bypass.sh}
+    '';
+  };
+
+  systemVpnCli = pkgs.writeShellApplication {
+    name = "system-vpn";
+    runtimeInputs = [
+      vpnStatusScript
+      vpnBypassScript
+      pkgs.systemd
+    ];
+    text = ''
+      case "''${1:-status}" in
+        status)
+          shift || true
+          exec vpn-status "$@"
+          ;;
+        restart)
+          echo "Restarting WireGuard ${cfg.interfaceName}..."
+          exec systemctl restart "wg-quick-${cfg.interfaceName}.service"
+          ;;
+        watchdog)
+          echo "Triggering WireGuard ${cfg.interfaceName} watchdog check..."
+          exec systemctl start "${cfg.interfaceName}-watchdog.service"
+          ;;
+        bypass)
+          shift || true
+          exec vpn-bypass "$@"
+          ;;
+        *)
+          echo "Usage: system-vpn {status|restart|watchdog|bypass <command...>}"
+          exit 1
+          ;;
+      esac
+    '';
+  };
 in {
   options.networking.systemVPN = {
     enable = mkEnableOption "system-wide WireGuard VPN with strict killswitch";
@@ -85,6 +204,46 @@ in {
       default = [51820];
       description = "UDP ports used by WireGuard VPN servers (e.g. ProtonVPN).";
     };
+
+    watchdog = {
+      enable = mkOption {
+        type = types.bool;
+        default = true;
+        description = "Enable automated connectivity watchdog that restarts the VPN if ping fails and handshakes stall.";
+      };
+
+      interval = mkOption {
+        type = types.str;
+        default = "2m";
+        description = "Interval between watchdog checks (systemd timer syntax).";
+      };
+
+      pingTarget = mkOption {
+        type = types.str;
+        default = "1.1.1.1";
+        description = "Target IP to ping through the WireGuard interface to verify connectivity.";
+      };
+
+      maxHandshakeAge = mkOption {
+        type = types.int;
+        default = 180;
+        description = "Maximum allowed age in seconds since last handshake before triggering restart.";
+      };
+    };
+
+    bypass = {
+      enable = mkOption {
+        type = types.bool;
+        default = true;
+        description = "Enable selective split-tunneling bypass via dedicated Linux group (vpn-bypass).";
+      };
+
+      group = mkOption {
+        type = types.str;
+        default = "vpn-bypass";
+        description = "Name of the Linux group whose processes bypass the VPN and route directly via physical gateway.";
+      };
+    };
   };
 
   config = mkIf cfg.enable {
@@ -95,7 +254,21 @@ in {
       }
     ];
 
-    environment.systemPackages = [pkgs.wireguard-tools];
+    environment.systemPackages = [
+      pkgs.wireguard-tools
+      systemVpnCli
+      vpnStatusScript
+      vpnBypassScript
+    ];
+
+    # Split-tunneling bypass group & automatic user membership
+    users.groups = mkIf cfg.bypass.enable {
+      ${cfg.bypass.group} = {};
+    };
+
+    users.users = mkIf (cfg.bypass.enable && config.user ? primary && config.user.primary != null) {
+      ${config.user.primary}.extraGroups = [cfg.bypass.group];
+    };
 
     # Tell NetworkManager to leave WireGuard and virtual interfaces unmanaged
     networking.networkmanager.unmanaged = map nmIface (
@@ -112,7 +285,6 @@ in {
 
     # Ensure systemd service handles pre/post routing cleanly
     systemd.services."wg-quick-${cfg.interfaceName}" = {
-      # Only starts after physical network and (optional) tailscale is running
       wants =
         [
           "network-online.target"
@@ -128,86 +300,46 @@ in {
         Restart = "on-failure";
         RestartSec = 5;
 
-        # Ensure direct routing for VPN endpoints so neither VPN nests inside the other
         ExecStartPre = [
-          "+${pkgs.writeShellScript "system-vpn-pre-up" ''
-            set -euo pipefail
-            # Looks up the local Gateway address
-            GW=$(${pkgs.iproute2}/bin/ip route show default dev ${cfg.physicalInterface} 2>/dev/null | ${pkgs.gawk}/bin/awk '/via/ {print $3}' | head -n 1 || true)
-            if [ -n "$GW" ]; then
-              # Routes wireguard VPN Endpoints through the local network
-              for conf in ${wgConfigListStr}; do
-                if [ -f "$conf" ]; then
-                  EP=$(${pkgs.gnugrep}/bin/grep -iE "^[[:space:]]*Endpoint" "$conf" | head -n 1 | ${pkgs.gnused}/bin/sed -E 's/.*=[[:space:]]*\[?([^]:[:space:]]+).*/\1/' || true)
-                  if [ -n "$EP" ]; then
-                    ${pkgs.iproute2}/bin/ip route add "$EP/32" via "$GW" dev "${cfg.physicalInterface}" 2>/dev/null || true
-                  fi
-                fi
-              done
-            fi
-          ''}"
+          "+${preUpScript}/bin/system-vpn-pre-up \"${cfg.physicalInterface}\" ${wgConfigListStr}"
         ];
 
-        # Prioritize local LAN and Tailscale overlay routing before WireGuard default routing
         ExecStartPost = [
-          "+${pkgs.writeShellScript "system-vpn-post-up" ''
-            # Clean up auto-generated wg-quick IPv4 rules
-            while ${pkgs.iproute2}/bin/ip rule del not fwmark 0xca6c lookup 51820 2>/dev/null; do :; done
-            while ${pkgs.iproute2}/bin/ip rule del table main suppress_prefixlength 0 2>/dev/null; do :; done
-            while ${pkgs.iproute2}/bin/ip rule del to 100.64.0.0/10 lookup 52 2>/dev/null; do :; done
-            while ${pkgs.iproute2}/bin/ip rule del from 100.64.0.0/10 lookup 52 2>/dev/null; do :; done
-
-            # Clean up auto-generated wg-quick IPv6 rules
-            while ${pkgs.iproute2}/bin/ip -6 rule del not fwmark 0xca6c lookup 51820 2>/dev/null; do :; done
-            while ${pkgs.iproute2}/bin/ip -6 rule del table main suppress_prefixlength 0 2>/dev/null; do :; done
-            while ${pkgs.iproute2}/bin/ip -6 rule del to fd7a:115c:a1e0::/48 lookup 52 2>/dev/null; do :; done
-            while ${pkgs.iproute2}/bin/ip -6 rule del from fd7a:115c:a1e0::/48 lookup 52 2>/dev/null; do :; done
-
-            # Install deterministic IPv4 rules in strict order:
-            # 1. Main table routes with non-zero prefix length (LAN, host routes like VPN endpoints)
-            ${pkgs.iproute2}/bin/ip rule add lookup main suppress_prefixlength 0 priority 5000 2>/dev/null || true
-            # 2. Tailscale overlay traffic (CGNAT range 100.64.0.0/10)
-            ${pkgs.iproute2}/bin/ip rule add to 100.64.0.0/10 lookup 52 priority 5010 2>/dev/null || true
-            ${pkgs.iproute2}/bin/ip rule add from 100.64.0.0/10 lookup 52 priority 5011 2>/dev/null || true
-            ${optionalString (config.services.tailscale.enable or false) ''
-              ${pkgs.iproute2}/bin/ip route add 100.64.0.0/10 dev ${cfg.tailscaleInterface} 2>/dev/null || true
-            ''}
-            # 3. WireGuard system VPN default route for all other egress
-            ${pkgs.iproute2}/bin/ip rule add not fwmark 0xca6c lookup 51820 priority 5020 2>/dev/null || true
-
-            # Install deterministic IPv6 rules:
-            ${pkgs.iproute2}/bin/ip -6 rule add lookup main suppress_prefixlength 0 priority 5000 2>/dev/null || true
-            ${pkgs.iproute2}/bin/ip -6 rule add to fd7a:115c:a1e0::/48 lookup 52 priority 5010 2>/dev/null || true
-            ${pkgs.iproute2}/bin/ip -6 rule add from fd7a:115c:a1e0::/48 lookup 52 priority 5011 2>/dev/null || true
-            ${pkgs.iproute2}/bin/ip -6 rule add not fwmark 0xca6c lookup 51820 priority 5020 2>/dev/null || true
-          ''}"
+          "+${postUpScript}/bin/system-vpn-post-up \"${
+            if config.services.tailscale.enable or false
+            then "1"
+            else "0"
+          }\" \"${cfg.tailscaleInterface}\""
         ];
 
         ExecStopPost = [
-          "+${pkgs.writeShellScript "system-vpn-post-down" ''
-            ${pkgs.iproute2}/bin/ip rule del lookup main suppress_prefixlength 0 priority 5000 2>/dev/null || true
-            ${pkgs.iproute2}/bin/ip rule del to 100.64.0.0/10 lookup 52 priority 5010 2>/dev/null || true
-            ${pkgs.iproute2}/bin/ip rule del from 100.64.0.0/10 lookup 52 priority 5011 2>/dev/null || true
-            ${pkgs.iproute2}/bin/ip rule del not fwmark 0xca6c lookup 51820 priority 5020 2>/dev/null || true
-            ${optionalString (config.services.tailscale.enable or false) ''
-              ${pkgs.iproute2}/bin/ip route del 100.64.0.0/10 dev ${cfg.tailscaleInterface} 2>/dev/null || true
-            ''}
-
-            ${pkgs.iproute2}/bin/ip -6 rule del lookup main suppress_prefixlength 0 priority 5000 2>/dev/null || true
-            ${pkgs.iproute2}/bin/ip -6 rule del to fd7a:115c:a1e0::/48 lookup 52 priority 5010 2>/dev/null || true
-            ${pkgs.iproute2}/bin/ip -6 rule del from fd7a:115c:a1e0::/48 lookup 52 priority 5011 2>/dev/null || true
-            ${pkgs.iproute2}/bin/ip -6 rule del not fwmark 0xca6c lookup 51820 priority 5020 2>/dev/null || true
-
-            for conf in ${wgConfigListStr}; do
-              if [ -f "$conf" ]; then
-                EP=$(${pkgs.gnugrep}/bin/grep -iE "^[[:space:]]*Endpoint" "$conf" | head -n 1 | ${pkgs.gnused}/bin/sed -E 's/.*=[[:space:]]*\[?([^]:[:space:]]+).*/\1/' || true)
-                if [ -n "$EP" ]; then
-                  ${pkgs.iproute2}/bin/ip route del "$EP/32" 2>/dev/null || true
-                fi
-              fi
-            done
-          ''}"
+          "+${postDownScript}/bin/system-vpn-post-down \"${cfg.physicalInterface}\" \"${
+            if config.services.tailscale.enable or false
+            then "1"
+            else "0"
+          }\" \"${cfg.tailscaleInterface}\""
         ];
+      };
+    };
+
+    # -------------------------------------------------------------------------
+    # Auto-healing Watchdog service & timer
+    # -------------------------------------------------------------------------
+    systemd.services."${cfg.interfaceName}-watchdog" = mkIf cfg.watchdog.enable {
+      description = "Health check and auto-recovery for WireGuard ${cfg.interfaceName}";
+      serviceConfig = {
+        Type = "oneshot";
+        ExecStart = "${watchdogScript}/bin/system-vpn-watchdog";
+      };
+    };
+
+    systemd.timers."${cfg.interfaceName}-watchdog" = mkIf cfg.watchdog.enable {
+      description = "Timer for WireGuard ${cfg.interfaceName} health check";
+      wantedBy = ["timers.target"];
+      timerConfig = {
+        OnBootSec = "2m";
+        OnUnitActiveSec = cfg.watchdog.interval;
+        RandomizedDelaySec = "10s";
       };
     };
 
@@ -218,6 +350,12 @@ in {
       # -------------------------------------------------------------------------
       # System VPN Killswitch (IPv4)
       # -------------------------------------------------------------------------
+      ${optionalString cfg.bypass.enable ''
+        # Mark packets from processes in the bypass group
+        iptables -t mangle -C OUTPUT -m owner --gid-owner ${cfg.bypass.group} -j MARK --set-mark 0x5200 2>/dev/null || \
+        iptables -t mangle -A OUTPUT -m owner --gid-owner ${cfg.bypass.group} -j MARK --set-mark 0x5200
+      ''}
+
       iptables -F vpn-killswitch 2>/dev/null || iptables -N vpn-killswitch
       iptables -C OUTPUT -j vpn-killswitch 2>/dev/null || iptables -A OUTPUT -j vpn-killswitch
 
@@ -229,6 +367,11 @@ in {
 
       # Allow established / related connections
       iptables -A vpn-killswitch -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+
+      # Allow split-tunnel bypass group directly on physical interface
+      ${optionalString cfg.bypass.enable ''
+        iptables -A vpn-killswitch -m owner --gid-owner ${cfg.bypass.group} -o ${cfg.physicalInterface} -j ACCEPT
+      ''}
 
       # Allow local LAN & local multicast/broadcast on physical interface
       ${concatMapStringsSep "\n" (subnet: ''
@@ -259,6 +402,11 @@ in {
       # -------------------------------------------------------------------------
       # System VPN Killswitch (IPv6)
       # -------------------------------------------------------------------------
+      ${optionalString cfg.bypass.enable ''
+        ip6tables -t mangle -C OUTPUT -m owner --gid-owner ${cfg.bypass.group} -j MARK --set-mark 0x5200 2>/dev/null || \
+        ip6tables -t mangle -A OUTPUT -m owner --gid-owner ${cfg.bypass.group} -j MARK --set-mark 0x5200
+      ''}
+
       ip6tables -F vpn-killswitch 2>/dev/null || ip6tables -N vpn-killswitch
       ip6tables -C OUTPUT -j vpn-killswitch 2>/dev/null || ip6tables -A OUTPUT -j vpn-killswitch
 
@@ -267,6 +415,9 @@ in {
         '')
         allowedInterfaces}
       ip6tables -A vpn-killswitch -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+      ${optionalString cfg.bypass.enable ''
+        ip6tables -A vpn-killswitch -m owner --gid-owner ${cfg.bypass.group} -o ${cfg.physicalInterface} -j ACCEPT
+      ''}
       ip6tables -A vpn-killswitch -o ${cfg.physicalInterface} -d fe80::/10 -j ACCEPT
       ip6tables -A vpn-killswitch -o ${cfg.physicalInterface} -d ff00::/8 -j ACCEPT
       ip6tables -A vpn-killswitch -o ${cfg.physicalInterface} -p ipv6-icmp -j ACCEPT
@@ -277,6 +428,11 @@ in {
     '';
 
     networking.firewall.extraStopCommands = ''
+      ${optionalString cfg.bypass.enable ''
+        iptables -t mangle -D OUTPUT -m owner --gid-owner ${cfg.bypass.group} -j MARK --set-mark 0x5200 2>/dev/null || true
+        ip6tables -t mangle -D OUTPUT -m owner --gid-owner ${cfg.bypass.group} -j MARK --set-mark 0x5200 2>/dev/null || true
+      ''}
+
       iptables -D OUTPUT -j vpn-killswitch 2>/dev/null || true
       iptables -F vpn-killswitch 2>/dev/null || true
       iptables -X vpn-killswitch 2>/dev/null || true
