@@ -25,11 +25,17 @@ if [ "$CURRENT_GID" = "$TARGET_GID" ]; then
   exec "$@"
 fi
 
+# Locate setuid sg wrapper on NixOS
+SG="/run/wrappers/bin/sg"
+if [ ! -x "$SG" ]; then
+  SG="sg"
+fi
+
 # Check membership or root
 USER_NAME=$(id -un)
 if id -nG "$USER_NAME" | grep -qw "$GROUP" || [ "$EUID" -eq 0 ]; then
   CMD=$(printf '%q ' "$@")
-  exec sg "$GROUP" -c "$CMD"
+  exec "$SG" "$GROUP" -c "$CMD"
 else
   echo "Error: User '$USER_NAME' is not a member of '$GROUP'." >&2
   echo "Add user to group: users.users.$USER_NAME.extraGroups = [ \"$GROUP\" ];" >&2

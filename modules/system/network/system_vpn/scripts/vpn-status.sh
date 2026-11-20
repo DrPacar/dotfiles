@@ -6,6 +6,14 @@ PHYS_IFACE="${PHYS_IFACE:-${2:-eno1}}"
 BYPASS_GROUP="${BYPASS_GROUP:-${3:-vpn-bypass}}"
 UNIT="wg-quick-${IFACE}.service"
 
+# Privilege helper (leverages passwordless sudo if available)
+SUDO=""
+if [ "$EUID" -ne 0 ] && command -v sudo >/dev/null 2>&1; then
+  if sudo -n true 2>/dev/null; then
+    SUDO="sudo"
+  fi
+fi
+
 # Terminal formatting
 BOLD="\033[1m"
 GREEN="\033[0;32m"
@@ -28,10 +36,10 @@ echo -e "Service (${UNIT}): ${SERVICE_STATUS}"
 if ip link show "$IFACE" >/dev/null 2>&1; then
   echo -e "Tunnel Interface:       ${GREEN}UP${RESET} (${IFACE})"
 
-  PEER_INFO=$(wg show "$IFACE" 2>/dev/null || true)
+  PEER_INFO=$($SUDO wg show "$IFACE" 2>/dev/null || true)
   if [ -n "$PEER_INFO" ]; then
     ENDPOINT=$(echo "$PEER_INFO" | grep "endpoint:" | head -n 1 | awk '{print $2}' || true)
-    LATEST_HS=$(wg show "$IFACE" latest-handshakes 2>/dev/null | awk '{print $2}' | sort -n | tail -n 1 || true)
+    LATEST_HS=$($SUDO wg show "$IFACE" latest-handshakes 2>/dev/null | awk '{print $2}' | sort -n | tail -n 1 || true)
     TRANSFER=$(echo "$PEER_INFO" | grep "transfer:" | head -n 1 | sed 's/.*transfer:[[:space:]]*//' || true)
 
     NOW=$(date +%s)
@@ -66,8 +74,8 @@ fi
 
 # 4. Firewall & Killswitch statistics
 echo -e "\n${BOLD}${CYAN}--- Firewall & Killswitch ---${RESET}"
-if iptables -L vpn-killswitch -n >/dev/null 2>&1; then
-  DROPS=$(iptables -L vpn-killswitch -v -n 2>/dev/null | grep -i REJECT | awk '{print $1 " packets (" $2 " bytes)"}' || echo "0 packets")
+if $SUDO iptables -L vpn-killswitch -n >/dev/null 2>&1; then
+  DROPS=$($SUDO iptables -L vpn-killswitch -v -n 2>/dev/null | grep -i REJECT | awk '{print $1 " packets (" $2 " bytes)"}' || echo "0 packets")
   echo -e "Killswitch Chain:       ${GREEN}ACTIVE${RESET} (Default Deny on ${PHYS_IFACE})"
   echo -e "Blocked Leaks (REJECT): ${YELLOW}${DROPS}${RESET}"
 else

@@ -104,7 +104,6 @@
   vpnBypassScript = pkgs.writeShellApplication {
     name = "vpn-bypass";
     runtimeInputs = with pkgs; [
-      shadow
       glibc
       coreutils
     ];
@@ -354,6 +353,10 @@ in {
         # Mark packets from processes in the bypass group
         iptables -t mangle -C OUTPUT -m owner --gid-owner ${cfg.bypass.group} -j MARK --set-mark 0x5200 2>/dev/null || \
         iptables -t mangle -A OUTPUT -m owner --gid-owner ${cfg.bypass.group} -j MARK --set-mark 0x5200
+
+        # NAT MASQUERADE ensures packets routed via physical interface take the physical LAN IP
+        iptables -t nat -C POSTROUTING -o ${cfg.physicalInterface} -m mark --mark 0x5200 -j MASQUERADE 2>/dev/null || \
+        iptables -t nat -A POSTROUTING -o ${cfg.physicalInterface} -m mark --mark 0x5200 -j MASQUERADE
       ''}
 
       iptables -F vpn-killswitch 2>/dev/null || iptables -N vpn-killswitch
@@ -368,9 +371,9 @@ in {
       # Allow established / related connections
       iptables -A vpn-killswitch -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
 
-      # Allow split-tunnel bypass group directly on physical interface
+      # Allow split-tunnel bypass mark directly on physical interface
       ${optionalString cfg.bypass.enable ''
-        iptables -A vpn-killswitch -m owner --gid-owner ${cfg.bypass.group} -o ${cfg.physicalInterface} -j ACCEPT
+        iptables -A vpn-killswitch -m mark --mark 0x5200 -o ${cfg.physicalInterface} -j ACCEPT
       ''}
 
       # Allow local LAN & local multicast/broadcast on physical interface
@@ -416,7 +419,7 @@ in {
         allowedInterfaces}
       ip6tables -A vpn-killswitch -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
       ${optionalString cfg.bypass.enable ''
-        ip6tables -A vpn-killswitch -m owner --gid-owner ${cfg.bypass.group} -o ${cfg.physicalInterface} -j ACCEPT
+        ip6tables -A vpn-killswitch -m mark --mark 0x5200 -o ${cfg.physicalInterface} -j ACCEPT
       ''}
       ip6tables -A vpn-killswitch -o ${cfg.physicalInterface} -d fe80::/10 -j ACCEPT
       ip6tables -A vpn-killswitch -o ${cfg.physicalInterface} -d ff00::/8 -j ACCEPT
@@ -430,6 +433,7 @@ in {
     networking.firewall.extraStopCommands = ''
       ${optionalString cfg.bypass.enable ''
         iptables -t mangle -D OUTPUT -m owner --gid-owner ${cfg.bypass.group} -j MARK --set-mark 0x5200 2>/dev/null || true
+        iptables -t nat -D POSTROUTING -o ${cfg.physicalInterface} -m mark --mark 0x5200 -j MASQUERADE 2>/dev/null || true
         ip6tables -t mangle -D OUTPUT -m owner --gid-owner ${cfg.bypass.group} -j MARK --set-mark 0x5200 2>/dev/null || true
       ''}
 
