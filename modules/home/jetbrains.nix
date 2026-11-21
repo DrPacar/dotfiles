@@ -20,7 +20,8 @@
         buildInputs = [makeWrapper];
         postBuild = ''
           wrapProgram $out/bin/${pkg.meta.mainProgram} \
-            --set ${envVar} "${customVmOpts}"
+            --set ${envVar} "${customVmOpts}" \
+            --prefix LD_LIBRARY_PATH : "/run/current-system/sw/share/nix-ld/lib"
         '';
       };
   in [

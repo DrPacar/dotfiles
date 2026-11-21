@@ -62,6 +62,13 @@
       set -g fish_greeting ""
       microfetch
 
+      # Expose nix-ld libraries for Python virtualenvs and dynamic C-extensions (numpy, matplotlib, etc.)
+      if test -n "$NIX_LD_LIBRARY_PATH"
+          set -gx LD_LIBRARY_PATH $NIX_LD_LIBRARY_PATH
+      else if test -d "/run/current-system/sw/share/nix-ld/lib"
+          set -gx LD_LIBRARY_PATH "/run/current-system/sw/share/nix-ld/lib"
+      end
+
       # Completions for send_file script
       complete -c send_file -s n -l no-auto -d "Disable auto-selecting device"
       complete -c send_file -s h -l help -d "Show help message"
