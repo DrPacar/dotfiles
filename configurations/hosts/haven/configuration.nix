@@ -33,6 +33,12 @@
         DHCP = "yes";
         IgnoreCarrierLoss = "3s";
         DNSDefaultRoute = false;
+        Domains = [
+          "~local"
+          "~home.arpa"
+          "~lan"
+          "~lukpac.dev"
+        ];
       };
       dhcpV4Config = {
         UseDNS = false; # Keep static Cloudflare nameservers (1.1.1.1) to avoid loops with local AdGuard
