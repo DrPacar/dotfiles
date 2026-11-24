@@ -32,7 +32,6 @@
       mouse-hide-while-typing = true;
 
       # Clipboard & Selection
-      copy-on-select = "clipboard";
       clipboard-read = "allow";
       clipboard-paste-protection = true;
       clipboard-trim-trailing-spaces = true;
