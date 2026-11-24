@@ -15,8 +15,7 @@ set -euo pipefail
 #      interface, preventing unencrypted DNS leaks to the local router.
 #
 # Execution Context:
-#   Invoked by systemd ExecStopPost in `wg-quick-${IFACE}.service` when the
-#   WireGuard service is stopped or restarted.
+#   Invoked by systemd ExecStopPost in the wg-quick service when stopped or restarted.
 # =============================================================================
 
 : "${PHYS_IFACE:?PHYS_IFACE is required}"
@@ -25,39 +24,33 @@ TAILSCALE_IFACE="${TAILSCALE_IFACE:-tailscale0}"
 SPLIT_DNS_ENABLED="${SPLIT_DNS_ENABLED:-0}"
 
 # -----------------------------------------------------------------------------
-# 1. Clean up managed policy routing rules (data-driven)
+# 1. Clean up managed policy routing rules and table 51820 (IPv4 & IPv6)
 # -----------------------------------------------------------------------------
 for fam in -4 -6; do
 	if [ "$fam" = "-6" ] && [ ! -e /proc/net/if_inet6 ]; then
 		continue
 	fi
+
 	for prio in 4990 4991 4992 5000 5010 5011 5020; do
 		while ip "$fam" rule del priority "$prio" 2>/dev/null; do :; done
 	done
+
+	if [ "$TAILSCALE_ENABLED" = "1" ]; then
+		if [ "$fam" = "-4" ]; then
+			ts_net="100.64.0.0/10"
+		else
+			ts_net="fd7a:115c:a1e0::/48"
+		fi
+		ip "$fam" route del "$ts_net" dev "$TAILSCALE_IFACE" 2>/dev/null || true
+	fi
+
+	ip "$fam" route flush table 51820 2>/dev/null || true
 done
 
-if [ "$TAILSCALE_ENABLED" = "1" ]; then
-	ip route del 100.64.0.0/10 dev "$TAILSCALE_IFACE" 2>/dev/null || true
-	if [ -e /proc/net/if_inet6 ]; then
-		ip -6 route del fd7a:115c:a1e0::/48 dev "$TAILSCALE_IFACE" 2>/dev/null || true
-	fi
-fi
-
 # -----------------------------------------------------------------------------
-# 2. Flush WireGuard routing table 51820
+# 2. Enforce fail-closed Split-DNS on physical interface
 # -----------------------------------------------------------------------------
-ip route flush table 51820 2>/dev/null || true
-if [ -e /proc/net/if_inet6 ]; then
-	ip -6 route flush table 51820 2>/dev/null || true
-fi
-
-# -----------------------------------------------------------------------------
-# 3. Enforce fail-closed Split-DNS on physical interface
-# -----------------------------------------------------------------------------
-# Ensure the physical interface remains default-route=no to prevent DNS leaks
-# when the VPN tunnel is stopped.
-if [ "$SPLIT_DNS_ENABLED" = "1" ]; then
-	if command -v resolvectl >/dev/null 2>&1; then
-		resolvectl default-route "$PHYS_IFACE" no 2>/dev/null || true
-	fi
+# Keep DefaultRoute=no on the physical link so DNS fails closed while VPN is down.
+if [ "$SPLIT_DNS_ENABLED" = "1" ] && command -v resolvectl >/dev/null 2>&1; then
+	resolvectl default-route "$PHYS_IFACE" no 2>/dev/null || true
 fi

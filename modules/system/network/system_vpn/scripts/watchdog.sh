@@ -41,13 +41,15 @@ fi
 # -----------------------------------------------------------------------------
 # 2. Ping failed: evaluate consecutive failures and handshake age
 # -----------------------------------------------------------------------------
-mkdir -p "$STATE_DIR" 2>/dev/null || true
+mkdir -p "$STATE_DIR"
 FAILS=0
 if [ -f "$FAIL_FILE" ]; then
 	FAILS=$(cat "$FAIL_FILE" 2>/dev/null || echo 0)
 fi
 FAILS=$((FAILS + 1))
-echo "$FAILS" >"$FAIL_FILE" 2>/dev/null || true
+if ! echo "$FAILS" >"$FAIL_FILE"; then
+	echo "WARN: [system-vpn-watchdog] Failed to persist failure count to $FAIL_FILE." >&2
+fi
 
 LATEST_HANDSHAKE=$(wg show "$IFACE" latest-handshakes 2>/dev/null | awk '{print $2}' | sort -n | tail -n 1 || true)
 NOW=$(date +%s)

@@ -172,14 +172,14 @@ Die Routing Policy Database (RPDB) wird über `post-up.sh` und `post-down.sh` mi
 Das CLI-Tool `system-vpn` kapselt alle Management- und Diagnosewerkzeuge in einem einzigen Befehl:
 
 ```bash
-system-vpn {status|check|start|stop|restart|logs|watchdog|bypass <command...>}
+system-vpn {status [--fast|--no-ip]|check|start|stop|restart|logs|watchdog|bypass <command...>}
 ```
 
 ### Befehle im Überblick
 
-#### 1. `system-vpn status` (oder einfach `system-vpn`)
+#### 1. `system-vpn status [--fast|--no-ip]` (oder einfach `system-vpn`)
 
-Öffnet das interaktive Terminal-Dashboard mit strukturierter Telemetrie:
+Öffnet das interaktive Terminal-Dashboard mit strukturierter Telemetrie (`--fast` / `--no-ip` überspringt die externe IP-Abfrage):
 
 - Status des WireGuard-Dienstes und Interface-Uptime.
 - WireGuard-Kryptografie: Endpoint, letzter Handshake, Datenübertragung (RX/TX).

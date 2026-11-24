@@ -49,7 +49,11 @@ else
 	RESET=""
 fi
 
-# Helper to read named nftables counter (exits 1 if table or counter is not loaded)
+print_kv() {
+	printf "%-24s%b\n" "$1:" "$2"
+}
+
+# Read named nftables counter (exits 1 if table or counter is not loaded)
 get_nft_counter() {
 	local counter_name="$1"
 	if [ -n "$SUDO" ] || [ "$EUID" -eq 0 ]; then
@@ -89,6 +93,57 @@ do_selftest() {
 		fi
 	}
 
+	check_rule() {
+		local rules="$1"
+		local desc="$2"
+		local pattern="$3"
+		if echo "$rules" | grep -qE "$pattern"; then
+			run_check "$desc" 0
+		else
+			run_check "$desc" 1 "rule missing"
+		fi
+	}
+
+	check_table_51820() {
+		local fam="$1"
+		local fam_label="$2"
+		if ip "$fam" route show table 51820 2>/dev/null | grep -qE "default.*dev[[:space:]]+$IFACE"; then
+			run_check "Routing table 51820 contains $fam_label default route via $IFACE" 0
+		else
+			run_check "Routing table 51820 contains $fam_label default route via $IFACE" 1 "$fam_label default route missing"
+		fi
+	}
+
+	check_rpdb_family() {
+		local fam_label="$1"
+		local rules="$2"
+		local ts_net="$3"
+
+		check_rule "$rules" "RPDB $fam_label Priority 4990 (bypass mark $BYPASS_MARK -> table main)" \
+			"^4990:[[:space:]]+.*fwmark[[:space:]]+${BYPASS_MARK}[[:space:]]+lookup[[:space:]]+main"
+
+		if [ "$TAILSCALE_ENABLED" = "1" ]; then
+			check_rule "$rules" "RPDB $fam_label Priority 4991 (Tailscale mark $TAILSCALE_FWMARK -> table main)" \
+				"^4991:[[:space:]]+.*fwmark[[:space:]]+${TAILSCALE_FWMARK}[[:space:]]+lookup[[:space:]]+main"
+		fi
+
+		check_rule "$rules" "RPDB $fam_label Priority 4992 (bypass unreachable catch)" \
+			"^4992:[[:space:]]+.*fwmark[[:space:]]+${BYPASS_MARK}[[:space:]]+unreachable"
+
+		check_rule "$rules" "RPDB $fam_label Priority 5000 (LAN suppress_prefixlength 0)" \
+			"^5000:[[:space:]]+.*lookup[[:space:]]+main[[:space:]]+suppress_prefixlength[[:space:]]+0"
+
+		if [ "$TAILSCALE_ENABLED" = "1" ]; then
+			check_rule "$rules" "RPDB $fam_label Priority 5010 (Tailscale CGNAT to -> table 52)" \
+				"^5010:[[:space:]]+.*to[[:space:]]+${ts_net}[[:space:]]+lookup[[:space:]]+52"
+			check_rule "$rules" "RPDB $fam_label Priority 5011 (Tailscale CGNAT from -> table 52)" \
+				"^5011:[[:space:]]+.*from[[:space:]]+${ts_net}[[:space:]]+lookup[[:space:]]+52"
+		fi
+
+		check_rule "$rules" "RPDB $fam_label Priority 5020 (default internet -> table 51820)" \
+			"^5020:[[:space:]]+.*not[[:space:]]+.*fwmark[[:space:]]+${WG_FWMARK}[[:space:]]+lookup[[:space:]]+51820"
+	}
+
 	# Check 1: Interface UP
 	if ip link show dev "$IFACE" up 2>/dev/null | grep -q .; then
 		run_check "Tunnel interface $IFACE exists and is UP" 0
@@ -105,123 +160,26 @@ do_selftest() {
 		run_check "WireGuard kernel fwmark is valid" 1 "found '$FWMARK', expected '$WG_FWMARK'"
 	fi
 
-	# Check 3: WireGuard routing table 51820 default route
-	if ip route show table 51820 2>/dev/null | grep -qE "default.*dev[[:space:]]+$IFACE"; then
-		run_check "Routing table 51820 contains IPv4 default route via $IFACE" 0
-	else
-		run_check "Routing table 51820 contains IPv4 default route via $IFACE" 1 "IPv4 default route missing"
-	fi
+	# Check 3: WireGuard routing table 51820 default routes (IPv4 & IPv6)
+	check_table_51820 -4 "IPv4"
 	if [ -e /proc/net/if_inet6 ]; then
-		if ip -6 route show table 51820 2>/dev/null | grep -qE "default.*dev[[:space:]]+$IFACE"; then
-			run_check "Routing table 51820 contains IPv6 default route via $IFACE" 0
-		else
-			run_check "Routing table 51820 contains IPv6 default route via $IFACE" 1 "IPv6 default route missing"
-		fi
+		check_table_51820 -6 "IPv6"
 	fi
 
-	# Check 4: IPv4 RPDB Policy routing rules (anchored checks)
+	# Check 4 & 5: IPv4 & IPv6 RPDB Policy routing rules
 	local RULES_V4
 	RULES_V4=$(ip rule show)
+	check_rpdb_family "IPv4" "$RULES_V4" "100.64.0.0/10"
 
-	if echo "$RULES_V4" | grep -qE "^4990:[[:space:]]+.*fwmark[[:space:]]+${BYPASS_MARK}[[:space:]]+lookup[[:space:]]+main"; then
-		run_check "RPDB IPv4 Priority 4990 (bypass mark $BYPASS_MARK -> table main)" 0
-	else
-		run_check "RPDB IPv4 Priority 4990 (bypass mark $BYPASS_MARK)" 1 "rule missing"
-	fi
-
-	if [ "$TAILSCALE_ENABLED" = "1" ]; then
-		if echo "$RULES_V4" | grep -qE "^4991:[[:space:]]+.*fwmark[[:space:]]+${TAILSCALE_FWMARK}[[:space:]]+lookup[[:space:]]+main"; then
-			run_check "RPDB IPv4 Priority 4991 (Tailscale mark $TAILSCALE_FWMARK -> table main)" 0
-		else
-			run_check "RPDB IPv4 Priority 4991 (Tailscale mark $TAILSCALE_FWMARK)" 1 "rule missing"
-		fi
-	fi
-
-	if echo "$RULES_V4" | grep -qE "^4992:[[:space:]]+.*fwmark[[:space:]]+${BYPASS_MARK}[[:space:]]+unreachable"; then
-		run_check "RPDB IPv4 Priority 4992 (bypass unreachable catch)" 0
-	else
-		run_check "RPDB IPv4 Priority 4992 (bypass unreachable catch)" 1 "rule missing"
-	fi
-
-	if echo "$RULES_V4" | grep -qE "^5000:[[:space:]]+.*lookup[[:space:]]+main[[:space:]]+suppress_prefixlength[[:space:]]+0"; then
-		run_check "RPDB IPv4 Priority 5000 (LAN suppress_prefixlength 0)" 0
-	else
-		run_check "RPDB IPv4 Priority 5000 (LAN preservation)" 1 "rule missing"
-	fi
-
-	if [ "$TAILSCALE_ENABLED" = "1" ]; then
-		if echo "$RULES_V4" | grep -qE "^5010:[[:space:]]+.*to[[:space:]]+100.64.0.0/10[[:space:]]+lookup[[:space:]]+52"; then
-			run_check "RPDB IPv4 Priority 5010 (Tailscale CGNAT to -> table 52)" 0
-		else
-			run_check "RPDB IPv4 Priority 5010 (Tailscale CGNAT to)" 1 "rule missing"
-		fi
-		if echo "$RULES_V4" | grep -qE "^5011:[[:space:]]+.*from[[:space:]]+100.64.0.0/10[[:space:]]+lookup[[:space:]]+52"; then
-			run_check "RPDB IPv4 Priority 5011 (Tailscale CGNAT from -> table 52)" 0
-		else
-			run_check "RPDB IPv4 Priority 5011 (Tailscale CGNAT from)" 1 "rule missing"
-		fi
-	fi
-
-	if echo "$RULES_V4" | grep -qE "^5020:[[:space:]]+.*not[[:space:]]+.*fwmark[[:space:]]+${WG_FWMARK}[[:space:]]+lookup[[:space:]]+51820"; then
-		run_check "RPDB IPv4 Priority 5020 (default internet -> table 51820)" 0
-	else
-		run_check "RPDB IPv4 Priority 5020 (WireGuard default table)" 1 "rule missing"
-	fi
-
-	# Check 5: IPv6 RPDB Policy routing rules (anchored checks, guarded)
 	if [ -e /proc/net/if_inet6 ]; then
 		local RULES_V6
 		RULES_V6=$(ip -6 rule show 2>/dev/null || true)
-
-		if echo "$RULES_V6" | grep -qE "^4990:[[:space:]]+.*fwmark[[:space:]]+${BYPASS_MARK}[[:space:]]+lookup[[:space:]]+main"; then
-			run_check "RPDB IPv6 Priority 4990 (bypass mark $BYPASS_MARK -> table main)" 0
-		else
-			run_check "RPDB IPv6 Priority 4990 (bypass mark $BYPASS_MARK)" 1 "rule missing"
-		fi
-
-		if [ "$TAILSCALE_ENABLED" = "1" ]; then
-			if echo "$RULES_V6" | grep -qE "^4991:[[:space:]]+.*fwmark[[:space:]]+${TAILSCALE_FWMARK}[[:space:]]+lookup[[:space:]]+main"; then
-				run_check "RPDB IPv6 Priority 4991 (Tailscale mark $TAILSCALE_FWMARK -> table main)" 0
-			else
-				run_check "RPDB IPv6 Priority 4991 (Tailscale mark $TAILSCALE_FWMARK)" 1 "rule missing"
-			fi
-		fi
-
-		if echo "$RULES_V6" | grep -qE "^4992:[[:space:]]+.*fwmark[[:space:]]+${BYPASS_MARK}[[:space:]]+unreachable"; then
-			run_check "RPDB IPv6 Priority 4992 (bypass unreachable catch)" 0
-		else
-			run_check "RPDB IPv6 Priority 4992 (bypass unreachable catch)" 1 "rule missing"
-		fi
-
-		if echo "$RULES_V6" | grep -qE "^5000:[[:space:]]+.*lookup[[:space:]]+main[[:space:]]+suppress_prefixlength[[:space:]]+0"; then
-			run_check "RPDB IPv6 Priority 5000 (LAN suppress_prefixlength 0)" 0
-		else
-			run_check "RPDB IPv6 Priority 5000 (LAN preservation)" 1 "rule missing"
-		fi
-
-		if [ "$TAILSCALE_ENABLED" = "1" ]; then
-			if echo "$RULES_V6" | grep -qE "^5010:[[:space:]]+.*to[[:space:]]+fd7a:115c:a1e0::/48[[:space:]]+lookup[[:space:]]+52"; then
-				run_check "RPDB IPv6 Priority 5010 (Tailscale CGNAT to -> table 52)" 0
-			else
-				run_check "RPDB IPv6 Priority 5010 (Tailscale CGNAT to)" 1 "rule missing"
-			fi
-			if echo "$RULES_V6" | grep -qE "^5011:[[:space:]]+.*from[[:space:]]+fd7a:115c:a1e0::/48[[:space:]]+lookup[[:space:]]+52"; then
-				run_check "RPDB IPv6 Priority 5011 (Tailscale CGNAT from -> table 52)" 0
-			else
-				run_check "RPDB IPv6 Priority 5011 (Tailscale CGNAT from)" 1 "rule missing"
-			fi
-		fi
-
-		if echo "$RULES_V6" | grep -qE "^5020:[[:space:]]+.*not[[:space:]]+.*fwmark[[:space:]]+${WG_FWMARK}[[:space:]]+lookup[[:space:]]+51820"; then
-			run_check "RPDB IPv6 Priority 5020 (default internet -> table 51820)" 0
-		else
-			run_check "RPDB IPv6 Priority 5020 (WireGuard default table)" 1 "rule missing"
-		fi
+		check_rpdb_family "IPv6" "$RULES_V6" "fd7a:115c:a1e0::/48"
 	fi
 
 	# Check 6: Split-DNS scoping
 	if [ "$SPLIT_DNS_ENABLED" = "1" ] && command -v resolvectl >/dev/null 2>&1; then
-		local WG_DOMAINS
+		local WG_DOMAINS WG_DNS PHYS_DEFROUTE
 		WG_DOMAINS=$(resolvectl domain "$IFACE" 2>/dev/null || true)
 		if echo "$WG_DOMAINS" | grep -qF "~."; then
 			run_check "systemd-resolved global domain scope (~.) on $IFACE" 0
@@ -229,7 +187,6 @@ do_selftest() {
 			run_check "systemd-resolved global domain scope (~.) on $IFACE" 1 "missing ~."
 		fi
 
-		local WG_DNS
 		WG_DNS=$(resolvectl dns "$IFACE" 2>/dev/null | awk -F': ' '{print $2}' | tr -d ' ' || true)
 		if [ -n "$WG_DNS" ]; then
 			run_check "systemd-resolved active DNS servers on $IFACE" 0
@@ -237,7 +194,6 @@ do_selftest() {
 			run_check "systemd-resolved active DNS servers on $IFACE" 1 "no DNS configured on tunnel"
 		fi
 
-		local PHYS_DEFROUTE
 		PHYS_DEFROUTE=$(resolvectl default-route "$PHYS_IFACE" 2>/dev/null | awk -F': ' '{print $2}' || true)
 		if echo "$PHYS_DEFROUTE" | grep -qi "no"; then
 			run_check "systemd-resolved DefaultRoute disabled on $PHYS_IFACE" 0
@@ -258,9 +214,9 @@ do_selftest() {
 	local CURL_CODE=0
 	curl --connect-timeout 1 -m 2 -sSf --interface "if!$PHYS_IFACE" https://1.1.1.1 >/dev/null 2>&1 || CURL_CODE=$?
 
-	local FINAL_DROPS
+	local FINAL_DROPS DIFF
 	FINAL_DROPS=$(get_nft_counter "killswitch_reject" 2>/dev/null || echo "$INIT_DROPS")
-	local DIFF=$((FINAL_DROPS - INIT_DROPS))
+	DIFF=$((FINAL_DROPS - INIT_DROPS))
 
 	if [ "$DIFF" -gt 0 ] && [ "$CURL_CODE" -ne 0 ]; then
 		run_check "Killswitch active: unencrypted egress on $PHYS_IFACE was rejected (nft counter +$DIFF)" 0
@@ -279,142 +235,147 @@ do_selftest() {
 }
 
 # -----------------------------------------------------------------------------
+# Subcommand: Live Status Dashboard
+# -----------------------------------------------------------------------------
+do_status() {
+	local FAST_MODE=0
+	local IP_LOOKUP=1
+	for arg in "$@"; do
+		case "$arg" in
+		--fast)
+			FAST_MODE=1
+			IP_LOOKUP=0
+			;;
+		--no-ip)
+			IP_LOOKUP=0
+			;;
+		esac
+	done
+
+	echo -e "${BOLD}${CYAN}=== System VPN Status (${IFACE}) ===${RESET}"
+
+	if [ "$EUID" -ne 0 ] && [ -z "$SUDO" ]; then
+		echo -e "${YELLOW}Notice: Running unprivileged. Detailed WireGuard peer telemetry and firewall counters require root/sudo.${RESET}\n"
+	fi
+
+	# 1. Systemd Service State
+	local SERVICE_STATUS
+	if systemctl is-active --quiet "$UNIT"; then
+		SERVICE_STATUS="${GREEN}active (running)${RESET}"
+	else
+		SERVICE_STATUS="${RED}inactive / stopped${RESET}"
+	fi
+	echo -e "Service (${UNIT}): ${SERVICE_STATUS}"
+
+	# 2. Interface State & Cryptographic Handshake Telemetry
+	if ip link show dev "$IFACE" up 2>/dev/null | grep -q .; then
+		print_kv "Tunnel Interface" "${GREEN}UP${RESET} (${IFACE})"
+
+		local PEER_INFO
+		PEER_INFO=$($SUDO wg show "$IFACE" 2>/dev/null || true)
+		if [ -n "$PEER_INFO" ]; then
+			local ENDPOINT LATEST_HS TRANSFER NOW DIFF HS_STR
+			ENDPOINT=$(echo "$PEER_INFO" | awk '/endpoint:/ {print $2; exit}' || true)
+			LATEST_HS=$($SUDO wg show "$IFACE" latest-handshakes 2>/dev/null | awk '{print $2}' | sort -n | tail -n 1 || true)
+			TRANSFER=$(echo "$PEER_INFO" | sed -n 's/.*transfer:[[:space:]]*//p' | head -n 1 || true)
+
+			NOW=$(date +%s)
+			if [ -n "$LATEST_HS" ] && [ "$LATEST_HS" -gt 0 ]; then
+				DIFF=$((NOW - LATEST_HS))
+				if [ "$DIFF" -lt 150 ]; then
+					HS_STR="${GREEN}${DIFF}s ago${RESET}"
+				else
+					HS_STR="${YELLOW}${DIFF}s ago (stale)${RESET}"
+				fi
+			else
+				HS_STR="${RED}never / none${RESET}"
+			fi
+
+			print_kv "WireGuard Endpoint" "${ENDPOINT:-none}"
+			print_kv "Latest Handshake" "${HS_STR}"
+			print_kv "Transfer (Rx / Tx)" "${TRANSFER:-none}"
+		fi
+	else
+		print_kv "Tunnel Interface" "${RED}DOWN / NOT FOUND${RESET}"
+	fi
+
+	# 3. Public Egress IP Verification
+	if [ "$FAST_MODE" -eq 0 ] && [ "$IP_LOOKUP" -eq 1 ]; then
+		echo -e "\n${BOLD}${CYAN}--- Public IP Verification ---${RESET}"
+		local IP_JSON
+		IP_JSON=$(curl --connect-timeout 2 -m 3 -s https://ipinfo.io/json 2>/dev/null || true)
+		if [ -n "$IP_JSON" ]; then
+			local VPN_IP VPN_COUNTRY VPN_CITY
+			VPN_IP=$(echo "$IP_JSON" | jq -r '.ip // empty' 2>/dev/null || true)
+			VPN_COUNTRY=$(echo "$IP_JSON" | jq -r '.country // empty' 2>/dev/null || true)
+			VPN_CITY=$(echo "$IP_JSON" | jq -r '.city // empty' 2>/dev/null || true)
+			print_kv "Egress Public IP" "${GREEN}${VPN_IP:-Unknown}${RESET} (${VPN_CITY:+$VPN_CITY, }${VPN_COUNTRY:-Unknown})"
+		else
+			print_kv "Egress Public IP" "${YELLOW}UNAVAILABLE (offline or rate-limited)${RESET}"
+		fi
+	fi
+
+	# 4. Firewall & Killswitch Telemetry
+	echo -e "\n${BOLD}${CYAN}--- Firewall & Killswitch ---${RESET}"
+	if [ -n "$SUDO" ] || [ "$EUID" -eq 0 ]; then
+		local OUTPUT_DROPS FORWARD_DROPS
+		if OUTPUT_DROPS=$(get_nft_counter "killswitch_reject"); then
+			FORWARD_DROPS=$(get_nft_counter "forward_killswitch_reject" 2>/dev/null || echo 0)
+			print_kv "Killswitch Engine" "${GREEN}nftables (inet system-vpn)${RESET}"
+			print_kv "Killswitch Status" "${GREEN}ACTIVE${RESET} (Default Deny)"
+			print_kv "Blocked Output Leaks" "${YELLOW}${OUTPUT_DROPS} packets${RESET}"
+			print_kv "Blocked Forward Leaks" "${YELLOW}${FORWARD_DROPS} packets${RESET}"
+		else
+			print_kv "Killswitch Status" "${RED}NOT LOADED${RESET}"
+		fi
+	else
+		print_kv "Killswitch Status" "${YELLOW}UNKNOWN${RESET} (requires root/sudo privileges to read nftables)"
+	fi
+
+	# 5. Split-Tunneling & Split-DNS Telemetry
+	echo -e "\n${BOLD}${CYAN}--- Split-Tunneling & DNS ---${RESET}"
+	local HAS_BYPASS=0
+	if [ -n "$BYPASS_GROUP" ] && getent group "$BYPASS_GROUP" >/dev/null 2>&1; then
+		print_kv "Bypass Group" "${GREEN}${BYPASS_GROUP}${RESET} (use 'system-vpn bypass <cmd>' to route direct via ${PHYS_IFACE})"
+		HAS_BYPASS=1
+	fi
+	if [ -n "${BYPASS_SERVICES:-}" ]; then
+		print_kv "Bypass Services" "${GREEN}${BYPASS_SERVICES}${RESET} (primary GID bypass)"
+		HAS_BYPASS=1
+	fi
+	if [ "${SPLIT_DNS_ENABLED:-0}" = "1" ] && command -v resolvectl >/dev/null 2>&1; then
+		local RESOLV_DOMAINS
+		RESOLV_DOMAINS=$(resolvectl domain "$PHYS_IFACE" 2>/dev/null | awk -F': ' '{print $2}' || true)
+		if [ -n "$RESOLV_DOMAINS" ]; then
+			print_kv "Split-DNS (${PHYS_IFACE})" "${GREEN}${RESOLV_DOMAINS}${RESET} (LAN routed)"
+			HAS_BYPASS=1
+		fi
+	fi
+	if [ "$HAS_BYPASS" -eq 0 ]; then
+		print_kv "Split-Tunneling" "${YELLOW}none configured${RESET}"
+	fi
+
+	# 6. Autonomous Health Watchdog
+	local WATCHDOG_TIMER="${IFACE}-watchdog.timer"
+	if systemctl is-active --quiet "$WATCHDOG_TIMER" 2>/dev/null; then
+		print_kv "Watchdog Timer" "${GREEN}ACTIVE${RESET} (${WATCHDOG_TIMER})"
+	fi
+
+	echo -e "${BOLD}${CYAN}===================================${RESET}"
+}
+
+# -----------------------------------------------------------------------------
 # Dispatch Subcommands
 # -----------------------------------------------------------------------------
 case "${1:-status}" in
 check | selftest | test)
 	do_selftest
-	exit $?
+	;;
+status)
+	shift || true
+	do_status "$@"
+	;;
+*)
+	do_status "$@"
 	;;
 esac
-
-FAST_MODE=0
-IP_LOOKUP=1
-for arg in "$@"; do
-	if [ "$arg" = "--fast" ]; then
-		FAST_MODE=1
-		IP_LOOKUP=0
-	fi
-	if [ "$arg" = "--no-ip" ]; then
-		IP_LOOKUP=0
-	fi
-done
-
-echo -e "${BOLD}${CYAN}=== System VPN Status (${IFACE}) ===${RESET}"
-
-# Privilege notification
-if [ "$EUID" -ne 0 ] && [ -z "$SUDO" ]; then
-	echo -e "${YELLOW}Notice: Running unprivileged. Detailed WireGuard peer telemetry and firewall counters require root/sudo.${RESET}\n"
-fi
-
-# -----------------------------------------------------------------------------
-# 1. Systemd Service State
-# -----------------------------------------------------------------------------
-if systemctl is-active --quiet "$UNIT"; then
-	SERVICE_STATUS="${GREEN}active (running)${RESET}"
-else
-	SERVICE_STATUS="${RED}inactive / stopped${RESET}"
-fi
-echo -e "Service (${UNIT}): ${SERVICE_STATUS}"
-
-# -----------------------------------------------------------------------------
-# 2. Interface State & Cryptographic Handshake Telemetry
-# -----------------------------------------------------------------------------
-if ip link show dev "$IFACE" up 2>/dev/null | grep -q .; then
-	echo -e "Tunnel Interface:       ${GREEN}UP${RESET} (${IFACE})"
-
-	PEER_INFO=$($SUDO wg show "$IFACE" 2>/dev/null || true)
-	if [ -n "$PEER_INFO" ]; then
-		ENDPOINT=$(echo "$PEER_INFO" | grep "endpoint:" | head -n 1 | awk '{print $2}' || true)
-		LATEST_HS=$($SUDO wg show "$IFACE" latest-handshakes 2>/dev/null | awk '{print $2}' | sort -n | tail -n 1 || true)
-		TRANSFER=$(echo "$PEER_INFO" | grep "transfer:" | head -n 1 | sed 's/.*transfer:[[:space:]]*//' || true)
-
-		NOW=$(date +%s)
-		if [ -n "$LATEST_HS" ] && [ "$LATEST_HS" -gt 0 ]; then
-			DIFF=$((NOW - LATEST_HS))
-			if [ "$DIFF" -lt 150 ]; then
-				HS_STR="${GREEN}${DIFF}s ago${RESET}"
-			else
-				HS_STR="${YELLOW}${DIFF}s ago (stale)${RESET}"
-			fi
-		else
-			HS_STR="${RED}never / none${RESET}"
-		fi
-
-		echo -e "WireGuard Endpoint:     ${ENDPOINT:-none}"
-		echo -e "Latest Handshake:       ${HS_STR}"
-		echo -e "Transfer (Rx / Tx):     ${TRANSFER:-none}"
-	fi
-else
-	echo -e "Tunnel Interface:       ${RED}DOWN / NOT FOUND${RESET}"
-fi
-
-# -----------------------------------------------------------------------------
-# 3. Public Egress IP Verification (Single JSON request, skippable)
-# -----------------------------------------------------------------------------
-if [ "$FAST_MODE" -eq 0 ] && [ "$IP_LOOKUP" -eq 1 ]; then
-	echo -e "\n${BOLD}${CYAN}--- Public IP Verification ---${RESET}"
-	IP_JSON=$(curl --connect-timeout 2 -m 3 -s https://ipinfo.io/json 2>/dev/null || true)
-	if [ -n "$IP_JSON" ]; then
-		VPN_IP=$(echo "$IP_JSON" | grep -o '"ip": "[^"]*' | cut -d'"' -f4 || true)
-		VPN_COUNTRY=$(echo "$IP_JSON" | grep -o '"country": "[^"]*' | cut -d'"' -f4 || true)
-		VPN_CITY=$(echo "$IP_JSON" | grep -o '"city": "[^"]*' | cut -d'"' -f4 || true)
-		echo -e "Egress Public IP:       ${GREEN}${VPN_IP:-Unknown}${RESET} (${VPN_CITY:+$VPN_CITY, }${VPN_COUNTRY:-Unknown})"
-	else
-		echo -e "Egress Public IP:       ${YELLOW}UNAVAILABLE (offline or rate-limited)${RESET}"
-	fi
-fi
-
-# -----------------------------------------------------------------------------
-# 4. Firewall & Killswitch Telemetry
-# -----------------------------------------------------------------------------
-echo -e "\n${BOLD}${CYAN}--- Firewall & Killswitch ---${RESET}"
-if [ -n "$SUDO" ] || [ "$EUID" -eq 0 ]; then
-	if OUTPUT_DROPS=$(get_nft_counter "killswitch_reject"); then
-		FORWARD_DROPS=$(get_nft_counter "forward_killswitch_reject" 2>/dev/null || echo 0)
-		echo -e "Killswitch Engine:      ${GREEN}nftables (inet system-vpn)${RESET}"
-		echo -e "Killswitch Status:      ${GREEN}ACTIVE${RESET} (Default Deny)"
-		echo -e "Blocked Output Leaks:   ${YELLOW}${OUTPUT_DROPS} packets${RESET}"
-		echo -e "Blocked Forward Leaks:  ${YELLOW}${FORWARD_DROPS} packets${RESET}"
-	else
-		echo -e "Killswitch Status:      ${RED}NOT LOADED${RESET}"
-	fi
-else
-	echo -e "Killswitch Status:      ${YELLOW}UNKNOWN${RESET} (requires root/sudo privileges to read nftables)"
-fi
-
-# -----------------------------------------------------------------------------
-# 5. Split-Tunneling & Split-DNS Telemetry
-# -----------------------------------------------------------------------------
-echo -e "\n${BOLD}${CYAN}--- Split-Tunneling & DNS ---${RESET}"
-HAS_BYPASS=0
-if [ -n "$BYPASS_GROUP" ]; then
-	if getent group "$BYPASS_GROUP" >/dev/null 2>&1; then
-		echo -e "Bypass Group:           ${GREEN}${BYPASS_GROUP}${RESET} (use 'system-vpn bypass <cmd>' to route direct via ${PHYS_IFACE})"
-		HAS_BYPASS=1
-	fi
-fi
-if [ -n "${BYPASS_SERVICES:-}" ]; then
-	echo -e "Bypass Services:        ${GREEN}${BYPASS_SERVICES}${RESET} (primary GID bypass)"
-	HAS_BYPASS=1
-fi
-if [ "${SPLIT_DNS_ENABLED:-0}" = "1" ] && command -v resolvectl >/dev/null 2>&1; then
-	RESOLV_DOMAINS=$(resolvectl domain "$PHYS_IFACE" 2>/dev/null | awk -F': ' '{print $2}' || true)
-	if [ -n "$RESOLV_DOMAINS" ]; then
-		echo -e "Split-DNS (${PHYS_IFACE}):     ${GREEN}${RESOLV_DOMAINS}${RESET} (LAN routed)"
-		HAS_BYPASS=1
-	fi
-fi
-if [ "$HAS_BYPASS" -eq 0 ]; then
-	echo -e "Split-Tunneling:        ${YELLOW}none configured${RESET}"
-fi
-
-# -----------------------------------------------------------------------------
-# 6. Autonomous Health Watchdog
-# -----------------------------------------------------------------------------
-WATCHDOG_TIMER="${IFACE}-watchdog.timer"
-if systemctl is-active --quiet "$WATCHDOG_TIMER" 2>/dev/null; then
-	echo -e "Watchdog Timer:         ${GREEN}ACTIVE${RESET} (${WATCHDOG_TIMER})"
-fi
-
-echo -e "${BOLD}${CYAN}===================================${RESET}"
