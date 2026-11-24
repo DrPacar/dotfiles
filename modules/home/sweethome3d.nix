@@ -2,7 +2,7 @@
   home.packages = with pkgs; [
     (symlinkJoin {
       name = "sweethome3d-fixed";
-      paths = [sweethome3d.application];
+      paths = [sweethome3d];
       buildInputs = [makeWrapper];
       postBuild = ''
         wrapProgram $out/bin/sweethome3d \
