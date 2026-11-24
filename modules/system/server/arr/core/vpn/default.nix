@@ -53,27 +53,40 @@ in {
             echo "No default route detected after 30s, continuing anyway..."
           ''}"
         ];
-        ExecStartPost = [
-          "+${pkgs.writeShellScript "vpn-post-up-fixes" ''
-            # Ensure internal VPN gateway / DNS is always routed directly through the tunnel
-            ${
-              if cfg.vpn.portForwarding.gateway != null
-              then ''
-                ${pkgs.iproute2}/bin/ip -n ${cfg.vpn.namespace} route add ${cfg.vpn.portForwarding.gateway}/32 dev ${cfg.vpn.namespace}0 2>/dev/null || true
-              ''
-              else ''
-                ${pkgs.iproute2}/bin/ip -n ${cfg.vpn.namespace} route add 10.2.0.1/32 dev ${cfg.vpn.namespace}0 2>/dev/null || true
-              ''
-            }
-            # Allow fallback public DNS (Cloudflare 1.1.1.1) in firewall to bypass NetShield tracker blocking
-            ${pkgs.iptables}/bin/ip netns exec ${cfg.vpn.namespace} ${pkgs.iptables}/bin/iptables -I dns-fw 1 -p udp -d 1.1.1.1 -j ACCEPT 2>/dev/null || true
-            ${pkgs.iptables}/bin/ip netns exec ${cfg.vpn.namespace} ${pkgs.iptables}/bin/iptables -I dns-fw 1 -p tcp -d 1.1.1.1 -j ACCEPT 2>/dev/null || true
-            if [ -f /etc/netns/${cfg.vpn.namespace}/resolv.conf ]; then
-              if ! grep -q "1.1.1.1" /etc/netns/${cfg.vpn.namespace}/resolv.conf; then
-                echo "nameserver 1.1.1.1" >> /etc/netns/${cfg.vpn.namespace}/resolv.conf
+        ExecStartPost = let
+          gw =
+            if cfg.vpn.portForwarding.gateway != null
+            then cfg.vpn.portForwarding.gateway
+            else "10.2.0.1";
+          postUpScript = pkgs.writeShellApplication {
+            name = "arr-vpn-post-up-fixes";
+            runtimeInputs = with pkgs; [
+              iproute2
+              iptables
+              gnugrep
+            ];
+            text = ''
+              # Ensure internal VPN gateway / DNS is always routed directly through the tunnel
+              ip -n "${cfg.vpn.namespace}" route add "${gw}/32" dev "${cfg.vpn.namespace}0" 2>/dev/null || true
+
+              # Allow fallback public DNS (Cloudflare 1.1.1.1 / 1.0.0.1) inside VPN namespace to bypass NetShield tracker blocking
+              for dns_ip in 1.1.1.1 1.0.0.1; do
+                for proto in udp tcp; do
+                  if ! ip netns exec "${cfg.vpn.namespace}" iptables -C dns-fw -p "$proto" -d "$dns_ip" -j ACCEPT 2>/dev/null; then
+                    ip netns exec "${cfg.vpn.namespace}" iptables -I dns-fw 1 -p "$proto" -d "$dns_ip" -j ACCEPT
+                  fi
+                done
+              done
+
+              if [ -f "/etc/netns/${cfg.vpn.namespace}/resolv.conf" ]; then
+                if ! grep -q "1.1.1.1" "/etc/netns/${cfg.vpn.namespace}/resolv.conf"; then
+                  echo "nameserver 1.1.1.1" >> "/etc/netns/${cfg.vpn.namespace}/resolv.conf"
+                fi
               fi
-            fi
-          ''}"
+            '';
+          };
+        in [
+          "+${postUpScript}/bin/arr-vpn-post-up-fixes"
         ];
       };
       unitConfig = {
