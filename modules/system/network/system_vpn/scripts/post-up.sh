@@ -73,7 +73,7 @@ for fam in -4 -6; do
 	while ip "$fam" rule del not fwmark "$WG_FWMARK" lookup 51820 2>/dev/null; do :; done
 	while ip "$fam" rule del table main suppress_prefixlength 0 2>/dev/null; do :; done
 	# Clean only our own managed priorities
-	for prio in 4990 4991 5000 5010 5011 5020; do
+	for prio in 4990 4991 4992 5000 5010 5011 5020; do
 		while ip "$fam" rule del priority "$prio" 2>/dev/null; do :; done
 	done
 done
@@ -88,6 +88,9 @@ ip rule add fwmark "$BYPASS_MARK" lookup main priority 4990
 if [ "$TAILSCALE_ENABLED" = "1" ]; then
 	ip rule add fwmark "$TAILSCALE_FWMARK" lookup main priority 4991
 fi
+
+# Priority 4992: Unreachable catch prevents bypassed traffic from falling into table 51820 if main has no route
+ip rule add fwmark "$BYPASS_MARK" unreachable priority 4992
 
 # Priority 5000: LAN subnets and local routes take precedence over VPN
 ip rule add lookup main suppress_prefixlength 0 priority 5000
@@ -110,6 +113,8 @@ if [ -e /proc/net/if_inet6 ]; then
 	if [ "$TAILSCALE_ENABLED" = "1" ]; then
 		ip -6 rule add fwmark "$TAILSCALE_FWMARK" lookup main priority 4991
 	fi
+	# Priority 4992: Unreachable catch prevents bypassed IPv6 traffic from falling into VPN table 51820 when WAN lacks IPv6
+	ip -6 rule add fwmark "$BYPASS_MARK" unreachable priority 4992
 	ip -6 rule add lookup main suppress_prefixlength 0 priority 5000
 	if [ "$TAILSCALE_ENABLED" = "1" ]; then
 		ip -6 rule add to fd7a:115c:a1e0::/48 lookup 52 priority 5010

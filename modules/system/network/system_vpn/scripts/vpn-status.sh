@@ -137,6 +137,12 @@ do_selftest() {
 		fi
 	fi
 
+	if echo "$RULES_V4" | grep -qE "^4992:[[:space:]]+.*fwmark[[:space:]]+${BYPASS_MARK}[[:space:]]+unreachable"; then
+		run_check "RPDB IPv4 Priority 4992 (bypass unreachable catch)" 0
+	else
+		run_check "RPDB IPv4 Priority 4992 (bypass unreachable catch)" 1 "rule missing"
+	fi
+
 	if echo "$RULES_V4" | grep -qE "^5000:[[:space:]]+.*lookup[[:space:]]+main[[:space:]]+suppress_prefixlength[[:space:]]+0"; then
 		run_check "RPDB IPv4 Priority 5000 (LAN suppress_prefixlength 0)" 0
 	else
@@ -179,6 +185,12 @@ do_selftest() {
 			else
 				run_check "RPDB IPv6 Priority 4991 (Tailscale mark $TAILSCALE_FWMARK)" 1 "rule missing"
 			fi
+		fi
+
+		if echo "$RULES_V6" | grep -qE "^4992:[[:space:]]+.*fwmark[[:space:]]+${BYPASS_MARK}[[:space:]]+unreachable"; then
+			run_check "RPDB IPv6 Priority 4992 (bypass unreachable catch)" 0
+		else
+			run_check "RPDB IPv6 Priority 4992 (bypass unreachable catch)" 1 "rule missing"
 		fi
 
 		if echo "$RULES_V6" | grep -qE "^5000:[[:space:]]+.*lookup[[:space:]]+main[[:space:]]+suppress_prefixlength[[:space:]]+0"; then

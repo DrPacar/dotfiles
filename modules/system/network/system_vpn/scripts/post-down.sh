@@ -31,7 +31,7 @@ for fam in -4 -6; do
 	if [ "$fam" = "-6" ] && [ ! -e /proc/net/if_inet6 ]; then
 		continue
 	fi
-	for prio in 4990 4991 5000 5010 5011 5020; do
+	for prio in 4990 4991 4992 5000 5010 5011 5020; do
 		while ip "$fam" rule del priority "$prio" 2>/dev/null; do :; done
 	done
 done
