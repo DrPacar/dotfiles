@@ -65,8 +65,14 @@
     ++ (map (builtins.replaceStrings ["+"] ["*"]) cfg.extraTunnelInterfaces)
     ++ (map (builtins.replaceStrings ["+"] ["*"]) cfg.trustedInterfaces);
 
-  # Formatted string for nftables interface sets: { "lo", "wg-system", ... }
-  allowedIfacesNftStr = concatMapStringsSep ", " (iface: "\"${iface}\"") allowedInterfaces;
+  # Separate exact interface names from wildcard patterns (e.g. "br-*", "veth-*")
+  # Nftables sets do not reliably match wildcards across versions.
+  isWild = lib.hasInfix "*";
+  exactIfaces = filter (i: !isWild i) allowedInterfaces;
+  wildIfaces = filter isWild allowedInterfaces;
+
+  exactIfacesNftStr = concatMapStringsSep ", " (iface: "\"${iface}\"") exactIfaces;
+  wildIfacesNftRules = concatMapStringsSep "\n            " (iface: "oifname \"${iface}\" accept;") wildIfaces;
 
   # ---------------------------------------------------------------------------
   # Single Source of Truth: Common Environment for Scripts & Systemd
@@ -588,7 +594,12 @@ in {
             type filter hook output priority filter - 5; policy accept;
 
             # 1. Allow all authorized virtual interfaces (loopback, VPN, Tailscale, extra tunnels, trusted bridges)
-            oifname { ${allowedIfacesNftStr} } accept;
+            ${optionalString (exactIfaces != []) ''
+            oifname { ${exactIfacesNftStr} } accept;
+          ''}
+            ${optionalString (wildIfaces != []) ''
+            ${wildIfacesNftRules}
+          ''}
 
             # 2. Allow split-tunnel bypassed traffic (processes running with GID or marked)
             ${optionalString bypassActive ''
@@ -629,7 +640,12 @@ in {
             type filter hook forward priority filter - 5; policy accept;
 
             # 1. Allow forwarded traffic routed through authorized interfaces
-            oifname { ${allowedIfacesNftStr} } accept;
+            ${optionalString (exactIfaces != []) ''
+            oifname { ${exactIfacesNftStr} } accept;
+          ''}
+            ${optionalString (wildIfaces != []) ''
+            ${wildIfacesNftRules}
+          ''}
 
             # 2. Allow forwarded traffic directed to local LAN subnets on physical NIC
             ${optionalString (ipv4LanSubnets != []) ''
@@ -639,8 +655,8 @@ in {
             oifname "${physIface}" ip6 daddr { ${concatStringsSep ", " ipv6LanSubnets} } accept;
           ''}
 
-            # 3. THE FORWARD KILLSWITCH: Hard-reject any forwarded traffic exiting via physical NIC
-            oifname "${physIface}" counter name "forward_killswitch_reject" reject with icmpx type admin-prohibited;
+            # 3. THE FORWARD KILLSWITCH: Hard-reject any remaining forwarded traffic not whitelisted above
+            counter name "forward_killswitch_reject" reject with icmpx type admin-prohibited;
           };
         '';
       };

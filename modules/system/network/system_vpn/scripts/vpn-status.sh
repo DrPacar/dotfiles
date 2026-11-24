@@ -107,9 +107,16 @@ do_selftest() {
 
 	# Check 3: WireGuard routing table 51820 default route
 	if ip route show table 51820 2>/dev/null | grep -qE "default.*dev[[:space:]]+$IFACE"; then
-		run_check "Routing table 51820 contains default route via $IFACE" 0
+		run_check "Routing table 51820 contains IPv4 default route via $IFACE" 0
 	else
-		run_check "Routing table 51820 contains default route via $IFACE" 1 "default route missing"
+		run_check "Routing table 51820 contains IPv4 default route via $IFACE" 1 "IPv4 default route missing"
+	fi
+	if [ -e /proc/net/if_inet6 ]; then
+		if ip -6 route show table 51820 2>/dev/null | grep -qE "default.*dev[[:space:]]+$IFACE"; then
+			run_check "Routing table 51820 contains IPv6 default route via $IFACE" 0
+		else
+			run_check "Routing table 51820 contains IPv6 default route via $IFACE" 1 "IPv6 default route missing"
+		fi
 	fi
 
 	# Check 4: IPv4 RPDB Policy routing rules (anchored checks)
@@ -180,6 +187,19 @@ do_selftest() {
 			run_check "RPDB IPv6 Priority 5000 (LAN preservation)" 1 "rule missing"
 		fi
 
+		if [ "$TAILSCALE_ENABLED" = "1" ]; then
+			if echo "$RULES_V6" | grep -qE "^5010:[[:space:]]+.*to[[:space:]]+fd7a:115c:a1e0::/48[[:space:]]+lookup[[:space:]]+52"; then
+				run_check "RPDB IPv6 Priority 5010 (Tailscale CGNAT to -> table 52)" 0
+			else
+				run_check "RPDB IPv6 Priority 5010 (Tailscale CGNAT to)" 1 "rule missing"
+			fi
+			if echo "$RULES_V6" | grep -qE "^5011:[[:space:]]+.*from[[:space:]]+fd7a:115c:a1e0::/48[[:space:]]+lookup[[:space:]]+52"; then
+				run_check "RPDB IPv6 Priority 5011 (Tailscale CGNAT from -> table 52)" 0
+			else
+				run_check "RPDB IPv6 Priority 5011 (Tailscale CGNAT from)" 1 "rule missing"
+			fi
+		fi
+
 		if echo "$RULES_V6" | grep -qE "^5020:[[:space:]]+.*not[[:space:]]+.*fwmark[[:space:]]+${WG_FWMARK}[[:space:]]+lookup[[:space:]]+51820"; then
 			run_check "RPDB IPv6 Priority 5020 (default internet -> table 51820)" 0
 		else
@@ -224,7 +244,7 @@ do_selftest() {
 
 	# Attempt unencrypted egress via physical NIC (must be immediately rejected by nftables)
 	local CURL_CODE=0
-	curl --connect-timeout 1 -m 2 -sSf --interface "$PHYS_IFACE" https://1.1.1.1 >/dev/null 2>&1 || CURL_CODE=$?
+	curl --connect-timeout 1 -m 2 -sSf --interface "if!$PHYS_IFACE" https://1.1.1.1 >/dev/null 2>&1 || CURL_CODE=$?
 
 	local FINAL_DROPS
 	FINAL_DROPS=$(get_nft_counter "killswitch_reject" 2>/dev/null || echo "$INIT_DROPS")
