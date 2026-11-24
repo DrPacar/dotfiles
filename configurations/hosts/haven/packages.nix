@@ -117,27 +117,27 @@
           {
             name = "Nyaa.si";
             priority = 10;
-            "torrentBaseSettings.appMinimumSeeders" = 3;
+            "torrentBaseSettings.appMinimumSeeders" = 1;
           }
           {
             name = "Anime Tosho";
             priority = 10;
-            "torrentBaseSettings.appMinimumSeeders" = 3;
+            "torrentBaseSettings.appMinimumSeeders" = 1;
           }
           {
             name = "SubsPlease";
             priority = 15;
-            "torrentBaseSettings.appMinimumSeeders" = 3;
+            "torrentBaseSettings.appMinimumSeeders" = 1;
           }
           {
             name = "Tokyo Toshokan";
             priority = 15;
-            "torrentBaseSettings.appMinimumSeeders" = 3;
+            "torrentBaseSettings.appMinimumSeeders" = 1;
           }
           {
             name = "Shana Project";
             priority = 15;
-            "torrentBaseSettings.appMinimumSeeders" = 3;
+            "torrentBaseSettings.appMinimumSeeders" = 1;
           }
 
           # Movies & TV Shows
@@ -145,28 +145,28 @@
             name = "1337x";
             priority = 20;
             tags = ["flaresolverr"];
-            "torrentBaseSettings.appMinimumSeeders" = 3;
+            "torrentBaseSettings.appMinimumSeeders" = 1;
           }
           {
             name = "EZTV";
             priority = 20;
             tags = ["flaresolverr"];
-            "torrentBaseSettings.appMinimumSeeders" = 3;
+            "torrentBaseSettings.appMinimumSeeders" = 1;
           }
           {
             name = "Knaben";
             priority = 20;
-            "torrentBaseSettings.appMinimumSeeders" = 3;
+            "torrentBaseSettings.appMinimumSeeders" = 1;
           }
           {
             name = "The Pirate Bay";
             priority = 25;
-            "torrentBaseSettings.appMinimumSeeders" = 3;
+            "torrentBaseSettings.appMinimumSeeders" = 1;
           }
           {
             name = "TorrentProject2";
             priority = 25;
-            "torrentBaseSettings.appMinimumSeeders" = 3;
+            "torrentBaseSettings.appMinimumSeeders" = 1;
           }
         ];
       };
