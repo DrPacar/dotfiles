@@ -1,12 +1,41 @@
-{lib, ...}: let
+{
+  lib,
+  pkgs,
+  ...
+}: let
   # Helper to associate a list of MIME types with a single desktop file
   assoc = mimes: app: lib.genAttrs mimes (_: app);
+
+  # Routes Spotify web URLs directly to the Spotify desktop app and falls back to Zen Browser
+  urlHandlerScript = pkgs.writeShellApplication {
+    name = "url-handler";
+    text = ''
+      if [ $# -eq 1 ]; then
+        url="$1"
+        if [[ "$url" =~ ^https?://open\.spotify\.com/(intl-[a-zA-Z-]+/)?(track|album|playlist|artist|episode|show|user)/([A-Za-z0-9]+) ]]; then
+          spotify_uri="spotify:''${BASH_REMATCH[2]}:''${BASH_REMATCH[3]}"
+          if command -v gtk-launch >/dev/null 2>&1 && gtk-launch spotify.desktop "$spotify_uri" 2>/dev/null; then
+            exit 0
+          elif command -v spotify >/dev/null 2>&1; then
+            exec spotify "$spotify_uri"
+          fi
+        fi
+      fi
+
+      if command -v gtk-launch >/dev/null 2>&1; then
+        exec gtk-launch zen-beta.desktop "$@"
+      fi
+
+      exec zen-beta --name zen-beta "$@"
+    '';
+  };
 
   # ============================================================================
   # Default Applications
   # ============================================================================
   apps = {
     browser = "zen-beta.desktop";
+    urlHandler = "url-handler.desktop";
     fileManager = "org.gnome.Nautilus.desktop";
     office = "onlyoffice-desktopeditors.desktop";
     textEditor = "nvim.desktop";
@@ -28,10 +57,13 @@
     "text/xml"
     "application/xhtml+xml"
     "application/x-xpinstall"
-    "x-scheme-handler/http"
-    "x-scheme-handler/https"
     "x-scheme-handler/about"
     "x-scheme-handler/unknown"
+  ];
+
+  webSchemeMimes = [
+    "x-scheme-handler/http"
+    "x-scheme-handler/https"
   ];
 
   # 2. Directories (File Manager)
@@ -169,11 +201,22 @@
     "x-scheme-handler/spotify" = apps.spotify;
   };
 in {
+  xdg.desktopEntries.url-handler = {
+    name = "URL Handler";
+    genericName = "Web URL Dispatcher";
+    exec = "${urlHandlerScript}/bin/url-handler %U";
+    terminal = false;
+    noDisplay = true;
+    categories = ["Network"];
+    mimeType = webSchemeMimes;
+  };
+
   xdg.mimeApps = {
     enable = true;
 
     defaultApplications = lib.mkMerge [
       (assoc browserMimes apps.browser)
+      (assoc webSchemeMimes apps.urlHandler)
       (assoc directoryMimes apps.fileManager)
       (assoc officeMimes apps.office)
       (assoc textMimes apps.textEditor)
