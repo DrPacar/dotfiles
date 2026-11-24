@@ -181,21 +181,35 @@
     serverHost = "haven";
   };
 
-  # System-wide ProtonVPN tunnel with strict killswitch
+  # System-wide WireGuard VPN tunnel with strict killswitch
   networking.systemVPN = {
     enable = true;
     physicalInterface = "eno1";
-    extraWgConfigFiles = [
-      config.sops.secrets.arr_wireguard_conf.path
-    ];
+    wgConfFile = config.sops.secrets.system_wireguard_conf.path;
     extraTunnelInterfaces = [
       "wg-br"
       "veth-+"
       "wg0"
     ];
+    trustedInterfaces = [
+      "docker0"
+      "podman0"
+      "br-+"
+    ];
     lanSubnets = [
       "192.168.0.0/24"
       "100.64.0.0/10"
     ];
+    bypass = {
+      users = ["luka"];
+    };
+    splitDns = {
+      localDomains = [
+        "~local"
+        "~home.arpa"
+        "~lan"
+        "~lukpac.dev"
+      ];
+    };
   };
 }

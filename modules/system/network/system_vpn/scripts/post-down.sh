@@ -1,31 +1,63 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-PHYS_IFACE="${1:-}"
-TAILSCALE_ENABLED="${2:-0}"
-TAILSCALE_IFACE="${3:-tailscale0}"
+# =============================================================================
+# System VPN: Post-Down Policy Routing Cleanup & Teardown
+# =============================================================================
+#
+# Purpose:
+#   1. Flushes custom Linux Policy Routing rules (`ip rule`) installed during
+#      tunnel activation, returning system routing to its baseline state.
+#      Only deletes our own managed priorities (4990-5020), preserving Tailscale's
+#      5210+ rules.
+#   2. Flushes the isolated WireGuard routing table (table 51820).
+#   3. Enforces fail-closed Split-DNS by preserving DefaultRoute=no on the physical
+#      interface, preventing unencrypted DNS leaks to the local router.
+#
+# Execution Context:
+#   Invoked by systemd ExecStopPost in `wg-quick-${IFACE}.service` when the
+#   WireGuard service is stopped or restarted.
+# =============================================================================
 
-ip rule del fwmark 0x5200 lookup main priority 4990 2>/dev/null || true
-ip rule del lookup main suppress_prefixlength 0 priority 5000 2>/dev/null || true
-ip rule del to 100.64.0.0/10 lookup 52 priority 5010 2>/dev/null || true
-ip rule del from 100.64.0.0/10 lookup 52 priority 5011 2>/dev/null || true
-ip rule del not fwmark 0xca6c lookup 51820 priority 5020 2>/dev/null || true
+: "${PHYS_IFACE:?PHYS_IFACE is required}"
+TAILSCALE_ENABLED="${TAILSCALE_ENABLED:-0}"
+TAILSCALE_IFACE="${TAILSCALE_IFACE:-tailscale0}"
+SPLIT_DNS_ENABLED="${SPLIT_DNS_ENABLED:-0}"
+
+# -----------------------------------------------------------------------------
+# 1. Clean up managed policy routing rules (data-driven)
+# -----------------------------------------------------------------------------
+for fam in -4 -6; do
+	if [ "$fam" = "-6" ] && [ ! -e /proc/net/if_inet6 ]; then
+		continue
+	fi
+	for prio in 4990 4991 5000 5010 5011 5020; do
+		while ip "$fam" rule del priority "$prio" 2>/dev/null; do :; done
+	done
+done
 
 if [ "$TAILSCALE_ENABLED" = "1" ]; then
-  ip route del 100.64.0.0/10 dev "$TAILSCALE_IFACE" 2>/dev/null || true
+	ip route del 100.64.0.0/10 dev "$TAILSCALE_IFACE" 2>/dev/null || true
+	if [ -e /proc/net/if_inet6 ]; then
+		ip -6 route del fd7a:115c:a1e0::/48 dev "$TAILSCALE_IFACE" 2>/dev/null || true
+	fi
 fi
 
-ip -6 rule del fwmark 0x5200 lookup main priority 4990 2>/dev/null || true
-ip -6 rule del lookup main suppress_prefixlength 0 priority 5000 2>/dev/null || true
-ip -6 rule del to fd7a:115c:a1e0::/48 lookup 52 priority 5010 2>/dev/null || true
-ip -6 rule del from fd7a:115c:a1e0::/48 lookup 52 priority 5011 2>/dev/null || true
-ip -6 rule del not fwmark 0xca6c lookup 51820 priority 5020 2>/dev/null || true
+# -----------------------------------------------------------------------------
+# 2. Flush WireGuard routing table 51820
+# -----------------------------------------------------------------------------
+ip route flush table 51820 2>/dev/null || true
+if [ -e /proc/net/if_inet6 ]; then
+	ip -6 route flush table 51820 2>/dev/null || true
+fi
 
-if [ -f /run/system-vpn/endpoints ]; then
-  while IFS= read -r ip; do
-    if [ -n "$ip" ] && [ -n "$PHYS_IFACE" ]; then
-      ip route del "$ip/32" dev "$PHYS_IFACE" 2>/dev/null || true
-    fi
-  done </run/system-vpn/endpoints
-  rm -f /run/system-vpn/endpoints
+# -----------------------------------------------------------------------------
+# 3. Enforce fail-closed Split-DNS on physical interface
+# -----------------------------------------------------------------------------
+# Ensure the physical interface remains default-route=no to prevent DNS leaks
+# when the VPN tunnel is stopped.
+if [ "$SPLIT_DNS_ENABLED" = "1" ]; then
+	if command -v resolvectl >/dev/null 2>&1; then
+		resolvectl default-route "$PHYS_IFACE" no 2>/dev/null || true
+	fi
 fi

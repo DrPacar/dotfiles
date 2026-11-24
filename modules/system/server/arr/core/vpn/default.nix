@@ -4,7 +4,7 @@
   pkgs,
   ...
 }: let
-  inherit (lib) mkIf any optional;
+  inherit (lib) mkIf any optional filter;
   cfg = config.server.arr;
 in {
   config = mkIf (cfg.enable && cfg.vpn.enable) {
@@ -84,7 +84,11 @@ in {
 
     nixflix.vpn = {
       enable = true;
-      inherit (cfg.vpn) namespace accessibleFrom openVPNPorts;
+      inherit (cfg.vpn) namespace;
+      allowedIngress = cfg.vpn.accessibleFrom;
+      openVPNPorts = mkIf (!config.networking.nftables.enable) cfg.vpn.openVPNPorts;
+      allowedTCPPorts = mkIf config.networking.nftables.enable (map (p: p.port) (filter (p: p.protocol == "tcp" || p.protocol == "both") cfg.vpn.openVPNPorts));
+      allowedUDPPorts = mkIf config.networking.nftables.enable (map (p: p.port) (filter (p: p.protocol == "udp" || p.protocol == "both") cfg.vpn.openVPNPorts));
       # Provide a fallback path if null so evaluation can proceed to display the informative assertion error
       wgConfFile =
         if cfg.vpn.wgConfFile != null

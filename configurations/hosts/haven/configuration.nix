@@ -32,6 +32,7 @@
       networkConfig = {
         DHCP = "yes";
         IgnoreCarrierLoss = "3s";
+        DNSDefaultRoute = false;
       };
       dhcpV4Config = {
         UseDNS = false; # Keep static Cloudflare nameservers (1.1.1.1) to avoid loops with local AdGuard
