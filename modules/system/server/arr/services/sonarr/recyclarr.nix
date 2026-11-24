@@ -197,6 +197,10 @@ in {
                 name = "4K (2160p) – Deutsch";
                 score = -10000;
               }
+              {
+                name = "4K (2160p) – Englisch";
+                score = -10000;
+              }
             ];
           }
           {
