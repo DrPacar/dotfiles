@@ -33,6 +33,10 @@
         if (cfg.adguard.enable or false)
         then "1"
         else "0";
+      HAS_SHARES =
+        if ((config.networking.shares.enable or false) && (config.networking.shares.cli.enable or false))
+        then "1"
+        else "0";
       CHECK_STORAGE_PATHS =
         if (arrCfg.enable or false)
         then "/ ${arrCfg.dataDir}"

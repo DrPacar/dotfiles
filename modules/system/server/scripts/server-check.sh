@@ -18,6 +18,7 @@ set -euo pipefail
 : "${HAS_ARR_VPN:?HAS_ARR_VPN is required}"
 : "${HAS_ARR_QBIT:?HAS_ARR_QBIT is required}"
 : "${HAS_ADGUARD:?HAS_ADGUARD is required}"
+HAS_SHARES="${HAS_SHARES:-0}"
 CHECK_STORAGE_PATHS="${CHECK_STORAGE_PATHS:-/}"
 
 export PATH="${PATH:+$PATH:}/run/current-system/sw/bin"
@@ -39,6 +40,7 @@ Runs all enabled server health checks in sequence:
   - arr vpn check    (if enabled)
   - arr qbit check   (if enabled)
   - adguard check    (if enabled)
+  - shares check     (if enabled)
 
 Options:
   -b, --brief   Hide individual sub-test output; show pass/fail summary only
@@ -174,6 +176,10 @@ fi
 
 if [ "$HAS_ADGUARD" = "1" ]; then
 	run_suite "adguard check" adguard check
+fi
+
+if [ "$HAS_SHARES" = "1" ]; then
+	run_suite "shares check" shares check
 fi
 
 echo -e "\n${BOLD}${CYAN}=== Summary ===${RESET}"

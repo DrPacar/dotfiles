@@ -176,9 +176,14 @@
   };
 
   # Declarative share access on haven (direct local symlink ~/data -> /data)
-  client.shares.data = {
+  networking.shares = {
     enable = true;
-    serverHost = "haven";
+    entries.data = {
+      host = "haven";
+      localPath = "/data";
+      isLocal = true;
+      symlink.enable = true;
+    };
   };
 
   # System-wide WireGuard VPN tunnel
