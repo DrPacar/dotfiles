@@ -71,6 +71,12 @@ get_chain_packets() {
 		awk '$3 == "DROP" {sum += $1; seen=1} END {if (seen) print sum; else print 0}' || echo 0
 }
 
+get_veth_drop_packets() {
+	local veth_iface="veth-${NAMESPACE}"
+	$SUDO ip netns exec "$NAMESPACE" iptables -L OUTPUT -v -n -x 2>/dev/null |
+		awk -v iface="$veth_iface" '$3 == "DROP" && $7 == iface {sum += $1; seen=1} END {if (seen) print sum; else print 0}' || echo 0
+}
+
 # -----------------------------------------------------------------------------
 # Subcommand: Automated Verification Self-Test
 # -----------------------------------------------------------------------------
@@ -107,7 +113,7 @@ do_selftest() {
 		run_check "Network namespace '$NAMESPACE' exists" 1 "namespace missing"
 	fi
 
-	if ip -n "$NAMESPACE" link show dev "$WG_IFACE" up 2>/dev/null | grep -q .; then
+	if $SUDO ip -n "$NAMESPACE" link show dev "$WG_IFACE" up 2>/dev/null | grep -q .; then
 		run_check "Tunnel interface $WG_IFACE inside '$NAMESPACE' is UP" 0
 	else
 		run_check "Tunnel interface $WG_IFACE inside '$NAMESPACE' is UP" 1 "interface DOWN or missing"
@@ -143,14 +149,14 @@ do_selftest() {
 	fi
 
 	# Check 3: Default routes & DNS table 51820 inside namespace
-	if ip -n "$NAMESPACE" -4 route show default 2>/dev/null | grep -qE "dev[[:space:]]+$WG_IFACE"; then
+	if $SUDO ip -n "$NAMESPACE" -4 route show default 2>/dev/null | grep -qE "dev[[:space:]]+$WG_IFACE"; then
 		run_check "Namespace IPv4 default route goes through $WG_IFACE" 0
 	else
 		run_check "Namespace IPv4 default route goes through $WG_IFACE" 1 "default route missing"
 	fi
 
-	if ip -n "$NAMESPACE" -4 route show table 51820 2>/dev/null | grep -qE "default.*dev[[:space:]]+$WG_IFACE" &&
-		ip -n "$NAMESPACE" -4 rule show 2>/dev/null | grep -qE "ipproto[[:space:]]+udp.*dport[[:space:]]+53.*lookup[[:space:]]+51820"; then
+	if $SUDO ip -n "$NAMESPACE" -4 route show table 51820 2>/dev/null | grep -qE "default.*dev[[:space:]]+$WG_IFACE" &&
+		$SUDO ip -n "$NAMESPACE" -4 rule show 2>/dev/null | grep -qE "ipproto[[:space:]]+udp.*dport[[:space:]]+53.*lookup[[:space:]]+51820"; then
 		run_check "Namespace DNS policy routing pinned to table 51820 ($WG_IFACE)" 0
 	else
 		run_check "Namespace DNS policy routing pinned to table 51820 ($WG_IFACE)" 1 "rule or route missing"
@@ -173,10 +179,24 @@ do_selftest() {
 		run_check "Namespace dns-leak chain recorded 0 leaked packets" 1 "observed $DNS_LEAK_DROPS dropped leak packets"
 	fi
 
+	# Check 4b: Active killswitch probe on veth-${NAMESPACE}
+	echo -e "  [*] Probing namespace egress on veth-${NAMESPACE} (testing OUTPUT DROP counter)..."
+	local INIT_VETH_DROPS FINAL_VETH_DROPS VETH_DIFF PROBE_CODE=0
+	INIT_VETH_DROPS=$(get_veth_drop_packets)
+	$SUDO ip netns exec "$NAMESPACE" curl --connect-timeout 1 -m 1 -sSf http://192.168.0.1:80 >/dev/null 2>&1 || PROBE_CODE=$?
+	FINAL_VETH_DROPS=$(get_veth_drop_packets)
+	VETH_DIFF=$((FINAL_VETH_DROPS - INIT_VETH_DROPS))
+
+	if [ "$VETH_DIFF" -gt 0 ] && [ "$PROBE_CODE" -ne 0 ]; then
+		run_check "Namespace killswitch active: outbound probe on veth-${NAMESPACE} was dropped (counter +${VETH_DIFF})" 0
+	else
+		run_check "Namespace killswitch active probe on veth-${NAMESPACE}" 1 "drop counter did not increment (init: $INIT_VETH_DROPS, final: $FINAL_VETH_DROPS, curl exit: $PROBE_CODE)"
+	fi
+
 	# Check 5: qBittorrent confinement & resolv.conf mount integrity
 	local QBIT_PID
 	QBIT_PID=$(systemctl show -p MainPID --value qbittorrent.service 2>/dev/null || echo 0)
-	if [ "$QBIT_PID" -gt 0 ] && ip netns pids "$NAMESPACE" 2>/dev/null | grep -qxF "$QBIT_PID"; then
+	if [ "$QBIT_PID" -gt 0 ] && $SUDO ip netns pids "$NAMESPACE" 2>/dev/null | grep -qxF "$QBIT_PID"; then
 		run_check "qbittorrent.service (PID $QBIT_PID) is confined to netns '$NAMESPACE'" 0
 
 		local NS_RESOLV
@@ -275,13 +295,13 @@ do_status() {
 
 	# 2. Interface, Handshake & Egress Routing Telemetry
 	echo -e "\n${BOLD}${CYAN}--- WireGuard & Routing ---${RESET}"
-	if ip -n "$NAMESPACE" link show dev "$WG_IFACE" up 2>/dev/null | grep -q .; then
-		print_kv "Tunnel Interface" "${GREEN}UP${RESET} (${WG_IFACE} in netns ${NAMESPACE})"
-	else
-		print_kv "Tunnel Interface" "${RED}DOWN / NOT FOUND${RESET}"
-	fi
-
 	if [ -n "$SUDO" ] || [ "$EUID" -eq 0 ]; then
+		if $SUDO ip -n "$NAMESPACE" link show dev "$WG_IFACE" up 2>/dev/null | grep -q .; then
+			print_kv "Tunnel Interface" "${GREEN}UP${RESET} (${WG_IFACE} in netns ${NAMESPACE})"
+		else
+			print_kv "Tunnel Interface" "${RED}DOWN / NOT FOUND${RESET}"
+		fi
+
 		local PEER_INFO
 		PEER_INFO=$($SUDO ip netns exec "$NAMESPACE" wg show "$WG_IFACE" 2>/dev/null || true)
 		if [ -n "$PEER_INFO" ]; then
@@ -322,6 +342,8 @@ do_status() {
 			print_kv "Latest Handshake" "${HS_STR}"
 			print_kv "Transfer (Rx / Tx)" "${TRANSFER:-none}"
 		fi
+	else
+		print_kv "Tunnel Interface" "${YELLOW}UNKNOWN${RESET} (requires root/sudo privileges to inspect netns '${NAMESPACE}')"
 	fi
 
 	# 3. NAT-PMP Port Forwarding & DNS Telemetry

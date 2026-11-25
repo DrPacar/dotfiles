@@ -104,6 +104,47 @@ in {
         default = 180;
         description = "Maximum allowed age in seconds since last WireGuard handshake before triggering restart.";
       };
+
+      natpmpFailureThreshold = mkOption {
+        type = types.ints.positive;
+        default = 12;
+        description = ''
+          Number of consecutive NAT-PMP renewal failures before the watchdog alerts
+          and triggers a tunnel restart (when portForwarding.enable is true).
+        '';
+      };
+
+      natpmpRestartCooldown = mkOption {
+        type = types.ints.positive;
+        default = 900;
+        description = "Minimum seconds between NAT-PMP-triggered tunnel restarts to avoid restart loops.";
+      };
+    };
+
+    notifications = {
+      enable = mkOption {
+        type = types.bool;
+        default = config.server.notify.enable or false;
+        description = "Enable alerts when the Arr VPN tunnel or NAT-PMP port forwarding fails or recovers.";
+      };
+
+      handler = mkOption {
+        type = types.nullOr (types.either types.str types.package);
+        default = null;
+        example = lib.literalExpression ''
+          '''
+            # $1 contains the alert message string
+            ntfy-send media "$1" "Arr VPN Alert" warning
+          '''
+        '';
+        description = ''
+          Custom notification handler invoked on Arr VPN alerts and recoveries.
+          Receives the formatted message string as positional argument $1 (and optional
+          ntfy tag/severity as $2). Accepts either a shell script snippet string or an
+          executable package/derivation. When null and server.notify.enable is true,
+          defaults to sending alerts via the local server.notify ntfy endpoint.
+        '';
+      };
     };
 
     portForwarding = {

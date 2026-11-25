@@ -61,6 +61,7 @@ in {
         PIECE_EXTENT_AFFINITY = lib.boolToString cfg.qbittorrent.pieceExtentAffinity;
         COALESCE_READ_WRITE = lib.boolToString cfg.qbittorrent.coalesceReadWrite;
         PORT_STATE_FILE = vpn.commonEnv.PORT_STATE_FILE;
+        NATPMP_FAIL_FILE = vpn.commonEnv.NATPMP_FAIL_FILE;
       };
 
       serviceConfig = {

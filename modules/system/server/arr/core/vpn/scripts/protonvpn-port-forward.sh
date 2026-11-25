@@ -38,6 +38,7 @@ ANNOUNCE_TO_ALL_TRACKERS="${ANNOUNCE_TO_ALL_TRACKERS:-true}"
 PIECE_EXTENT_AFFINITY="${PIECE_EXTENT_AFFINITY:-true}"
 COALESCE_READ_WRITE="${COALESCE_READ_WRITE:-true}"
 PORT_STATE_FILE="${PORT_STATE_FILE:-/run/protonvpn-port-forward/port}"
+NATPMP_FAIL_FILE="${NATPMP_FAIL_FILE:-/run/protonvpn-port-forward/fail_streak}"
 
 detect_vpn_gateway() {
 	local gw=""
@@ -67,19 +68,32 @@ detect_vpn_gateway() {
 	echo "$gw"
 }
 
-write_port_state() {
-	local port="$1"
+write_state_value() {
+	local target="$1"
+	local value="$2"
 	local state_dir tmp_file
-	state_dir=$(dirname "$PORT_STATE_FILE")
+	state_dir=$(dirname "$target")
 	mkdir -p "$state_dir"
-	tmp_file=$(mktemp "${state_dir}/.port.XXXXXX")
-	printf '%s\n' "$port" >"$tmp_file"
+	tmp_file=$(mktemp "${state_dir}/.state.XXXXXX")
+	printf '%s\n' "$value" >"$tmp_file"
 	chmod 0644 "$tmp_file"
-	mv -f "$tmp_file" "$PORT_STATE_FILE"
+	mv -f "$tmp_file" "$target"
+}
+
+write_port_state() {
+	write_state_value "$PORT_STATE_FILE" "$1"
 }
 
 clear_port_state() {
 	rm -f "$PORT_STATE_FILE"
+}
+
+write_fail_streak() {
+	write_state_value "$NATPMP_FAIL_FILE" "$1"
+}
+
+clear_fail_streak() {
+	rm -f "$NATPMP_FAIL_FILE"
 }
 
 if [[ -z $GATEWAY ]]; then
@@ -95,6 +109,7 @@ COOKIE_FILE=$(mktemp)
 cleanup() {
 	rm -f "$COOKIE_FILE"
 	clear_port_state
+	clear_fail_streak
 }
 trap cleanup EXIT
 trap 'exit 0' INT TERM
@@ -197,6 +212,7 @@ PY
 
 	if [[ -n $PORT && $PORT != "0" ]]; then
 		FAIL_STREAK=0
+		clear_fail_streak
 		if [[ $PORT != "$OLD_PORT" ]]; then
 			log_info "Assigned public port: $PORT (previously: ${OLD_PORT:-none})"
 
@@ -218,6 +234,7 @@ PY
 		fi
 	else
 		FAIL_STREAK=$((FAIL_STREAK + 1))
+		write_fail_streak "$FAIL_STREAK"
 		log_warn "Failed to obtain port from NAT-PMP gateway $GATEWAY (streak: $FAIL_STREAK). Output: $(echo "${out:-no response}" | tr '\n' ' ')"
 		if [[ $FAIL_STREAK -ge 3 ]]; then
 			clear_port_state

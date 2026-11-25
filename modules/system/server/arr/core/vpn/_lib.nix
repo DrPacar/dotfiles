@@ -53,6 +53,7 @@
       then "1"
       else "0";
     PORT_STATE_FILE = "/run/protonvpn-port-forward/port";
+    NATPMP_FAIL_FILE = "/run/protonvpn-port-forward/fail_streak";
   };
 in {
   inherit

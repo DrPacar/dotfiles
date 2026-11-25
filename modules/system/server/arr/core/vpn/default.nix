@@ -34,6 +34,42 @@
     text = builtins.readFile ./scripts/post-up.sh;
   };
 
+  notifyCfg = config.server.notify or {};
+
+  notifyBin =
+    if !cfg.vpn.notifications.enable
+    then ""
+    else if cfg.vpn.notifications.handler != null
+    then
+      if builtins.isString cfg.vpn.notifications.handler
+      then let
+        customHandler = pkgs.writeShellApplication {
+          name = "arr-vpn-notify";
+          text = ''
+            export PATH="$PATH:/run/current-system/sw/bin"
+            ${cfg.vpn.notifications.handler}
+          '';
+        };
+      in "${customHandler}/bin/arr-vpn-notify"
+      else lib.getExe cfg.vpn.notifications.handler
+    else if (notifyCfg.enable or false)
+    then let
+      defaultHandler = pkgs.writeShellApplication {
+        name = "arr-vpn-notify";
+        runtimeInputs = [pkgs.curl];
+        text = ''
+          MSG="''${1:-Arr VPN notification}"
+          TAG="''${2:-warning}"
+          curl -fsS -m 5 \
+            -H "Title: Arr VPN (${vpn.ns})" \
+            -H "Tags: $TAG" \
+            -d "$MSG" \
+            "http://127.0.0.1:${toString (notifyCfg.port or 2586)}/${notifyCfg.topic or "media"}" >/dev/null
+        '';
+      };
+    in "${defaultHandler}/bin/arr-vpn-notify"
+    else "";
+
   watchdogScript = pkgs.writeShellApplication {
     name = "arr-vpn-watchdog";
     runtimeInputs = with pkgs; [
@@ -49,6 +85,12 @@
       WG_IFACE = vpn.iface;
       PING_TARGET = cfg.vpn.watchdog.pingTarget;
       MAX_AGE = toString cfg.vpn.watchdog.maxHandshakeAge;
+      PORT_FORWARDING_ENABLED = vpn.commonEnv.PORT_FORWARDING_ENABLED;
+      PORT_STATE_FILE = vpn.commonEnv.PORT_STATE_FILE;
+      NATPMP_FAIL_FILE = vpn.commonEnv.NATPMP_FAIL_FILE;
+      NATPMP_FAIL_THRESHOLD = toString cfg.vpn.watchdog.natpmpFailureThreshold;
+      NATPMP_RESTART_COOLDOWN = toString cfg.vpn.watchdog.natpmpRestartCooldown;
+      NOTIFY_BIN = notifyBin;
     };
     text = builtins.readFile ./scripts/watchdog.sh;
   };
