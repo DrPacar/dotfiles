@@ -142,14 +142,15 @@ prune)
 		echo "=========================================="
 		echo " Local Repository Retention Pruning & Check"
 		echo " Repository: $RESTIC_LOCAL_REPO"
-		echo " Retention: $KEEP_DAILY daily, $KEEP_WEEKLY weekly, $KEEP_MONTHLY monthly, $KEEP_YEARLY yearly"
+		if [ -n "${RESTIC_CLIENT_PRUNE_OPTS:-}" ]; then
+			read -ra PRUNE_ARGS <<<"$RESTIC_CLIENT_PRUNE_OPTS"
+			echo " Policy: $RESTIC_CLIENT_PRUNE_OPTS"
+		else
+			PRUNE_ARGS=(--keep-daily "$KEEP_DAILY" --keep-weekly "$KEEP_WEEKLY" --keep-monthly "$KEEP_MONTHLY" --keep-yearly "$KEEP_YEARLY")
+			echo " Retention: $KEEP_DAILY daily, $KEEP_WEEKLY weekly, $KEEP_MONTHLY monthly, $KEEP_YEARLY yearly"
+		fi
 		echo "=========================================="
-		restic-central forget \
-			--keep-daily "$KEEP_DAILY" \
-			--keep-weekly "$KEEP_WEEKLY" \
-			--keep-monthly "$KEEP_MONTHLY" \
-			--keep-yearly "$KEEP_YEARLY" \
-			--prune
+		restic-central forget "${PRUNE_ARGS[@]}" --prune
 		if [ "$CHECK_ENABLED" = "1" ]; then
 			if [ -n "$SUBSET" ]; then
 				restic-central check --read-data-subset "$SUBSET"

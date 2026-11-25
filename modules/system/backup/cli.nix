@@ -30,6 +30,7 @@
         then cfg.client.repository
         else ""
       }}"
+      export RESTIC_CLIENT_PRUNE_OPTS="''${RESTIC_CLIENT_PRUNE_OPTS:-${lib.concatStringsSep " " cfg.client.pruneOpts}}"
       export RESTIC_PASSWORD_FILE="''${RESTIC_PASSWORD_FILE:-${cfg.passwordFile}}"
       export RESTIC_KEEP_DAILY="''${RESTIC_KEEP_DAILY:-${toString cfg.server.prune.keepDaily}}"
       export RESTIC_KEEP_WEEKLY="''${RESTIC_KEEP_WEEKLY:-${toString cfg.server.prune.keepWeekly}}"

@@ -212,6 +212,7 @@
         Persistent = true;
         RandomizedDelaySec = "15m";
       };
+      pruneOpts = ["--keep-last 1"];
       databases = {
         postgresql.enable = true; # Immich PostgreSQL database
         sqlite = [
