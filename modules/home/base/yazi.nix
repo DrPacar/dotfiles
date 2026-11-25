@@ -497,7 +497,7 @@ in {
           (mkJump "d" "~/dotfiles" "dotfiles")
           (mkJump "u" "~/uni" "uni")
           (mkJump "s" "~/shared" "shared folder")
-          (mkJump "S" "~/data" "data")
+          (mkJump "S" "~/haven/data" "haven/data")
           (mkJump "m" "/mnt/data" "/mnt/data")
           (mkJump "D" "~/Downloads" "Downloads")
           (mkJump "h" "~" "home")

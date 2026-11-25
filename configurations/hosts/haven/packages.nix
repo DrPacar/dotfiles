@@ -175,14 +175,17 @@
     };
   };
 
-  # Declarative share access on haven (direct local symlink ~/data -> /data)
+  # Declarative share access on haven (direct local symlink ~/haven/data -> /data)
   networking.shares = {
     enable = true;
     entries.data = {
       host = "haven";
       localPath = "/data";
       isLocal = true;
-      symlink.enable = true;
+      symlink = {
+        enable = true;
+        path = "/home/luka/haven/data";
+      };
     };
   };
 

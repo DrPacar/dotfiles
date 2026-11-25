@@ -94,6 +94,8 @@ in {
     isLocalEntry
     resolveUid
     resolveGid
+    resolveGroupName
+    resolveUserHome
     resolveTargetPath
     resolveSymlinkPath
     manifestJson

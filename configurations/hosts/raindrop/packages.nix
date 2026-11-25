@@ -21,7 +21,10 @@
     enable = true;
     entries.data = {
       host = "100.64.0.1";
-      symlink.enable = true;
+      symlink = {
+        enable = true;
+        path = "/home/luka/haven/data";
+      };
     };
   };
 

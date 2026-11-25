@@ -62,6 +62,23 @@
     )
     shares.remoteEntries;
 
+  symlinkParentRules = unique (
+    lib.concatMap (
+      entry: let
+        linkPath = shares.resolveSymlinkPath entry;
+        parentDir =
+          if linkPath != null
+          then dirOf linkPath
+          else null;
+        userHome = shares.resolveUserHome entry;
+        groupName = shares.resolveGroupName entry;
+      in
+        lib.optional (linkPath != null && parentDir != userHome && parentDir != "/")
+        "d ${parentDir} 0755 ${entry.user} ${groupName} -"
+    )
+    (lib.attrValues shares.enabledEntries)
+  );
+
   symlinkRules =
     lib.concatMap (
       entry: let
@@ -104,6 +121,10 @@
           assertion = entry.group == null || (config.users.groups ? ${entry.group});
           message = "networking.shares.entries.${name}: group '${toString entry.group}' is not defined in config.users.groups.";
         }
+        {
+          assertion = !entry.symlink.enable || (hasPrefix "/" (shares.resolveSymlinkPath entry));
+          message = "networking.shares.entries.${name}: 'symlink.path' must be an absolute path.";
+        }
       ]
     )
     shares.enabledEntries
@@ -128,6 +149,6 @@ in {
 
     fileSystems = remoteFileSystems;
 
-    systemd.tmpfiles.rules = mountPointRules ++ symlinkRules;
+    systemd.tmpfiles.rules = mountPointRules ++ symlinkParentRules ++ symlinkRules;
   };
 }
