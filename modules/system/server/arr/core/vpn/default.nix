@@ -28,10 +28,17 @@
       iproute2
       iptables
       wireguard-tools
+      procps
       gnugrep
       coreutils
     ];
-    runtimeEnv = vpn.commonEnv;
+    runtimeEnv =
+      vpn.commonEnv
+      // {
+        TCP_CONGESTION_CONTROL = toString (config.boot.kernel.sysctl."net.ipv4.tcp_congestion_control" or "cubic");
+        TCP_MTU_PROBING = toString (config.boot.kernel.sysctl."net.ipv4.tcp_mtu_probing" or 0);
+        TCP_FASTOPEN = toString (config.boot.kernel.sysctl."net.ipv4.tcp_fastopen" or 1);
+      };
     text = builtins.readFile ./scripts/post-up.sh;
   };
 

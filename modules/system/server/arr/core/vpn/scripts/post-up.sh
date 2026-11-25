@@ -22,6 +22,9 @@ set -euo pipefail
 : "${GATEWAY:?GATEWAY environment variable is required}"
 WG_FWMARK="${WG_FWMARK:-}"
 FALLBACK_DNS="${FALLBACK_DNS:-}"
+TCP_CONGESTION_CONTROL="${TCP_CONGESTION_CONTROL:-cubic}"
+TCP_MTU_PROBING="${TCP_MTU_PROBING:-0}"
+TCP_FASTOPEN="${TCP_FASTOPEN:-1}"
 
 # -----------------------------------------------------------------------------
 # 1. Apply outer socket fwmark for direct physical egress (no nested VPN)
@@ -36,7 +39,7 @@ if [ -n "$WG_FWMARK" ]; then
 fi
 
 # -----------------------------------------------------------------------------
-# 2. Ensure internal VPN gateway routes via tunnel and clamp TCP MSS to PMTU
+# 2. Ensure internal VPN gateway routes via tunnel, clamp MSS & apply TCP tuning
 # -----------------------------------------------------------------------------
 ip -n "$NAMESPACE" route replace "${GATEWAY}/32" dev "$WG_IFACE"
 ip netns exec "$NAMESPACE" iptables -t mangle -C POSTROUTING -o "$WG_IFACE" -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu 2>/dev/null ||
@@ -45,6 +48,13 @@ if [ -e /proc/net/if_inet6 ]; then
 	ip netns exec "$NAMESPACE" ip6tables -t mangle -C POSTROUTING -o "$WG_IFACE" -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu 2>/dev/null ||
 		ip netns exec "$NAMESPACE" ip6tables -t mangle -A POSTROUTING -o "$WG_IFACE" -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
 fi
+
+# Mirror host TCP congestion control, MTU probing, and Fast Open into the netns
+# (Linux resets per-namespace net.ipv4.tcp_* sysctls to kernel defaults).
+ip netns exec "$NAMESPACE" sysctl -qw \
+	"net.ipv4.tcp_congestion_control=${TCP_CONGESTION_CONTROL}" \
+	"net.ipv4.tcp_mtu_probing=${TCP_MTU_PROBING}" \
+	"net.ipv4.tcp_fastopen=${TCP_FASTOPEN}" || true
 
 # -----------------------------------------------------------------------------
 # 3. Allow fallback DNS in dns-fw and configure namespace resolv.conf

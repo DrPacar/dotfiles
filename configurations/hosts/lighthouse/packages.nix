@@ -116,4 +116,7 @@
 
   # Declarative share access on lighthouse (direct local symlink ~/data -> /data)
   client.shares.data.enable = true;
+
+  # Use haven / Tailnet DNS on lighthouse
+  client.tailscale.acceptDns = true;
 }

@@ -9,8 +9,9 @@
   arrCfg = config.server.arr or {};
 
   hostName = config.networking.hostName;
+  tsEnabled = cfg.tailscale.enable or false;
   tailscaleFqdn =
-    if cfg.tailscaleDomain != null
+    if tsEnabled && cfg.tailscaleDomain != null
     then "${hostName}.${cfg.tailscaleDomain}"
     else null;
 
@@ -228,19 +229,17 @@ in {
     };
 
     # Allow Caddy to fetch TLS certificates from Tailscale LocalAPI and read ACME certs
-    services.tailscale.permitCertUid = lib.mkDefault "caddy";
+    services.tailscale.permitCertUid = mkIf tsEnabled (lib.mkDefault "caddy");
     users.users.caddy.extraGroups = lib.optional (customDomain != null) "acme";
 
     # Ensure Caddy starts after tailscaled and acme certificate generation
     systemd.services.caddy = {
       after =
-        [
-          "tailscaled.service"
-        ]
+        (lib.optional tsEnabled "tailscaled.service")
         ++ lib.optional (customDomain != null) "acme-${customDomain}.service"
         ++ lib.optional (arrDomain != null && arrDomain != customDomain) "acme-${arrDomain}.service";
       wants =
-        (lib.optional (config.services.tailscale.enable or false) "tailscaled.service")
+        (lib.optional tsEnabled "tailscaled.service")
         ++ lib.optional (customDomain != null) "acme-${customDomain}.service"
         ++ lib.optional (arrDomain != null && arrDomain != customDomain) "acme-${arrDomain}.service";
     };

@@ -63,6 +63,38 @@
     scsiLinkPolicy = "med_power_with_dipm";
   };
 
+  # Exclude eno1 from PCI runtime power management after powertop --auto-tune
+  systemd.services.powertop.serviceConfig.ExecStartPost = [
+    (pkgs.writeShellScript "powertop-keep-eno1-awake" ''
+      if [ -w /sys/class/net/eno1/device/power/control ]; then
+        echo on > /sys/class/net/eno1/device/power/control
+      fi
+    '')
+  ];
+
+  # Size eno1 RX/TX ring buffers for sustained NAS, WireGuard, and Tailscale bursts
+  systemd.services.tune-eno1 = {
+    description = "Configure eno1 NIC ring buffers";
+    wantedBy = ["multi-user.target"];
+    wants = ["sys-subsystem-net-devices-eno1.device"];
+    after = ["sys-subsystem-net-devices-eno1.device"];
+    before = ["systemd-networkd.service" "network.target"];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+      ExecStart = pkgs.writeShellScript "tune-eno1" ''
+        set -euo pipefail
+        read -r cur_rx cur_tx < <(
+          LC_ALL=C ${pkgs.ethtool}/bin/ethtool -g eno1 \
+            | ${pkgs.gawk}/bin/awk '/Current hardware settings:/{in_cur=1} in_cur && /^RX:/{rx=$2} in_cur && /^TX:/{tx=$2} END{print rx+0, tx+0}'
+        )
+        if [ "$cur_rx" -ne 1024 ] || [ "$cur_tx" -ne 1024 ]; then
+          ${pkgs.ethtool}/bin/ethtool -G eno1 rx 1024 tx 1024
+        fi
+      '';
+    };
+  };
+
   # Set Intel P-State Energy Performance Preference to balance_power
   systemd.services.set-cpu-epp = {
     description = "Set CPU Energy Performance Preference to balance_power";
