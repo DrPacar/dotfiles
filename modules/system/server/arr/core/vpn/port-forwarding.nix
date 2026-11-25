@@ -76,6 +76,8 @@ in {
         RuntimeDirectory = "protonvpn-port-forward";
         RuntimeDirectoryMode = "0755";
         User = "root";
+        PrivateTmp = true;
+        ProtectHome = true;
         Slice = "arr.slice";
         MemoryHigh = "64M";
         MemoryMax = "128M";

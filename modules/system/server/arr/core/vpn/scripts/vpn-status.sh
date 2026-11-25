@@ -58,7 +58,11 @@ else
 fi
 
 print_kv() {
-	printf "%-26s%b\n" "$1:" "$2"
+	printf "%-34s%b\n" "$1:" "$2"
+}
+
+strip_endpoint_ip() {
+	sed -E 's/:[0-9]+$//; s/^\[//; s/\]$//'
 }
 
 get_chain_packets() {
@@ -120,7 +124,7 @@ do_selftest() {
 		fi
 
 		local ENDPOINT_IP ROUTE_OUT ROUTE_DEV
-		ENDPOINT_IP=$($SUDO ip netns exec "$NAMESPACE" wg show "$WG_IFACE" endpoints 2>/dev/null | awk '{print $2}' | sed -E 's/^\[?([^]]+)\]:[0-9]+$/\1/' | head -n 1 || true)
+		ENDPOINT_IP=$($SUDO ip netns exec "$NAMESPACE" wg show "$WG_IFACE" endpoints 2>/dev/null | awk '{print $2}' | strip_endpoint_ip | head -n 1 || true)
 		if [ -n "$ENDPOINT_IP" ]; then
 			ROUTE_OUT=$(ip route get "$ENDPOINT_IP" mark "$WG_FWMARK" 2>/dev/null || true)
 			ROUTE_DEV=$(echo "$ROUTE_OUT" | awk '{for (i=1; i<=NF; i++) if ($i=="dev") {print $(i+1); exit}}' || true)
@@ -283,7 +287,7 @@ do_status() {
 		if [ -n "$PEER_INFO" ]; then
 			local ENDPOINT ENDPOINT_IP LATEST_HS TRANSFER FWMARK NOW DIFF HS_STR
 			ENDPOINT=$(echo "$PEER_INFO" | awk '/endpoint:/ {print $2; exit}' || true)
-			ENDPOINT_IP=$(echo "${ENDPOINT:-}" | sed -E 's/^\[?([^]]+)\]:[0-9]+$/\1/')
+			ENDPOINT_IP=$(echo "${ENDPOINT:-}" | strip_endpoint_ip)
 			FWMARK=$($SUDO ip netns exec "$NAMESPACE" wg show "$WG_IFACE" fwmark 2>/dev/null || true)
 			LATEST_HS=$($SUDO ip netns exec "$NAMESPACE" wg show "$WG_IFACE" latest-handshakes 2>/dev/null | awk '{print $2}' | sort -n | tail -n 1 || true)
 			TRANSFER=$(echo "$PEER_INFO" | sed -n 's/.*transfer:[[:space:]]*//p' | head -n 1 || true)

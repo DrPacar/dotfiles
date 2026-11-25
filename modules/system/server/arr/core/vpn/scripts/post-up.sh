@@ -36,9 +36,15 @@ if [ -n "$WG_FWMARK" ]; then
 fi
 
 # -----------------------------------------------------------------------------
-# 2. Ensure internal VPN gateway / DNS routes directly through the tunnel
+# 2. Ensure internal VPN gateway routes via tunnel and clamp TCP MSS to PMTU
 # -----------------------------------------------------------------------------
 ip -n "$NAMESPACE" route replace "${GATEWAY}/32" dev "$WG_IFACE"
+ip netns exec "$NAMESPACE" iptables -t mangle -C POSTROUTING -o "$WG_IFACE" -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu 2>/dev/null ||
+	ip netns exec "$NAMESPACE" iptables -t mangle -A POSTROUTING -o "$WG_IFACE" -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
+if [ -e /proc/net/if_inet6 ]; then
+	ip netns exec "$NAMESPACE" ip6tables -t mangle -C POSTROUTING -o "$WG_IFACE" -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu 2>/dev/null ||
+		ip netns exec "$NAMESPACE" ip6tables -t mangle -A POSTROUTING -o "$WG_IFACE" -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
+fi
 
 # -----------------------------------------------------------------------------
 # 3. Allow fallback DNS in dns-fw and configure namespace resolv.conf

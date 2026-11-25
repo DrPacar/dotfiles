@@ -39,6 +39,8 @@ in {
         ExecStart = "${pkgs.socat}/bin/socat TCP-LISTEN:${toString cfg.qbittorrent.webuiPort},bind=${cfg.network.bindAddress},fork,reuseaddr TCP:${namespaceAddress}:${toString cfg.qbittorrent.webuiPort}";
         Restart = "always";
         RestartSec = "3s";
+        # socat exits with 143 on SIGTERM during unit restarts / nh os switch
+        SuccessExitStatus = ["SIGTERM" "143"];
         DynamicUser = true;
         Slice = "arr.slice";
         CapabilityBoundingSet = "";
