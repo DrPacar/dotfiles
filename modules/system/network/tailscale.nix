@@ -4,11 +4,18 @@
   pkgs,
   ...
 }: let
-  inherit (lib) boolToString mkIf mkOption types;
-  isServer = config.server.enable or false;
+  inherit (lib) boolToString mkEnableOption mkIf mkOption types;
   cfg = config.client.tailscale;
 in {
   options.client.tailscale = {
+    enable = mkEnableOption "Tailscale client profile with desktop tray GUI and Tailnet DNS support";
+
+    operator = mkOption {
+      type = types.nullOr types.str;
+      default = config.user.primary or null;
+      description = "Local Unix username allowed to operate Tailscale without sudo.";
+    };
+
     acceptDns = mkOption {
       type = types.bool;
       default = true;
@@ -22,7 +29,7 @@ in {
     };
   };
 
-  config = mkIf (!isServer) {
+  config = mkIf cfg.enable {
     services.tailscale = {
       enable = true;
       openFirewall = true;
@@ -30,11 +37,12 @@ in {
       # Allow asymmetric routing / exit nodes without enabling IP forwarding
       useRoutingFeatures = "client";
 
-      extraSetFlags = [
-        "--operator=${config.user.primary}"
-        "--accept-dns=${boolToString cfg.acceptDns}"
-        "--accept-routes=${boolToString cfg.acceptRoutes}"
-      ];
+      extraSetFlags =
+        lib.optional (cfg.operator != null) "--operator=${cfg.operator}"
+        ++ [
+          "--accept-dns=${boolToString cfg.acceptDns}"
+          "--accept-routes=${boolToString cfg.acceptRoutes}"
+        ];
     };
 
     # Trust tailscale0 on clients for seamless access between personal devices

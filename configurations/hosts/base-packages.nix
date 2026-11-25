@@ -22,4 +22,7 @@
     "hyprland"
     "greeter"
   ];
+
+  # Enable Tailscale client profile on desktop and laptop hosts
+  client.tailscale.enable = true;
 }
