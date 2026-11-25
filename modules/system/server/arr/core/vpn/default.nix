@@ -161,9 +161,10 @@ in {
           ];
         };
 
+        # Never permanently lock out wg.service during prolonged ISP outages;
+        # RestartMaxDelaySec already throttles retries to once per minute.
         unitConfig = {
-          StartLimitIntervalSec = 300;
-          StartLimitBurst = 10;
+          StartLimitIntervalSec = 0;
         };
       };
 

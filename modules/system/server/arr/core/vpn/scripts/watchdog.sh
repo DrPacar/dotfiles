@@ -49,7 +49,19 @@ send_alert() {
 	fi
 }
 
-# Exit cleanly if the tunnel service is intentionally stopped
+# Revive failed tunnel unit (e.g. prolonged ISP outage), while respecting deliberate admin stops
+if systemctl is-failed --quiet "$UNIT"; then
+	mkdir -p "$STATE_DIR"
+	echo "WARN: [arr-vpn-watchdog] Service $UNIT is in failed state. Resetting and starting..." >&2
+	if [ ! -f "$TUNNEL_ALERTED_FILE" ]; then
+		touch "$TUNNEL_ALERTED_FILE"
+		send_alert "Arr VPN (${NAMESPACE}/${WG_IFACE}): Service ${UNIT} war im Fehlerzustand (failed). Starte neu." "rotating_light"
+	fi
+	systemctl reset-failed "$UNIT"
+	systemctl start "$UNIT"
+	exit 0
+fi
+
 if ! systemctl is-active --quiet "$UNIT"; then
 	exit 0
 fi

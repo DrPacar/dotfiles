@@ -120,7 +120,7 @@ trap 'exit 0' INT TERM
 log_info "Waiting for qBittorrent WebUI at $WEBUI_URL..."
 MAX_WAIT=90
 WAITED=0
-until curl -s -f -I "$WEBUI_URL/" >/dev/null 2>&1; do
+until curl --connect-timeout 2 -m 5 -s -f -I "$WEBUI_URL/" >/dev/null 2>&1; do
 	sleep 1 &
 	wait $! || true
 	WAITED=$((WAITED + 1))
@@ -136,7 +136,7 @@ login_qbittorrent() {
 		local pass
 		pass=$(tr -d '\r\n' <"$PASS_FILE")
 		rm -f "$COOKIE_FILE"
-		curl -s -c "$COOKIE_FILE" -X POST "$WEBUI_URL/api/v2/auth/login" \
+		curl --connect-timeout 5 -m 10 -s -c "$COOKIE_FILE" -X POST "$WEBUI_URL/api/v2/auth/login" \
 			--data-urlencode "username=$WEBUI_USER" \
 			--data-urlencode "password=$pass" >/dev/null 2>&1 || true
 	fi
@@ -152,10 +152,10 @@ sync_qbittorrent_prefs() {
 	local payload status
 	payload="json={${port_json}\"upnp\": false, \"current_network_interface\": \"${WG_IFACE}\", \"max_connec\": ${MAX_CONNECTIONS}, \"max_connec_per_torrent\": ${MAX_CONNECTIONS_PER_TORRENT}, \"max_active_downloads\": ${MAX_ACTIVE_DOWNLOADS}, \"max_active_torrents\": ${MAX_ACTIVE_TORRENTS}, \"dl_limit\": $((DL_LIMIT_KIB * 1024)), \"up_limit\": $((UP_LIMIT_KIB * 1024)), \"announce_to_all_trackers\": ${ANNOUNCE_TO_ALL_TRACKERS}, \"announce_to_all_tiers\": ${ANNOUNCE_TO_ALL_TRACKERS}, \"enable_piece_extent_affinity\": ${PIECE_EXTENT_AFFINITY}, \"enable_coalesce_read_write\": ${COALESCE_READ_WRITE}, \"category_changed_tmm_enabled\": true}"
 
-	status=$(curl -s -o /dev/null -w "%{http_code}" -b "$COOKIE_FILE" -X POST "$WEBUI_URL/api/v2/app/setPreferences" --data-urlencode "$payload" || true)
+	status=$(curl --connect-timeout 5 -m 10 -s -o /dev/null -w "%{http_code}" -b "$COOKIE_FILE" -X POST "$WEBUI_URL/api/v2/app/setPreferences" --data-urlencode "$payload" || true)
 	if [[ $status != "200" ]]; then
 		login_qbittorrent
-		status=$(curl -s -o /dev/null -w "%{http_code}" -b "$COOKIE_FILE" -X POST "$WEBUI_URL/api/v2/app/setPreferences" --data-urlencode "$payload" || true)
+		status=$(curl --connect-timeout 5 -m 10 -s -o /dev/null -w "%{http_code}" -b "$COOKIE_FILE" -X POST "$WEBUI_URL/api/v2/app/setPreferences" --data-urlencode "$payload" || true)
 	fi
 
 	echo "$status"
@@ -203,10 +203,10 @@ PY
 
 	out=""
 	if [[ -z $PORT || $PORT == "0" ]]; then
-		out=$(natpmpc -a 0 0 udp "$LEASE_DURATION" -g "$GATEWAY" 2>&1) || true
+		out=$(timeout 10 natpmpc -a 0 0 udp "$LEASE_DURATION" -g "$GATEWAY" 2>&1) || true
 		PORT=$(echo "$out" | grep -oP 'Mapped public port \K[0-9]+' | head -n 1 || true)
 		if [[ -n $PORT && $PORT != "0" ]]; then
-			natpmpc -a "$PORT" "$PORT" tcp "$LEASE_DURATION" -g "$GATEWAY" >/dev/null 2>&1 || true
+			timeout 10 natpmpc -a "$PORT" "$PORT" tcp "$LEASE_DURATION" -g "$GATEWAY" >/dev/null 2>&1 || true
 		fi
 	fi
 
@@ -225,10 +225,13 @@ PY
 			iptables -C INPUT -p udp --dport "$PORT" -j ACCEPT 2>/dev/null || iptables -I INPUT -p udp --dport "$PORT" -j ACCEPT
 
 			STATUS=$(sync_qbittorrent_prefs "$PORT")
-			log_info "Updated qBittorrent listen_port to $PORT (API status: $STATUS)"
-
-			write_port_state "$PORT"
-			OLD_PORT="$PORT"
+			if [[ $STATUS == "200" ]]; then
+				log_info "Updated qBittorrent listen_port to $PORT (API status: $STATUS)"
+				write_port_state "$PORT"
+				OLD_PORT="$PORT"
+			else
+				log_warn "Failed to update qBittorrent listen_port to $PORT (API status: $STATUS); will retry next cycle."
+			fi
 		elif [[ ! -f $PORT_STATE_FILE ]]; then
 			write_port_state "$PORT"
 		fi
