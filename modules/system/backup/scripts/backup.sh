@@ -54,6 +54,23 @@ status)
 	echo "=========================================="
 	systemctl list-timers "restic-backups-central*" "restic-server-prune*" --no-pager || true
 	echo ""
+	if [ "${RESTIC_SERVER_ENABLED:-0}" = "1" ]; then
+		echo "--> REST Server:"
+		systemctl status "restic-rest-server.service" --lines=3 --no-pager || true
+		if [ -d "${RESTIC_SERVER_DATA_DIR:-/var/lib/restic}" ]; then
+			echo "--> Server Repositories (${RESTIC_SERVER_DATA_DIR:-/var/lib/restic}):"
+			du -sh "${RESTIC_SERVER_DATA_DIR:-/var/lib/restic}"/* 2>/dev/null || echo "  (empty)"
+		fi
+		echo ""
+	elif [ -n "${RESTIC_LOCAL_REPO:-}" ]; then
+		echo "--> Local Repository (${RESTIC_LOCAL_REPO}):"
+		if [ -d "${RESTIC_LOCAL_REPO}" ]; then
+			du -sh "${RESTIC_LOCAL_REPO}" 2>/dev/null || true
+		else
+			echo "  (not initialized yet)"
+		fi
+		echo ""
+	fi
 	echo "--> Recent Service Executions:"
 	systemctl status "restic-backups-central*" "restic-server-prune*" --lines=5 --no-pager || true
 	;;
@@ -117,7 +134,34 @@ prune)
 	KEEP_WEEKLY="${RESTIC_KEEP_WEEKLY:-4}"
 	KEEP_MONTHLY="${RESTIC_KEEP_MONTHLY:-12}"
 	KEEP_YEARLY="${RESTIC_KEEP_YEARLY:-1}"
+	CHECK_ENABLED="${RESTIC_CHECK_ENABLED:-1}"
 	SUBSET="${RESTIC_READ_DATA_SUBSET:-}"
+
+	if [ "${RESTIC_SERVER_ENABLED:-0}" != "1" ] && [ -n "${RESTIC_LOCAL_REPO:-}" ]; then
+		ensure_restic_central
+		echo "=========================================="
+		echo " Local Repository Retention Pruning & Check"
+		echo " Repository: $RESTIC_LOCAL_REPO"
+		echo " Retention: $KEEP_DAILY daily, $KEEP_WEEKLY weekly, $KEEP_MONTHLY monthly, $KEEP_YEARLY yearly"
+		echo "=========================================="
+		restic-central forget \
+			--keep-daily "$KEEP_DAILY" \
+			--keep-weekly "$KEEP_WEEKLY" \
+			--keep-monthly "$KEEP_MONTHLY" \
+			--keep-yearly "$KEEP_YEARLY" \
+			--prune
+		if [ "$CHECK_ENABLED" = "1" ]; then
+			if [ -n "$SUBSET" ]; then
+				restic-central check --read-data-subset "$SUBSET"
+			else
+				restic-central check
+			fi
+		fi
+		echo "=========================================="
+		echo " Local pruning and integrity check completed!"
+		echo "=========================================="
+		exit 0
+	fi
 
 	if [ ! -d "$DATA_DIR" ]; then
 		echo "Data directory '$DATA_DIR' does not exist."
@@ -140,24 +184,33 @@ prune)
 	echo "=========================================="
 
 	PRUNED=0
+	ERRORS=0
 	for repo in "$DATA_DIR"/*; do
 		if [ -d "$repo" ] && [ -f "$repo/config" ]; then
 			repo_name="$(basename "$repo")"
 			echo "--> Pruning repository: $repo_name"
 			restic -r "$repo" --password-file "$PW_FILE" unlock || true
-			restic -r "$repo" --password-file "$PW_FILE" forget \
+			if ! restic -r "$repo" --password-file "$PW_FILE" forget \
 				--keep-daily "$KEEP_DAILY" \
 				--keep-weekly "$KEEP_WEEKLY" \
 				--keep-monthly "$KEEP_MONTHLY" \
 				--keep-yearly "$KEEP_YEARLY" \
-				--prune
+				--prune; then
+				ERRORS=$((ERRORS + 1))
+			fi
 
-			if [ -n "$SUBSET" ]; then
-				echo "--> Checking repository integrity (deep subset: $SUBSET): $repo_name"
-				restic -r "$repo" --password-file "$PW_FILE" check --read-data-subset "$SUBSET" || true
-			else
-				echo "--> Checking repository integrity: $repo_name"
-				restic -r "$repo" --password-file "$PW_FILE" check || true
+			if [ "$CHECK_ENABLED" = "1" ]; then
+				if [ -n "$SUBSET" ]; then
+					echo "--> Checking repository integrity (deep subset: $SUBSET): $repo_name"
+					if ! restic -r "$repo" --password-file "$PW_FILE" check --read-data-subset "$SUBSET"; then
+						ERRORS=$((ERRORS + 1))
+					fi
+				else
+					echo "--> Checking repository integrity: $repo_name"
+					if ! restic -r "$repo" --password-file "$PW_FILE" check; then
+						ERRORS=$((ERRORS + 1))
+					fi
+				fi
 			fi
 			PRUNED=1
 		fi
@@ -166,8 +219,11 @@ prune)
 	if [ "$PRUNED" -eq 0 ]; then
 		echo "No valid Restic repositories (containing 'config') found in $DATA_DIR."
 	else
-		# Ensure repository permissions remain owned by restic user
 		chown -R restic:restic "$DATA_DIR" 2>/dev/null || true
+		if [ "$ERRORS" -gt 0 ]; then
+			echo "ERROR: Server pruning/check encountered $ERRORS failure(s)!" >&2
+			exit 1
+		fi
 		echo "=========================================="
 		echo " Server pruning and integrity checks completed!"
 		echo "=========================================="
@@ -208,7 +264,7 @@ help | --help | -h)
 	echo "Commands:"
 	echo "  now, run, start       Start backup job immediately in foreground"
 	echo "  snapshots, list, ls   List existing snapshots in repository"
-	echo "  status                Show status of backup timers and recent executions"
+	echo "  status                Show status of backup timers, server repos, and executions"
 	echo "  mount [<path>]        Mount repository as virtual filesystem (default: /mnt/backup-restore)"
 	echo "  umount [<path>]       Unmount previously mounted repository"
 	echo "  check [--deep]        Verify repository integrity (use --deep for 10% data chunk check)"

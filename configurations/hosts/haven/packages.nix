@@ -201,6 +201,53 @@
     };
   };
 
+  # Encrypted backups of haven server services into local repository (/var/backup/restic)
+  # Prerequisite before enabling: add 'restic-password' in secrets/common.yaml (or secrets/haven.yaml)
+  backup = {
+    enable = false;
+    client = {
+      enable = true;
+      repository = "/var/backup/restic";
+      timerConfig = {
+        OnCalendar = "*-*-01/2 04:00:00"; # Every 2 days at 04:00
+        Persistent = true;
+        RandomizedDelaySec = "15m";
+      };
+      databases = {
+        postgresql.enable = true; # Immich PostgreSQL database
+        sqlite = [
+          {
+            path = "/var/lib/paperless/db.sqlite3";
+            destName = "paperless.sqlite3";
+          }
+          {
+            path = "/var/lib/private/uptime-kuma/kuma.db";
+            destName = "uptime-kuma.sqlite3";
+          }
+          {
+            path = "/var/lib/private/beszel-hub/data.db";
+            destName = "beszel.sqlite3";
+          }
+        ];
+      };
+      paths = [
+        "/var/backup/vaultwarden" # Atomic SQLite snapshot + RSA key (dumped at 03:30)
+        "/var/lib/immich" # Immich original photos & videos
+        "/var/lib/paperless/media" # Paperless archived PDFs & originals
+        "/var/lib/private/AdGuardHome/AdGuardHome.yaml"
+        "/var/lib/private/ntfy-sh"
+        "/var/lib/private/beszel-hub/id_ed25519" # Beszel Hub agent SSH key
+        "/arr_data/backups" # Arr stack backups (when server.arr.backup.enable = true)
+      ];
+      exclude = [
+        "/var/lib/immich/thumbs"
+        "/var/lib/immich/encoded-video"
+        "**/db.sqlite3-wal"
+        "**/db.sqlite3-shm"
+      ];
+    };
+  };
+
   # System-wide WireGuard VPN tunnel
   networking.systemVPN = {
     enable = true;

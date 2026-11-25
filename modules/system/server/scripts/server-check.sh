@@ -18,6 +18,7 @@ set -euo pipefail
 : "${HAS_ARR_VPN:?HAS_ARR_VPN is required}"
 : "${HAS_ARR_QBIT:?HAS_ARR_QBIT is required}"
 : "${HAS_ADGUARD:?HAS_ADGUARD is required}"
+HAS_VAULTWARDEN="${HAS_VAULTWARDEN:-0}"
 HAS_SHARES="${HAS_SHARES:-0}"
 CHECK_STORAGE_PATHS="${CHECK_STORAGE_PATHS:-/}"
 
@@ -39,8 +40,9 @@ Runs all enabled server health checks in sequence:
   - system-vpn check (if enabled)
   - arr vpn check    (if enabled)
   - arr qbit check   (if enabled)
-  - adguard check    (if enabled)
-  - shares check     (if enabled)
+  - adguard check      (if enabled)
+  - vaultwarden check  (if enabled)
+  - shares check       (if enabled)
 
 Options:
   -b, --brief   Hide individual sub-test output; show pass/fail summary only
@@ -176,6 +178,14 @@ fi
 
 if [ "$HAS_ADGUARD" = "1" ]; then
 	run_suite "adguard check" adguard check
+fi
+
+if [ "$HAS_VAULTWARDEN" = "1" ]; then
+	if [ "$EUID" -eq 0 ] || [ -n "$SUDO" ]; then
+		run_suite "vaultwarden check" $SUDO vaultwarden-ctl check
+	else
+		run_suite "vaultwarden check" vaultwarden-ctl check
+	fi
 fi
 
 if [ "$HAS_SHARES" = "1" ]; then

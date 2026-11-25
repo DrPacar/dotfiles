@@ -33,6 +33,10 @@
         if (cfg.adguard.enable or false)
         then "1"
         else "0";
+      HAS_VAULTWARDEN =
+        if ((cfg.vaultwarden.enable or false) && (cfg.vaultwarden.cli.enable or true))
+        then "1"
+        else "0";
       HAS_SHARES =
         if ((config.networking.shares.enable or false) && (config.networking.shares.cli.enable or false))
         then "1"
