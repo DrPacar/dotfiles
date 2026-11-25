@@ -29,7 +29,7 @@ now | run | start)
 	echo " Starting Central Backup..."
 	echo "=========================================="
 
-	if systemctl list-unit-files | grep -q "restic-backups-central.service"; then
+	if systemctl cat "restic-backups-central.service" >/dev/null 2>&1; then
 		echo "--> Starting restic-backups-central.service..."
 		systemctl start --wait restic-backups-central.service
 		echo "=========================================="
