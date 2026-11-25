@@ -7,6 +7,7 @@
   inherit (lib) genAttrs hasPrefix mkForce mkIf mkMerge optional removeSuffix;
   cfg = config.networking.systemVPN;
   vpn = import ./_lib.nix {inherit config lib;};
+  inherit (import ../_lib.nix) mkNotifyBin;
 
   nmIface = iface: "interface-name:${vpn.normalizeIface iface}";
 
@@ -37,6 +38,13 @@
     text = builtins.readFile ./scripts/post-down.sh;
   };
 
+  notifyBin = mkNotifyBin {
+    inherit pkgs lib config;
+    inherit (cfg.notifications) enable handler;
+    name = "system-vpn-notify";
+    title = "System VPN (${cfg.interfaceName})";
+  };
+
   watchdogScript = pkgs.writeShellApplication {
     name = "system-vpn-watchdog";
     runtimeInputs = with pkgs; [
@@ -50,6 +58,7 @@
       IFACE = cfg.interfaceName;
       PING_TARGET = cfg.watchdog.pingTarget;
       MAX_AGE = toString cfg.watchdog.maxHandshakeAge;
+      NOTIFY_BIN = notifyBin;
     };
     text = builtins.readFile ./scripts/watchdog.sh;
   };
@@ -156,6 +165,10 @@ in {
             ExecStopPost = [
               "+${postDownScript}/bin/system-vpn-post-down"
             ];
+          };
+
+          unitConfig = {
+            StartLimitIntervalSec = mkForce 0;
           };
         };
 

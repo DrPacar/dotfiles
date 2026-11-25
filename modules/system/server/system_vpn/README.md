@@ -71,6 +71,8 @@ Die Konfiguration erfolgt deklarativ in NixOS über `networking.systemVPN`:
 | `watchdog.interval` | `str` | `"2m"` | Prüfintervall im systemd-Timer-Format (z. B. `"2m"`, `"5m"`). |
 | `watchdog.pingTarget` | `str` | `"1.1.1.1"` | IP-Adresse, die exklusiv über das VPN-Interface angepingt wird, um die Egress-Konnektivität zu validieren. |
 | `watchdog.maxHandshakeAge` | `ints.positive` | `180` | Maximales Alter des kryptografischen Handshakes in Sekunden vor automatischem Serviceneustart. |
+| **`notifications.enable`** | `bool` | `config.server.notify.enable or false` | Aktiviert deduplizierte Ausfall- und Recovery-Benachrichtigungen des Watchdogs. |
+| `notifications.handler` | `nullOr (str \| package)` | `null` | Eigener Notification-Handler (`$1` = Nachricht, `$2` = Tag). Default: lokales `ntfy` (`server.notify`). |
 
 ---
 

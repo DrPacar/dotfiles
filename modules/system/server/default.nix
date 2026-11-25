@@ -29,5 +29,11 @@ in {
       default = "gute-court.ts.net";
       description = "Tailscale tailnet domain suffix for authorized host access.";
     };
+
+    cli.enable = mkOption {
+      type = types.bool;
+      default = true;
+      description = "Install the unified 'server-check' health verification command.";
+    };
   };
 }

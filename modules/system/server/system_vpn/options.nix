@@ -153,5 +153,30 @@ in {
         description = "Domain scopes routed to the physical network interface.";
       };
     };
+
+    notifications = {
+      enable = mkOption {
+        type = types.bool;
+        default = config.server.notify.enable or false;
+        description = "Enable alerts when the system WireGuard VPN fails, recovers, or restarts.";
+      };
+
+      handler = mkOption {
+        type = types.nullOr (types.either types.str types.package);
+        default = null;
+        example = lib.literalExpression ''
+          '''
+            # $1 contains the alert message string, $2 an optional tag
+            ntfy-send media "$1" "System VPN Alert" "$2"
+          '''
+        '';
+        description = ''
+          Custom notification handler invoked on system VPN watchdog alerts and recoveries.
+          Receives the formatted message string as $1 and an optional severity/ntfy tag as $2.
+          Accepts either a shell snippet string or an executable package/derivation.
+          When null and server.notify.enable is true, defaults to sending alerts via server.notify.
+        '';
+      };
+    };
   };
 }
