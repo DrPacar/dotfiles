@@ -1,107 +1,140 @@
 #!/usr/bin/env python3
 """
 AdGuard Home Admin User Sync Script
-Synchronizes the admin user and bcrypt password hash from a SOPS secret into AdGuardHome.yaml.
+Synchronizes the admin user and bcrypt password hash from a SOPS secret into AdGuardHome.yaml
+using atomic file replacement to avoid configuration corruption.
 """
+from __future__ import annotations
 
 import argparse
 import grp
+import logging
 import os
 import pwd
 import sys
+import tempfile
+from pathlib import Path
+
 import bcrypt
 import yaml
 
+logging.basicConfig(level=logging.INFO, format="[adguard-sync] %(levelname)-5s: %(message)s")
+logger = logging.getLogger("adguard-sync")
 
-def sync_admin(config_path: str, secret_path: str, username: str) -> int:
-    if not os.path.exists(secret_path):
-        print(f"Error: Secret file '{secret_path}' does not exist.", file=sys.stderr)
+
+def get_adguard_ids() -> tuple[int, int]:
+    """Resolve (uid, gid) for the adguardhome user/group if present."""
+    uid = -1
+    gid = -1
+    try:
+        uid = pwd.getpwnam("adguardhome").pw_uid
+    except KeyError:
+        pass
+    try:
+        gid = grp.getgrnam("adguardhome").gr_gid
+    except KeyError:
+        pass
+    return uid, gid
+
+
+def sync_admin(config_path: Path, secret_path: Path, username: str) -> int:
+    if not secret_path.is_file():
+        logger.error("Secret file '%s' does not exist.", secret_path)
         return 1
 
-    with open(secret_path, "r", encoding="utf-8") as f:
-        password = f.read().strip()
-
+    password = secret_path.read_text(encoding="utf-8").strip()
     if not password:
-        print("Error: Secret password is empty.", file=sys.stderr)
+        logger.error("Secret password in '%s' is empty.", secret_path)
         return 1
 
-    config_dir = os.path.dirname(config_path)
-    if not os.path.exists(config_dir):
-        os.makedirs(config_dir, mode=0o750, exist_ok=True)
-        try:
-            uid = pwd.getpwnam("adguardhome").pw_uid
-            gid = grp.getgrnam("adguardhome").gr_gid
-            os.chown(config_dir, uid, gid)
-        except Exception:
-            pass
+    uid, gid = get_adguard_ids()
 
-    data = {}
-    if os.path.exists(config_path):
+    config_dir = config_path.parent
+    if not config_dir.exists():
+        config_dir.mkdir(parents=True, mode=0o750, exist_ok=True)
+        if uid != -1 or gid != -1:
+            try:
+                os.chown(config_dir, uid, gid)
+            except OSError:
+                pass
+
+    data: dict = {}
+    if config_path.is_file():
         try:
-            with open(config_path, "r", encoding="utf-8") as f:
-                data = yaml.safe_load(f) or {}
-        except Exception as e:
-            print(f"Warning: Could not read existing config '{config_path}': {e}", file=sys.stderr)
+            data = yaml.safe_load(config_path.read_text(encoding="utf-8")) or {}
+        except Exception as exc:
+            logger.warning("Could not parse existing config '%s': %s", config_path, exc)
             data = {}
 
     users = data.get("users", [])
+    if not isinstance(users, list):
+        users = []
+
     user_found = False
     needs_update = False
 
     for user in users:
-        if user.get("name") == username:
+        if isinstance(user, dict) and user.get("name") == username:
             user_found = True
-            current_hash = user.get("password", "")
+            current_hash = str(user.get("password", ""))
             try:
-                # Check if the secret password matches the current bcrypt hash
                 if not bcrypt.checkpw(password.encode("utf-8"), current_hash.encode("utf-8")):
-                    print(f"AdGuard Home: Password for user '{username}' changed. Updating bcrypt hash...")
-                    new_hash = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt(10)).decode("utf-8")
-                    user["password"] = new_hash
+                    logger.info("Password for user '%s' changed. Updating bcrypt hash...", username)
+                    user["password"] = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt(10)).decode("utf-8")
                     needs_update = True
                 else:
-                    print(f"AdGuard Home: User '{username}' credentials are up to date.")
-            except Exception as e:
-                print(f"AdGuard Home: Hash verification failed ({e}). Re-generating bcrypt hash...")
-                new_hash = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt(10)).decode("utf-8")
-                user["password"] = new_hash
+                    logger.info("User '%s' credentials are already up to date.", username)
+            except Exception as exc:
+                logger.warning("Hash verification failed (%s). Regenerating bcrypt hash...", exc)
+                user["password"] = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt(10)).decode("utf-8")
                 needs_update = True
             break
 
     if not user_found:
-        print(f"AdGuard Home: Creating admin user '{username}' with bcrypt hash...")
-        new_hash = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt(10)).decode("utf-8")
-        users.append({
-            "name": username,
-            "password": new_hash
-        })
+        logger.info("Creating admin user '%s' with bcrypt hash...", username)
+        users.append(
+            {
+                "name": username,
+                "password": bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt(10)).decode("utf-8"),
+            }
+        )
         data["users"] = users
         needs_update = True
 
     if needs_update:
-        with open(config_path, "w", encoding="utf-8") as f:
-            yaml.dump(data, f, default_flow_style=False)
-        os.chmod(config_path, 0o600)
+        temp_path: Path | None = None
         try:
-            uid = pwd.getpwnam("adguardhome").pw_uid
-            gid = grp.getgrnam("adguardhome").gr_gid
-            os.chown(config_path, uid, gid)
-        except Exception:
-            pass
-        print("AdGuard Home: User configuration successfully written.")
+            with tempfile.NamedTemporaryFile("w", dir=config_dir, delete=False, encoding="utf-8") as tf:
+                temp_path = Path(tf.name)
+                yaml.safe_dump(data, tf, default_flow_style=False, sort_keys=False)
+                tf.flush()
+                os.fsync(tf.fileno())
+
+            temp_path.chmod(0o600)
+            if uid != -1 or gid != -1:
+                try:
+                    os.chown(temp_path, uid, gid)
+                except OSError:
+                    pass
+            temp_path.replace(config_path)
+            logger.info("Atomically wrote user configuration to '%s'.", config_path)
+        except Exception as exc:
+            logger.error("Failed to write '%s': %s", config_path, exc)
+            if temp_path and temp_path.exists():
+                temp_path.unlink(missing_ok=True)
+            return 1
 
     return 0
 
 
-def main():
+def main() -> int:
     parser = argparse.ArgumentParser(description="Sync AdGuard Home admin user from SOPS secret.")
-    parser.add_argument("--config", default="/var/lib/AdGuardHome/AdGuardHome.yaml", help="Path to AdGuardHome.yaml")
-    parser.add_argument("--secret", required=True, help="Path to secret file containing plaintext password")
+    parser.add_argument("--config", type=Path, default=Path("/var/lib/AdGuardHome/AdGuardHome.yaml"), help="Path to AdGuardHome.yaml")
+    parser.add_argument("--secret", type=Path, required=True, help="Path to secret file containing plaintext password")
     parser.add_argument("--username", default="luka", help="Admin username")
     args = parser.parse_args()
-
-    sys.exit(sync_admin(args.config, args.secret, args.username))
+    return sync_admin(args.config, args.secret, args.username)
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
