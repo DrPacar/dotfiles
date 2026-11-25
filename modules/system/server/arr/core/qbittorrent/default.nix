@@ -82,9 +82,13 @@ in {
         BitTorrent = {
           Session = {
             # Bind strictly to the VPN interface so BitTorrent traffic NEVER leaves outside the VPN
-            Interface = mkIf cfg.vpn.enable "wg0";
-            InterfaceName = mkIf cfg.vpn.enable "wg0";
+            Interface = mkIf cfg.vpn.enable qbit.vpnIface;
+            InterfaceName = mkIf cfg.vpn.enable qbit.vpnIface;
+            LSDEnabled = !cfg.vpn.enable;
+            ReannounceWhenAddressChanged = true;
             DiskCacheSize = cfg.qbittorrent.diskCacheSizeMiB;
+            HashingThreadsCount = cfg.qbittorrent.hashingThreads;
+            SaveResumeDataInterval = cfg.qbittorrent.saveResumeDataInterval;
             # Fallback path for manually added torrents without a category
             DefaultSavePath = "${cfg.paths.torrents}/default";
             # Enable Automatic Torrent Management (TMM) so categories use their explicit save paths
@@ -96,10 +100,14 @@ in {
             AnnounceToAllTiers = cfg.qbittorrent.announceToAllTrackers;
             PieceExtentAffinity = cfg.qbittorrent.pieceExtentAffinity;
             CoalesceReadWrite = cfg.qbittorrent.coalesceReadWrite;
+            ConnectionSpeed = cfg.qbittorrent.connectionSpeed;
+            SocketBacklogSize = cfg.qbittorrent.socketBacklogSize;
             MaxActiveDownloads = cfg.qbittorrent.maxActiveDownloads;
             MaxActiveTorrents = cfg.qbittorrent.maxActiveTorrents;
             MaxConnections = cfg.qbittorrent.maxConnections;
             MaxConnectionsPerTorrent = cfg.qbittorrent.maxConnectionsPerTorrent;
+            MaxUploads = cfg.qbittorrent.maxUploads;
+            MaxUploadsPerTorrent = cfg.qbittorrent.maxUploadsPerTorrent;
             GlobalDownloadRateLimit = cfg.qbittorrent.downloadRateLimitKiB;
             GlobalUploadRateLimit = cfg.qbittorrent.uploadRateLimitKiB;
             # Modern qBittorrent 4.6+/5.x seeding share limits
