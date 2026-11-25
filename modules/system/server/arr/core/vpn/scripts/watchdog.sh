@@ -62,7 +62,7 @@ send_tunnel_alert_once() {
 if systemctl is-failed --quiet "$UNIT"; then
 	mkdir -p "$STATE_DIR"
 	echo "WARN: [arr-vpn-watchdog] Service $UNIT is in failed state. Resetting and starting..." >&2
-	send_tunnel_alert_once "Arr VPN (${NAMESPACE}/${WG_IFACE}): Service ${UNIT} war im Fehlerzustand (failed). Starte neu." "rotating_light"
+	send_tunnel_alert_once "Arr VPN (${NAMESPACE}/${WG_IFACE}): Service ${UNIT} entered failed state. Resetting and starting." "rotating_light"
 	systemctl reset-failed "$UNIT"
 	systemctl start "$UNIT"
 	exit 0
@@ -81,7 +81,7 @@ if ip netns exec "$NAMESPACE" ping -c 2 -W 3 -I "$WG_IFACE" "$PING_TARGET" >/dev
 	rm -f "$FAIL_FILE"
 	if [ -f "$TUNNEL_ALERTED_FILE" ]; then
 		rm -f "$TUNNEL_ALERTED_FILE"
-		send_alert "Arr VPN (${NAMESPACE}/${WG_IFACE}): Tunnel-Konnektivität wiederhergestellt." "white_check_mark"
+		send_alert "Arr VPN (${NAMESPACE}/${WG_IFACE}): Tunnel connectivity restored." "white_check_mark"
 	fi
 else
 	FAILS=0
@@ -105,13 +105,13 @@ else
 	if [ "$AGE" -gt "$MAX_AGE" ]; then
 		echo "WARN: [arr-vpn-watchdog] Connectivity test to $PING_TARGET failed in netns '$NAMESPACE' ($WG_IFACE) and handshake age is ${AGE}s (> ${MAX_AGE}s). Restarting $UNIT..." >&2
 		rm -f "$FAIL_FILE"
-		send_tunnel_alert_once "Arr VPN (${NAMESPACE}/${WG_IFACE}): Tunnel ausgefallen (Handshake vor ${AGE}s). Starte ${UNIT} neu." "rotating_light"
+		send_tunnel_alert_once "Arr VPN (${NAMESPACE}/${WG_IFACE}): Tunnel down (last handshake ${AGE}s ago). Restarting ${UNIT}." "rotating_light"
 		systemctl restart "$UNIT"
 		exit 0
 	elif [ "$FAILS" -ge 3 ]; then
 		echo "WARN: [arr-vpn-watchdog] Connectivity test to $PING_TARGET failed 3 consecutive times in netns '$NAMESPACE' despite recent handshake (${AGE}s). Restarting $UNIT..." >&2
 		rm -f "$FAIL_FILE"
-		send_tunnel_alert_once "Arr VPN (${NAMESPACE}/${WG_IFACE}): 3 Ping-Fehlversuche trotz Handshake (${AGE}s). Starte ${UNIT} neu." "warning"
+		send_tunnel_alert_once "Arr VPN (${NAMESPACE}/${WG_IFACE}): 3 consecutive ping failures despite recent handshake (${AGE}s ago). Restarting ${UNIT}." "warning"
 		systemctl restart "$UNIT"
 		exit 0
 	else
@@ -139,7 +139,7 @@ if [ "$PORT_FORWARDING_ENABLED" = "1" ] && systemctl is-active --quiet protonvpn
 
 		if [ ! -f "$NATPMP_ALERTED_FILE" ]; then
 			touch "$NATPMP_ALERTED_FILE"
-			send_alert "Arr VPN (${NAMESPACE}): NAT-PMP Port-Forwarding seit ${NATPMP_STREAK} Versuchen fehlgeschlagen (Tunnel-Ping OK)." "warning"
+			send_alert "Arr VPN (${NAMESPACE}): NAT-PMP port forwarding failed for ${NATPMP_STREAK} consecutive checks (tunnel ping OK)." "warning"
 		fi
 
 		if [ "$ELAPSED" -ge "$NATPMP_RESTART_COOLDOWN" ]; then
@@ -152,6 +152,6 @@ if [ "$PORT_FORWARDING_ENABLED" = "1" ] && systemctl is-active --quiet protonvpn
 	elif [ -f "$NATPMP_ALERTED_FILE" ] && [ -f "$PORT_STATE_FILE" ]; then
 		ACTIVE_PORT=$(tr -d '[:space:]' <"$PORT_STATE_FILE" 2>/dev/null || true)
 		rm -f "$NATPMP_ALERTED_FILE"
-		send_alert "Arr VPN (${NAMESPACE}): NAT-PMP Port-Forwarding wiederhergestellt (Port ${ACTIVE_PORT:-unbekannt})." "white_check_mark"
+		send_alert "Arr VPN (${NAMESPACE}): NAT-PMP port forwarding restored (port ${ACTIVE_PORT:-unknown})." "white_check_mark"
 	fi
 fi

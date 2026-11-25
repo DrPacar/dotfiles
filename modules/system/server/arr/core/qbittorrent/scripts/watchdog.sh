@@ -60,7 +60,7 @@ mkdir -p "$STATE_DIR"
 # Revive failed qBittorrent service (respecting deliberate manual stops)
 if systemctl is-failed --quiet "$QBIT_UNIT"; then
 	echo "WARN: [qbittorrent-watchdog] $QBIT_UNIT is in failed state. Resetting and starting..." >&2
-	send_alert_once "qBittorrent: Service ${QBIT_UNIT} war im Fehlerzustand (failed). Starte neu." "rotating_light"
+	send_alert_once "qBittorrent: Service ${QBIT_UNIT} entered failed state. Resetting and starting." "rotating_light"
 	systemctl reset-failed "$QBIT_UNIT"
 	systemctl start "$QBIT_UNIT"
 	exit 0
@@ -74,7 +74,7 @@ fi
 if [ "$VPN_ENABLED" = "1" ]; then
 	if systemctl is-failed --quiet "$PROXY_UNIT"; then
 		echo "WARN: [qbittorrent-watchdog] $PROXY_UNIT is in failed state. Resetting and starting..." >&2
-		send_alert_once "qBittorrent: WebUI-Proxy (${PROXY_UNIT}) war im Fehlerzustand (failed). Starte neu." "warning"
+		send_alert_once "qBittorrent: WebUI proxy (${PROXY_UNIT}) entered failed state. Resetting and starting." "warning"
 		systemctl reset-failed "$PROXY_UNIT"
 		systemctl start "$PROXY_UNIT"
 		exit 0
@@ -90,7 +90,7 @@ if curl --connect-timeout 3 -m 5 -fsS -I "${WEBUI_URL}/" >/dev/null 2>&1; then
 	rm -f "$FAIL_FILE"
 	if [ -f "$ALERTED_FILE" ]; then
 		rm -f "$ALERTED_FILE"
-		send_alert "qBittorrent: WebUI und Service wieder erreichbar." "white_check_mark"
+		send_alert "qBittorrent: WebUI and service reachable again." "white_check_mark"
 	fi
 	exit 0
 fi
@@ -108,7 +108,7 @@ echo "$FAILS" >"$FAIL_FILE"
 if [ "$FAILS" -ge "$FAILURE_THRESHOLD" ]; then
 	echo "WARN: [qbittorrent-watchdog] WebUI at $WEBUI_URL failed $FAILS consecutive probes. Restarting $QBIT_UNIT..." >&2
 	rm -f "$FAIL_FILE"
-	send_alert_once "qBittorrent: WebUI antwortet nach ${FAILS} Prüfungen nicht (${WEBUI_URL}). Starte ${QBIT_UNIT} neu." "rotating_light"
+	send_alert_once "qBittorrent: WebUI unresponsive after ${FAILS} checks (${WEBUI_URL}). Restarting ${QBIT_UNIT}." "rotating_light"
 	systemctl restart "$QBIT_UNIT"
 else
 	echo "INFO: [qbittorrent-watchdog] WebUI probe failed ($FAILS/$FAILURE_THRESHOLD) at $WEBUI_URL. Awaiting next cycle."

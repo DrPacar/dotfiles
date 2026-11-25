@@ -181,7 +181,7 @@
     serverHost = "haven";
   };
 
-  # System-wide WireGuard VPN tunnel with strict killswitch
+  # System-wide WireGuard VPN tunnel
   networking.systemVPN = {
     enable = true;
     physicalInterface = "eno1";

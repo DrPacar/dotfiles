@@ -55,7 +55,7 @@ mkdir -p "$STATE_DIR"
 # Revive failed tunnel unit (e.g. prolonged ISP outage), while respecting deliberate admin stops
 if systemctl is-failed --quiet "$UNIT"; then
 	echo "WARN: [system-vpn-watchdog] Service $UNIT is in failed state. Resetting and starting..." >&2
-	send_alert_once "System VPN (${IFACE}): Service ${UNIT} war im Fehlerzustand (failed). Starte neu." "rotating_light"
+	send_alert_once "System VPN (${IFACE}): Service ${UNIT} entered failed state. Resetting and starting." "rotating_light"
 	systemctl reset-failed "$UNIT"
 	systemctl start "$UNIT"
 	exit 0
@@ -73,7 +73,7 @@ if ping -c 2 -W 3 -I "$IFACE" "$PING_TARGET" >/dev/null 2>&1; then
 	rm -f "$FAIL_FILE"
 	if [ -f "$ALERTED_FILE" ]; then
 		rm -f "$ALERTED_FILE"
-		send_alert "System VPN (${IFACE}): Tunnel-Konnektivität wiederhergestellt." "white_check_mark"
+		send_alert "System VPN (${IFACE}): Tunnel connectivity restored." "white_check_mark"
 	fi
 	exit 0
 fi
@@ -103,13 +103,13 @@ fi
 if [ "$AGE" -gt "$MAX_AGE" ]; then
 	echo "WARN: [system-vpn-watchdog] Connectivity test to $PING_TARGET failed on $IFACE and handshake age is ${AGE}s (> ${MAX_AGE}s). Restarting $UNIT..." >&2
 	rm -f "$FAIL_FILE"
-	send_alert_once "System VPN (${IFACE}): Tunnel ausgefallen (Handshake vor ${AGE}s). Starte ${UNIT} neu." "rotating_light"
+	send_alert_once "System VPN (${IFACE}): Tunnel down (last handshake ${AGE}s ago). Restarting ${UNIT}." "rotating_light"
 	systemctl restart "$UNIT"
 # Threshold 2: Upstream routing dead (3 consecutive failures despite fresh keepalives)
 elif [ "$FAILS" -ge 3 ]; then
 	echo "WARN: [system-vpn-watchdog] Connectivity test to $PING_TARGET failed 3 consecutive times on $IFACE despite recent handshake (${AGE}s). Restarting $UNIT to heal stalled routing..." >&2
 	rm -f "$FAIL_FILE"
-	send_alert_once "System VPN (${IFACE}): 3 Ping-Fehlversuche trotz Handshake (${AGE}s). Starte ${UNIT} neu." "warning"
+	send_alert_once "System VPN (${IFACE}): 3 consecutive ping failures despite recent handshake (${AGE}s ago). Restarting ${UNIT}." "warning"
 	systemctl restart "$UNIT"
 else
 	echo "INFO: [system-vpn-watchdog] Connectivity test failed on $IFACE (attempt $FAILS/3, handshake ${AGE}s ago). Awaiting next evaluation cycle."

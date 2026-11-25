@@ -4,7 +4,7 @@
   pkgs,
   ...
 }: let
-  inherit (lib) mkIf optional optionals;
+  inherit (lib) mkDefault mkIf optional optionals;
   cfg = config.server;
   adg = import ./_lib.nix {inherit config lib pkgs;};
 
@@ -40,6 +40,23 @@
     text = builtins.readFile ./scripts/watchdog.sh;
   };
 in {
+  # Automatically ignore router DHCP DNS on the AdGuard host so the server never
+  # loops host lookups back to its own LAN IP via DHCP.
+  options.systemd.network.networks = lib.mkOption {
+    type = lib.types.attrsOf (
+      lib.types.submodule (netArgs: let
+        dhcpMode = netArgs.config.networkConfig.DHCP or "no";
+        hasDhcp = dhcpMode != "no" && dhcpMode != null && dhcpMode != false;
+        isUnmanaged = netArgs.config.linkConfig.Unmanaged or false;
+      in {
+        config = mkIf (cfg.enable && cfg.adguard.enable && !isUnmanaged && hasDhcp) {
+          dhcpV4Config.UseDNS = mkDefault false;
+          dhcpV6Config.UseDNS = mkDefault false;
+        };
+      })
+    );
+  };
+
   config = mkIf (cfg.enable && cfg.adguard.enable) {
     # -------------------------------------------------------------------------
     # Configuration Sanity Assertions
@@ -58,6 +75,9 @@ in {
     sops.secrets.services_password = {
       restartUnits = ["adguardhome-admin-sync.service" "adguardhome.service"];
     };
+
+    # Keep independent host fallback resolvers when ignoring router DHCP DNS
+    networking.nameservers = mkDefault ["1.1.1.1" "1.0.0.1"];
 
     # Open DNS port 53 (TCP & UDP) for LAN and Tailscale clients
     networking.firewall.allowedTCPPorts = [53];

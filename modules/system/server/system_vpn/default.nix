@@ -4,7 +4,7 @@
   pkgs,
   ...
 }: let
-  inherit (lib) genAttrs hasPrefix mkForce mkIf mkMerge optional removeSuffix;
+  inherit (lib) elem genAttrs hasPrefix mkDefault mkForce mkIf mkMerge mkOptionDefault optional removeSuffix toList;
   cfg = config.networking.systemVPN;
   vpn = import ./_lib.nix {inherit config lib;};
   inherit (import ../_lib.nix) mkNotifyBin;
@@ -72,7 +72,29 @@
     text = builtins.readFile ./scripts/nm-dispatcher.sh;
   };
 in {
+  # Automatically isolate Split-DNS on the matching systemd-networkd physical interface
+  # so hosts only need plain DHCP without duplicating UseDNS/DNSDefaultRoute/Domains.
+  options.systemd.network.networks = lib.mkOption {
+    type = lib.types.attrsOf (
+      lib.types.submodule (netArgs: let
+        matchedNames = toList (netArgs.config.matchConfig.Name or []);
+        isPhysIface = cfg.physicalInterface != null && elem cfg.physicalInterface matchedNames;
+      in {
+        config = mkIf (cfg.enable && cfg.splitDns.enable && isPhysIface) {
+          networkConfig = {
+            DNSDefaultRoute = mkDefault false;
+            Domains = cfg.splitDns.localDomains;
+          };
+          dhcpV4Config.UseDNS = mkDefault false;
+          dhcpV6Config.UseDNS = mkDefault false;
+        };
+      })
+    );
+  };
+
   config = mkIf cfg.enable {
+    services.resolved.enable = mkIf cfg.splitDns.enable (mkDefault true);
+    networking.nameservers = mkIf cfg.splitDns.enable (mkOptionDefault ["1.1.1.1" "1.0.0.1"]);
     # -------------------------------------------------------------------------
     # Configuration Sanity Assertions
     # -------------------------------------------------------------------------

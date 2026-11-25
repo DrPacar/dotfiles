@@ -80,7 +80,7 @@ mkdir -p "$STATE_DIR"
 # Revive failed AdGuard Home unit (respecting deliberate manual stops)
 if systemctl is-failed --quiet "$UNIT"; then
 	echo "WARN: [adguard-watchdog] $UNIT is in failed state. Resetting and starting..." >&2
-	send_alert_once "AdGuard Home: Service ${UNIT} war im Fehlerzustand (failed). Starte neu." "rotating_light"
+	send_alert_once "AdGuard Home: Service ${UNIT} entered failed state. Resetting and starting." "rotating_light"
 	systemctl reset-failed "$UNIT"
 	systemctl start "$UNIT"
 	exit 0
@@ -111,7 +111,7 @@ if [ "$WEB_OK" -eq 1 ] && [ "$DNS_OK" -eq 1 ]; then
 	rm -f "$FAIL_FILE"
 	if [ -f "$ALERTED_FILE" ]; then
 		rm -f "$ALERTED_FILE"
-		send_alert "AdGuard Home: WebUI und DNS-Auflösung wieder voll funktionsfähig." "white_check_mark"
+		send_alert "AdGuard Home: WebUI and DNS resolution fully operational again." "white_check_mark"
 	fi
 	exit 0
 fi
@@ -126,15 +126,15 @@ fi
 FAILS=$((FAILS + 1))
 echo "$FAILS" >"$FAIL_FILE"
 
-REASON="DNS-Auflösung (${TEST_DOMAIN}) fehlgeschlagen"
+REASON="DNS resolution (${TEST_DOMAIN}) failed"
 if [ "$WEB_OK" -eq 0 ]; then
-	REASON="WebUI (${ADGUARD_URL}/login.html) nicht erreichbar"
+	REASON="WebUI (${ADGUARD_URL}/login.html) unreachable"
 fi
 
 if [ "$FAILS" -ge "$FAILURE_THRESHOLD" ]; then
 	echo "WARN: [adguard-watchdog] ${REASON} ($FAILS consecutive failures). Restarting $UNIT..." >&2
 	rm -f "$FAIL_FILE"
-	send_alert_once "AdGuard Home: ${REASON} nach ${FAILS} Prüfungen. Starte ${UNIT} neu." "rotating_light"
+	send_alert_once "AdGuard Home: ${REASON} after ${FAILS} checks. Restarting ${UNIT}." "rotating_light"
 	systemctl restart "$UNIT"
 else
 	echo "INFO: [adguard-watchdog] Probe failed (${REASON}, attempt $FAILS/$FAILURE_THRESHOLD). Awaiting next cycle."

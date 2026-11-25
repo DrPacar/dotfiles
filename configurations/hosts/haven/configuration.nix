@@ -19,10 +19,6 @@
     useNetworkd = true;
     useDHCP = false;
     networkmanager.enable = false;
-    nameservers = [
-      "1.1.1.1"
-      "1.0.0.1"
-    ];
   };
 
   systemd.network = {
@@ -32,16 +28,8 @@
       networkConfig = {
         DHCP = "yes";
         IgnoreCarrierLoss = "3s";
-        DNSDefaultRoute = false;
-        Domains = [
-          "~local"
-          "~home.arpa"
-          "~lan"
-          "~lukpac.dev"
-        ];
       };
       dhcpV4Config = {
-        UseDNS = false; # Keep static Cloudflare nameservers (1.1.1.1) to avoid loops with local AdGuard
         RouteMetric = 100;
       };
     };
