@@ -140,6 +140,86 @@ def get_latest_backup(backup_dir):
     }
 
 
+def query_vpn_telemetry(vpn_cfg):
+    """Collect lightweight live telemetry for the BitTorrent VPN namespace."""
+    telemetry = {
+        "forwarded_port": None,
+        "endpoint": None,
+        "fwmark": None,
+        "handshake_age_s": None,
+        "outer_egress_dev": None,
+    }
+
+    port_file = vpn_cfg.get("portStateFile", "/run/protonvpn-port-forward/port")
+    if port_file and os.path.isfile(port_file):
+        try:
+            raw_port = Path(port_file).read_text(encoding="utf-8").strip()
+            if raw_port.isdigit():
+                telemetry["forwarded_port"] = int(raw_port)
+        except Exception:
+            pass
+
+    ns = vpn_cfg.get("namespace", "wg")
+    iface = vpn_cfg.get("iface", f"{ns}0")
+
+    prefix = []
+    if os.geteuid() != 0:
+        if shutil.which("sudo") and subprocess.run(["sudo", "-n", "true"], capture_output=True).returncode == 0:
+            prefix = ["sudo", "-n"]
+        else:
+            return telemetry
+
+    try:
+        res = subprocess.run(
+            prefix + ["ip", "netns", "exec", ns, "wg", "show", iface],
+            capture_output=True,
+            text=True,
+            timeout=2,
+        )
+        if res.returncode == 0:
+            for line in res.stdout.splitlines():
+                stripped = line.strip()
+                if stripped.startswith("endpoint:"):
+                    telemetry["endpoint"] = stripped.split(":", 1)[1].strip()
+                elif stripped.startswith("fwmark:"):
+                    telemetry["fwmark"] = stripped.split(":", 1)[1].strip()
+
+        hs_res = subprocess.run(
+            prefix + ["ip", "netns", "exec", ns, "wg", "show", iface, "latest-handshakes"],
+            capture_output=True,
+            text=True,
+            timeout=2,
+        )
+        if hs_res.returncode == 0:
+            stamps = []
+            for line in hs_res.stdout.splitlines():
+                parts = line.split()
+                if len(parts) >= 2 and parts[1].isdigit():
+                    stamps.append(int(parts[1]))
+            if stamps:
+                latest = max(stamps)
+                if latest > 0:
+                    telemetry["handshake_age_s"] = max(0, int(time.time()) - latest)
+
+        endpoint = telemetry.get("endpoint")
+        if endpoint:
+            ep_ip = endpoint.rsplit(":", 1)[0].strip("[]")
+            route_cmd = ["ip", "route", "get", ep_ip]
+            if telemetry.get("fwmark") and telemetry["fwmark"] != "off":
+                route_cmd.extend(["mark", telemetry["fwmark"]])
+            route_res = subprocess.run(route_cmd, capture_output=True, text=True, timeout=2)
+            if route_res.returncode == 0:
+                tokens = route_res.stdout.split()
+                if "dev" in tokens:
+                    idx = tokens.index("dev")
+                    if idx + 1 < len(tokens):
+                        telemetry["outer_egress_dev"] = tokens[idx + 1]
+    except Exception:
+        pass
+
+    return telemetry
+
+
 def build_status_dict(config):
     services_cfg = config.get("services", {})
     all_units = []
@@ -153,6 +233,8 @@ def build_status_dict(config):
                 all_units.append(s_data["proxyUnit"])
             if "forwarderUnit" in s_data:
                 all_units.append(s_data["forwarderUnit"])
+            if s_data.get("watchdogEnabled") and "watchdogUnit" in s_data:
+                all_units.append(s_data["watchdogUnit"])
 
     # Slice unit
     all_units.append("arr.slice")
@@ -215,6 +297,12 @@ def build_status_dict(config):
     if not (qbittorrent_enabled and vpn_cfg.get("enable", False) and vpn_cfg.get("portForwarding", False)):
         forwarder_active = "disabled"
 
+    watchdog_active = unit_props.get(vpn_cfg.get("watchdogUnit", ""), {}).get("ActiveState", "inactive")
+    if not (vpn_cfg.get("enable", False) and vpn_cfg.get("watchdogEnabled", False)):
+        watchdog_active = "disabled"
+
+    vpn_telemetry = query_vpn_telemetry(vpn_cfg) if vpn_cfg.get("enable", False) else {}
+
     vpn_status = {
         "enabled": vpn_cfg.get("enable", False),
         "tunnel_unit": vpn_cfg.get("unit", "wg.service"),
@@ -223,6 +311,9 @@ def build_status_dict(config):
         "proxy_state": proxy_active,
         "forwarder_unit": vpn_cfg.get("forwarderUnit", ""),
         "forwarder_state": forwarder_active,
+        "watchdog_unit": vpn_cfg.get("watchdogUnit", ""),
+        "watchdog_state": watchdog_active,
+        "telemetry": vpn_telemetry,
     }
 
     disk_info = get_disk_info(config.get("dataDir", "/arr_data"))
@@ -348,7 +439,16 @@ def render_rich_ui(console, data):
 
         vpn_text.append(f"WireGuard Tunnel:  {fmt_vpn(vpn['tunnel_state'])} ({vpn['tunnel_unit']})\n")
         vpn_text.append(f"WebUI Proxy:       {fmt_vpn(vpn['proxy_state'])}\n")
-        vpn_text.append(f"Port Forwarder:    {fmt_vpn(vpn['forwarder_state'])}")
+        tel = vpn.get("telemetry", {})
+        fwd_port = tel.get("forwarded_port")
+        port_suffix = f" [bold cyan](Port {fwd_port})[/bold cyan]" if fwd_port else ""
+        vpn_text.append(f"Port Forwarder:    {fmt_vpn(vpn['forwarder_state'])}{port_suffix}\n")
+        vpn_text.append(f"Watchdog Timer:    {fmt_vpn(vpn.get('watchdog_state', 'disabled'))}")
+        if tel.get("outer_egress_dev") or tel.get("handshake_age_s") is not None:
+            egress = tel.get("outer_egress_dev") or "?"
+            fwm = tel.get("fwmark") or "off"
+            hs = f"{tel['handshake_age_s']}s ago" if tel.get("handshake_age_s") is not None else "n/a"
+            vpn_text.append(f"\nTunnel Path:       [bold white]{egress}[/bold white] (fwmark {fwm}, handshake {hs})")
     else:
         vpn_text.append("VPN Isolation: [dim]Disabled[/dim] (qBittorrent running on host network)")
 

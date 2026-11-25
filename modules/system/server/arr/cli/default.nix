@@ -80,10 +80,16 @@
       vpn = {
         enable = cfg.vpn.enable;
         portForwarding = cfg.vpn.portForwarding.enable;
+        watchdogEnabled = cfg.vpn.watchdog.enable;
+        directPhysicalEgress = cfg.vpn.directPhysicalEgress;
+        fwmark = cfg.vpn.fwmark;
         namespace = cfg.vpn.namespace;
+        iface = "${cfg.vpn.namespace}0";
         unit = "${cfg.vpn.namespace}.service";
+        watchdogUnit = "${cfg.vpn.namespace}-watchdog.timer";
         proxyUnit = "qbittorrent-webui-proxy.service";
         forwarderUnit = "protonvpn-port-forward.service";
+        portStateFile = "/run/protonvpn-port-forward/port";
       };
     };
   });
@@ -164,6 +170,19 @@
           esac
           exec systemctl restart "''${svc}.service"
           ;;
+        vpn)
+          shift || true
+          ${
+        if cfg.vpn.enable
+        then ''
+          exec arr-vpn "$@"
+        ''
+        else ''
+          echo "Error: arr.vpn is disabled in your NixOS configuration."
+          exit 1
+        ''
+      }
+          ;;
         help|--help|-h)
           echo "Arr Stack Management CLI"
           echo ""
@@ -173,6 +192,8 @@
           echo "  status         Display comprehensive stack status (default, aliases: arr-status)"
           echo "  status -w      Continuously watch stack status"
           echo "  status --json  Output raw JSON for scripts/monitoring"
+          echo "  vpn [status|check]"
+          echo "                 Inspect BitTorrent VPN namespace, fwmark routing, DNS, and NAT-PMP"
           echo "  backup         Trigger on-demand backup via arr-backup.service"
           echo "  logs <svc>     Follow journal logs for a service (e.g., arr logs sonarr)"
           echo "  restart <svc>  Restart a service (e.g., arr restart radarr)"

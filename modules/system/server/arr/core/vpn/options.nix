@@ -3,7 +3,7 @@
   lib,
   ...
 }: let
-  inherit (lib) mkOption types;
+  inherit (lib) mkEnableOption mkOption types;
 in {
   options.server.arr.vpn = {
     enable = mkOption {
@@ -22,6 +22,39 @@ in {
       type = types.nullOr types.str;
       default = config.sops.secrets.arr_wireguard_conf.path or null;
       description = "Filesystem path to WireGuard configuration file (managed via sops-nix).";
+    };
+
+    directPhysicalEgress = mkOption {
+      type = types.bool;
+      default = true;
+      description = ''
+        Route the BitTorrent WireGuard outer UDP tunnel directly via the host's physical
+        WAN interface instead of nesting inside networking.systemVPN. Prevents double
+        encryption, MTU fragmentation, and cascading tunnel outages.
+      '';
+    };
+
+    fwmark = mkOption {
+      type = types.str;
+      default = "0xca6c";
+      description = ''
+        Kernel firewall mark applied to the WireGuard outer socket when
+        directPhysicalEgress is enabled. Matches system_vpn's wgFwmark so encrypted
+        tunnel packets skip table 51820 and pass system-vpn's output_killswitch.
+      '';
+    };
+
+    fallbackDns = mkOption {
+      type = types.listOf types.str;
+      default = [
+        "1.1.1.1"
+        "1.0.0.1"
+      ];
+      description = ''
+        Fallback DNS resolvers allowed through dns-fw inside the VPN namespace and
+        appended after the VPN provider's resolver in /etc/netns/<namespace>/resolv.conf
+        (useful when provider DNS filtering such as Proton NetShield blocks trackers).
+      '';
     };
 
     accessibleFrom = mkOption {
@@ -49,6 +82,28 @@ in {
       });
       default = [];
       description = "Port forwarding rules inside the VPN namespace for incoming BitTorrent peer traffic.";
+    };
+
+    watchdog = {
+      enable = mkEnableOption "automated connectivity watchdog that restarts the namespace tunnel if ping fails and handshakes stall" // {default = true;};
+
+      interval = mkOption {
+        type = types.str;
+        default = "2m";
+        description = "Interval between watchdog checks (systemd timer syntax).";
+      };
+
+      pingTarget = mkOption {
+        type = types.str;
+        default = "1.1.1.1";
+        description = "Target IP to ping through the WireGuard interface inside the namespace.";
+      };
+
+      maxHandshakeAge = mkOption {
+        type = types.ints.positive;
+        default = 180;
+        description = "Maximum allowed age in seconds since last WireGuard handshake before triggering restart.";
+      };
     };
 
     portForwarding = {

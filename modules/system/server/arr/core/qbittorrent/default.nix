@@ -7,6 +7,17 @@
   inherit (lib) mkIf mkForce;
   cfg = config.server.arr;
   inherit (import ../../_lib.nix) secretRef;
+  resolvedEnabled = config.services.resolved.enable or false;
+
+  injectPasswordScript = pkgs.writeShellApplication {
+    name = "qbittorrent-inject-password";
+    runtimeInputs = [pkgs.python3];
+    text = ''
+      exec python3 ${./scripts/qbittorrent-sync.py} \
+        --pass-file "${config.sops.secrets.services_password.path}" \
+        --group "${cfg.mediaGroup}"
+    '';
+  };
 in {
   config = mkIf (cfg.enable && cfg.qbittorrent.enable) {
     assertions = [
@@ -124,12 +135,11 @@ in {
         RestartSec = 5;
         MemoryHigh = "2G";
         MemoryMax = "4G";
+        # Isolate /run/systemd/resolve so host systemd-resolved updates cannot
+        # replace the namespace resolv.conf bind mount underneath qBittorrent.
+        TemporaryFileSystem = mkIf (cfg.vpn.enable && resolvedEnabled) ["/run/systemd/resolve:ro"];
         ExecStartPre = lib.mkAfter [
-          (pkgs.writeShellScript "qbittorrent-inject-password" ''
-            exec ${pkgs.python3}/bin/python3 ${./scripts/qbittorrent-sync.py} \
-              --pass-file "${config.sops.secrets.services_password.path}" \
-              --group "${cfg.mediaGroup}"
-          '')
+          "${injectPasswordScript}/bin/qbittorrent-inject-password"
         ];
       };
     };

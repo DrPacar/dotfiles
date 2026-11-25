@@ -4,11 +4,64 @@
   pkgs,
   ...
 }: let
-  inherit (lib) mkIf any optional filter;
+  inherit (lib) any filter mkIf optional;
   cfg = config.server.arr;
+  vpn = import ./_lib.nix {inherit config lib;};
+
+  # ---------------------------------------------------------------------------
+  # Lifecycle & Watchdog Scripts
+  # ---------------------------------------------------------------------------
+  waitForRouteScript = pkgs.writeShellApplication {
+    name = "arr-vpn-wait-route";
+    runtimeInputs = with pkgs; [
+      iproute2
+      gnugrep
+      coreutils
+    ];
+    text = builtins.readFile ./scripts/wait-for-default-route.sh;
+  };
+
+  postUpScript = pkgs.writeShellApplication {
+    name = "arr-vpn-post-up";
+    runtimeInputs = with pkgs; [
+      iproute2
+      iptables
+      wireguard-tools
+      gnugrep
+      coreutils
+    ];
+    runtimeEnv = vpn.commonEnv;
+    text = builtins.readFile ./scripts/post-up.sh;
+  };
+
+  watchdogScript = pkgs.writeShellApplication {
+    name = "arr-vpn-watchdog";
+    runtimeInputs = with pkgs; [
+      systemd
+      iproute2
+      wireguard-tools
+      iputils
+      gawk
+      coreutils
+    ];
+    runtimeEnv = {
+      NAMESPACE = vpn.ns;
+      WG_IFACE = vpn.iface;
+      PING_TARGET = cfg.vpn.watchdog.pingTarget;
+      MAX_AGE = toString cfg.vpn.watchdog.maxHandshakeAge;
+    };
+    text = builtins.readFile ./scripts/watchdog.sh;
+  };
 in {
   config = mkIf (cfg.enable && cfg.vpn.enable) {
-    warnings = optional (cfg.vpn.openVPNPorts == [] && !cfg.vpn.portForwarding.enable) "arr.vpn: arr.vpn.openVPNPorts is empty and arr.vpn.portForwarding is disabled. qBittorrent can download via outgoing connections, but cannot receive incoming peer connections without port forwarding.";
+    # -------------------------------------------------------------------------
+    # Configuration Sanity Warnings & Assertions
+    # -------------------------------------------------------------------------
+    warnings =
+      optional (cfg.vpn.openVPNPorts == [] && !cfg.vpn.portForwarding.enable)
+      "arr.vpn: arr.vpn.openVPNPorts is empty and arr.vpn.portForwarding is disabled. qBittorrent can download via outgoing connections, but cannot receive incoming peer connections without port forwarding."
+      ++ optional (cfg.vpn.directPhysicalEgress && vpn.systemVpnEnabled && !vpn.systemVpnBypassActive)
+      "arr.vpn: directPhysicalEgress is enabled alongside networking.systemVPN, but systemVPN bypass is disabled. The pre-up endpoint ping in wg-up will depend on systemVPN being active unless bypass.enable = true.";
 
     assertions =
       [
@@ -17,11 +70,15 @@ in {
           message = "arr.vpn: arr.vpn.wgConfFile must be set to the path of your WireGuard configuration file (e.g., config.sops.secrets.arr_wireguard_conf.path) when arr.vpn.enable is true.";
         }
         {
+          assertion = cfg.vpn.wgConfFile == null || !(lib.hasPrefix builtins.storeDir cfg.vpn.wgConfFile);
+          message = "arr.vpn: 'wgConfFile' must not point to a path in the Nix store (private keys would be world-readable). Specify a runtime filesystem path string (e.g. from sops-nix).";
+        }
+        {
           assertion = builtins.stringLength cfg.vpn.namespace < 8;
           message = "arr.vpn: arr.vpn.namespace must be shorter than 8 characters (current: '${cfg.vpn.namespace}') due to Linux network interface name limits (IFNAMSIZ).";
         }
       ]
-      ++ lib.optional cfg.qbittorrent.enable {
+      ++ optional cfg.qbittorrent.enable {
         assertion =
           cfg.vpn.openVPNPorts
           == []
@@ -34,75 +91,71 @@ in {
 
     environment.systemPackages = [pkgs.wireguard-tools];
 
-    # Automatically retry WireGuard on boot if Wi-Fi / network connection is still establishing
-    systemd.services.${cfg.vpn.namespace} = {
-      wants = ["network-online.target"] ++ lib.optional cfg.qbittorrent.enable "qbittorrent.service";
-      after = ["network-online.target"];
-      before = lib.optional cfg.qbittorrent.enable "qbittorrent.service";
-      serviceConfig = {
-        Restart = "on-failure";
-        RestartSec = 5;
-        ExecStartPre = [
-          "+${pkgs.writeShellScript "wait-for-default-route" ''
-            for i in $(seq 1 30); do
-              if ${pkgs.iproute2}/bin/ip route show default | grep -q default; then
-                exit 0
-              fi
-              sleep 1
-            done
-            echo "No default route detected after 30s, continuing anyway..."
-          ''}"
-        ];
-        ExecStartPost = let
-          gw =
-            if cfg.vpn.portForwarding.gateway != null
-            then cfg.vpn.portForwarding.gateway
-            else "10.2.0.1";
-          postUpScript = pkgs.writeShellApplication {
-            name = "arr-vpn-post-up-fixes";
-            runtimeInputs = with pkgs; [
-              iproute2
-              iptables
-              gnugrep
-            ];
-            text = ''
-              # Ensure internal VPN gateway / DNS is always routed directly through the tunnel
-              ip -n "${cfg.vpn.namespace}" route add "${gw}/32" dev "${cfg.vpn.namespace}0" 2>/dev/null || true
+    # -------------------------------------------------------------------------
+    # Namespace Tunnel Service, Direct Egress Hook & Connectivity Watchdog
+    # -------------------------------------------------------------------------
+    systemd.services = {
+      ${vpn.ns} = {
+        wants = ["network-online.target"] ++ optional cfg.qbittorrent.enable "qbittorrent.service";
+        after = ["network-online.target"];
+        before = optional cfg.qbittorrent.enable "qbittorrent.service";
 
-              # Allow fallback public DNS (Cloudflare 1.1.1.1 / 1.0.0.1) inside VPN namespace to bypass NetShield tracker blocking
-              for dns_ip in 1.1.1.1 1.0.0.1; do
-                for proto in udp tcp; do
-                  if ! ip netns exec "${cfg.vpn.namespace}" iptables -C dns-fw -p "$proto" -d "$dns_ip" -j ACCEPT 2>/dev/null; then
-                    ip netns exec "${cfg.vpn.namespace}" iptables -I dns-fw 1 -p "$proto" -d "$dns_ip" -j ACCEPT
-                  fi
-                done
-              done
+        serviceConfig = {
+          Restart = "on-failure";
+          RestartSec = "5s";
+          RestartSteps = 5;
+          RestartMaxDelaySec = "1m";
 
-              if [ -f "/etc/netns/${cfg.vpn.namespace}/resolv.conf" ]; then
-                if ! grep -q "1.1.1.1" "/etc/netns/${cfg.vpn.namespace}/resolv.conf"; then
-                  echo "nameserver 1.1.1.1" >> "/etc/netns/${cfg.vpn.namespace}/resolv.conf"
-                fi
-              fi
-            '';
-          };
-        in [
-          "+${postUpScript}/bin/arr-vpn-post-up-fixes"
-        ];
+          # Run host-side pre-up endpoint ping inside the systemVPN bypass group so
+          # the BitTorrent tunnel can bootstrap directly via the physical NIC even
+          # when systemVPN is stopped or restarting.
+          Group = mkIf (cfg.vpn.directPhysicalEgress && vpn.systemVpnBypassActive) vpn.systemVpnBypassGroup;
+
+          ExecStartPre = [
+            "+${waitForRouteScript}/bin/arr-vpn-wait-route"
+          ];
+          ExecStartPost = [
+            "+${postUpScript}/bin/arr-vpn-post-up"
+          ];
+        };
+
+        unitConfig = {
+          StartLimitIntervalSec = 300;
+          StartLimitBurst = 10;
+        };
       };
-      unitConfig = {
-        StartLimitIntervalSec = 300;
-        StartLimitBurst = 10;
+
+      "${vpn.ns}-watchdog" = mkIf cfg.vpn.watchdog.enable {
+        description = "Health check and auto-recovery for Arr VPN namespace ${vpn.ns}";
+        serviceConfig = {
+          Type = "oneshot";
+          RuntimeDirectory = "arr-vpn";
+          RuntimeDirectoryPreserve = "yes";
+          ExecStart = "${watchdogScript}/bin/arr-vpn-watchdog";
+        };
       };
     };
 
+    systemd.timers."${vpn.ns}-watchdog" = mkIf cfg.vpn.watchdog.enable {
+      description = "Timer for Arr VPN namespace ${vpn.ns} health check";
+      wantedBy = ["timers.target"];
+      timerConfig = {
+        OnBootSec = "2m";
+        OnUnitActiveSec = cfg.vpn.watchdog.interval;
+        RandomizedDelaySec = "10s";
+      };
+    };
+
+    # -------------------------------------------------------------------------
+    # Upstream nixflix VPN Namespace Confinement
+    # -------------------------------------------------------------------------
     nixflix.vpn = {
       enable = true;
       inherit (cfg.vpn) namespace;
       allowedIngress = cfg.vpn.accessibleFrom;
-      openVPNPorts = mkIf (!config.networking.nftables.enable) cfg.vpn.openVPNPorts;
-      allowedTCPPorts = mkIf config.networking.nftables.enable (map (p: p.port) (filter (p: p.protocol == "tcp" || p.protocol == "both") cfg.vpn.openVPNPorts));
-      allowedUDPPorts = mkIf config.networking.nftables.enable (map (p: p.port) (filter (p: p.protocol == "udp" || p.protocol == "both") cfg.vpn.openVPNPorts));
-      # Provide a fallback path if null so evaluation can proceed to display the informative assertion error
+      allowedTCPPorts = map (p: p.port) (filter (p: p.protocol == "tcp" || p.protocol == "both") cfg.vpn.openVPNPorts);
+      allowedUDPPorts = map (p: p.port) (filter (p: p.protocol == "udp" || p.protocol == "both") cfg.vpn.openVPNPorts);
+      # Provide a fallback path if null so evaluation can proceed to display the assertion error
       wgConfFile =
         if cfg.vpn.wgConfFile != null
         then cfg.vpn.wgConfFile

@@ -42,19 +42,19 @@ in {
           }
           {
             name = "Bluray-1080p";
-            min = 20;
+            min = 10;
             preferred = 95;
             max = 220;
           }
           {
             name = "WEBDL-1080p";
-            min = 12;
+            min = 10;
             preferred = 65;
             max = 150;
           }
           {
             name = "WEBRip-1080p";
-            min = 12;
+            min = 10;
             preferred = 65;
             max = 150;
           }
@@ -91,11 +91,16 @@ in {
           trash_id = "d1d67249d3890e49bc12e275d989a7e9"; # HD Bluray + WEB
           reset_unmatched_scores.enabled = true;
           min_format_score = -500;
+          upgrade = {
+            allowed = true;
+            until_quality = "Bluray|WEB-1080p";
+            until_score = 10000;
+          };
           qualities = [
-            {name = "Bluray-1080p";}
             {
-              name = "WEB 1080p";
+              name = "Bluray|WEB-1080p";
               qualities = [
+                "Bluray-1080p"
                 "WEBRip-1080p"
                 "WEBDL-1080p"
               ];
