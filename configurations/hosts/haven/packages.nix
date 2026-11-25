@@ -32,6 +32,18 @@
       enable = true;
       lanIp = "192.168.0.2";
       tailscaleIp = "100.64.0.1";
+      rewrites = [
+        {
+          domain = "haven";
+          lanAnswer = "192.168.0.2";
+          tailscaleAnswer = "100.64.0.1";
+        }
+        {
+          domain = "haven.local";
+          lanAnswer = "192.168.0.2";
+          tailscaleAnswer = "100.64.0.1";
+        }
+      ];
     };
 
     vaultwarden = {

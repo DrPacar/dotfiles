@@ -120,6 +120,47 @@ in {
       description = "Retention window for AdGuard Home's persistent query log.";
     };
 
+    rewrites = mkOption {
+      type = types.listOf (types.submodule {
+        options = {
+          domain = mkOption {
+            type = types.str;
+            example = "nas.lan";
+            description = "Hostname or domain to rewrite in AdGuard Home.";
+          };
+
+          answer = mkOption {
+            type = types.nullOr types.str;
+            default = null;
+            example = "192.168.0.10";
+            description = "Uniform DNS answer (IP or CNAME) returned to all clients when split answers are not used.";
+          };
+
+          lanAnswer = mkOption {
+            type = types.nullOr types.str;
+            default = null;
+            example = "192.168.0.2";
+            description = "Split-horizon answer returned to LAN clients (lanSubnet) and localhost.";
+          };
+
+          tailscaleAnswer = mkOption {
+            type = types.nullOr types.str;
+            default = null;
+            example = "100.64.0.1";
+            description = "Split-horizon answer returned to Tailscale clients (tailscaleSubnet and Tailscale IPv6 ULA).";
+          };
+
+          includeSubdomains = mkOption {
+            type = types.bool;
+            default = true;
+            description = "Match subdomains in addition to the exact domain name (e.g. '*.domain').";
+          };
+        };
+      });
+      default = [];
+      description = "Declarative custom DNS rewrites supporting both uniform answers and LAN/Tailscale split-horizon answers.";
+    };
+
     cli = {
       enable = mkEnableOption "the 'adguard' diagnostic and self-test CLI" // {default = true;};
     };

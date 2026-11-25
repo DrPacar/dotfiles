@@ -8,6 +8,109 @@
   cfg = config.server;
   adg = import ./_lib.nix {inherit config lib pkgs;};
 
+  mkRulePrefix = includeSubdomains: domain:
+    if includeSubdomains
+    then "||${domain}^"
+    else "|${domain}^";
+
+  # Shared helper producing AdGuard filtering/user_rules entries for a rewrite record
+  mkSplitUserRules = {
+    domain,
+    lanAnswer ? null,
+    tailscaleAnswer ? null,
+    includeSubdomains ? true,
+  }: let
+    prefix = mkRulePrefix includeSubdomains domain;
+  in
+    optionals (tailscaleAnswer != null) [
+      "${prefix}$dnsrewrite=NOERROR;A;${tailscaleAnswer},client=${cfg.adguard.tailscaleSubnet}|fd7a:115c:a1e0::/48"
+    ]
+    ++ optionals (lanAnswer != null) [
+      "${prefix}$dnsrewrite=NOERROR;A;${lanAnswer},client=${cfg.adguard.lanSubnet}"
+      "${prefix}$dnsrewrite=NOERROR;A;${lanAnswer},client=127.0.0.1|::1"
+    ];
+
+  autoSplitDomains = optionals (cfg.domain != null) (
+    [cfg.domain]
+    ++ optionals (adg.arrDomain != null && !lib.hasSuffix ".${cfg.domain}" adg.arrDomain && adg.arrDomain != cfg.domain) [adg.arrDomain]
+  );
+
+  uniformRewrites =
+    lib.concatMap (
+      r:
+        if r.answer != null
+        then
+          [
+            {
+              inherit (r) domain answer;
+              enabled = true;
+            }
+          ]
+          ++ lib.optional r.includeSubdomains {
+            domain = "*.${r.domain}";
+            inherit (r) answer;
+            enabled = true;
+          }
+        else []
+    )
+    cfg.adguard.rewrites;
+
+  singleIpFallback =
+    if cfg.adguard.tailscaleIp == null && cfg.adguard.lanIp != null
+    then cfg.adguard.lanIp
+    else if cfg.adguard.lanIp == null && cfg.adguard.tailscaleIp != null
+    then cfg.adguard.tailscaleIp
+    else null;
+
+  autoSingleRewrites = optionals (singleIpFallback != null && cfg.domain != null) (
+    [
+      {
+        domain = "*.${cfg.domain}";
+        answer = singleIpFallback;
+        enabled = true;
+      }
+      {
+        domain = cfg.domain;
+        answer = singleIpFallback;
+        enabled = true;
+      }
+    ]
+    ++ optionals (adg.arrDomain != null && adg.arrDomain != cfg.domain) [
+      {
+        domain = "*.${adg.arrDomain}";
+        answer = singleIpFallback;
+        enabled = true;
+      }
+      {
+        domain = adg.arrDomain;
+        answer = singleIpFallback;
+        enabled = true;
+      }
+    ]
+  );
+
+  customSplitUserRules =
+    lib.concatMap (
+      r:
+        if r.answer == null
+        then
+          mkSplitUserRules {
+            inherit (r) domain lanAnswer tailscaleAnswer includeSubdomains;
+          }
+        else []
+    )
+    cfg.adguard.rewrites;
+
+  rewriteAssertions =
+    map (r: let
+      hasUniform = r.answer != null;
+      hasSplit = r.lanAnswer != null || r.tailscaleAnswer != null;
+    in {
+      assertion = (hasUniform != hasSplit) && (hasUniform || hasSplit);
+      message = "server.adguard.rewrites (${r.domain}): specify either 'answer' OR at least one of 'lanAnswer' / 'tailscaleAnswer' (not both).";
+    })
+    cfg.adguard.rewrites;
+
   pythonWithBcrypt = pkgs.python3.withPackages (ps: [
     ps.bcrypt
     ps.pyyaml
@@ -61,16 +164,18 @@ in {
     # -------------------------------------------------------------------------
     # Configuration Sanity Assertions
     # -------------------------------------------------------------------------
-    assertions = [
-      {
-        assertion = config.sops.secrets ? services_password;
-        message = "server.adguard: config.sops.secrets.services_password must be defined in your secrets file.";
-      }
-      {
-        assertion = !cfg.adguard.bypassSystemVpn || !adg.systemVpnEnabled || adg.systemVpnBypassActive;
-        message = "server.adguard: 'bypassSystemVpn = true' requires 'networking.systemVPN.bypass.enable = true'.";
-      }
-    ];
+    assertions =
+      [
+        {
+          assertion = config.sops.secrets ? services_password;
+          message = "server.adguard: config.sops.secrets.services_password must be defined in your secrets file.";
+        }
+        {
+          assertion = !cfg.adguard.bypassSystemVpn || !adg.systemVpnEnabled || adg.systemVpnBypassActive;
+          message = "server.adguard: 'bypassSystemVpn = true' requires 'networking.systemVPN.bypass.enable = true'.";
+        }
+      ]
+      ++ rewriteAssertions;
 
     sops.secrets.services_password = {
       restartUnits = ["adguardhome-admin-sync.service" "adguardhome.service"];
@@ -188,6 +293,8 @@ in {
           ];
           use_private_ptr_resolvers = true;
           local_ptr_upstreams = [cfg.adguard.routerIp];
+          # Prevent NixOS-generated /etc/hosts loopback entries (e.g. Caddy vhosts) from leaking 127.0.0.x to LAN/Tailscale clients
+          hostsfile_enabled = false;
           trusted_proxies = [
             "127.0.0.0/8"
             "::1/128"
@@ -197,53 +304,21 @@ in {
           protection_enabled = true;
           filtering_enabled = true;
           rewrites_enabled = true;
-          rewrites = let
-            singleIp =
-              if cfg.adguard.tailscaleIp == null && cfg.adguard.lanIp != null
-              then cfg.adguard.lanIp
-              else if cfg.adguard.lanIp == null && cfg.adguard.tailscaleIp != null
-              then cfg.adguard.tailscaleIp
-              else null;
-          in
-            optionals (singleIp != null && cfg.domain != null) (
-              [
-                {
-                  domain = "*.${cfg.domain}";
-                  answer = singleIp;
-                  enabled = true;
-                }
-                {
-                  domain = cfg.domain;
-                  answer = singleIp;
-                  enabled = true;
-                }
-              ]
-              ++ optionals (adg.arrDomain != null && adg.arrDomain != cfg.domain) [
-                {
-                  domain = "*.${adg.arrDomain}";
-                  answer = singleIp;
-                  enabled = true;
-                }
-                {
-                  domain = adg.arrDomain;
-                  answer = singleIp;
-                  enabled = true;
-                }
-              ]
-            );
+          rewrites = autoSingleRewrites ++ uniformRewrites;
         };
-        user_rules = let
-          extraDomains = optionals (adg.arrDomain != null && !lib.hasSuffix ".${cfg.domain}" adg.arrDomain && adg.arrDomain != cfg.domain) [adg.arrDomain];
-          domains = [cfg.domain] ++ extraDomains;
-          mkRules = domain: [
-            "||${domain}^$dnsrewrite=NOERROR;A;${cfg.adguard.tailscaleIp},client=${cfg.adguard.tailscaleSubnet}|fd7a:115c:a1e0::/48"
-            "||${domain}^$dnsrewrite=NOERROR;A;${cfg.adguard.lanIp},client=${cfg.adguard.lanSubnet}"
-            "||${domain}^$dnsrewrite=NOERROR;A;${cfg.adguard.lanIp},client=127.0.0.1|::1"
-          ];
-        in
-          optionals (cfg.adguard.tailscaleIp != null && cfg.adguard.lanIp != null && cfg.domain != null) (
-            lib.concatMap mkRules domains
-          );
+        user_rules =
+          optionals (cfg.adguard.tailscaleIp != null && cfg.adguard.lanIp != null) (
+            lib.concatMap (
+              domain:
+                mkSplitUserRules {
+                  inherit domain;
+                  lanAnswer = cfg.adguard.lanIp;
+                  tailscaleAnswer = cfg.adguard.tailscaleIp;
+                }
+            )
+            autoSplitDomains
+          )
+          ++ customSplitUserRules;
         filters = [
           {
             enabled = true;
