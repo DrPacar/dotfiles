@@ -202,9 +202,8 @@
   };
 
   # Encrypted backups of haven server services into local repository (/var/backup/restic)
-  # Prerequisite before enabling: add 'restic-password' in secrets/common.yaml (or secrets/haven.yaml)
   backup = {
-    enable = false;
+    enable = true;
     client = {
       enable = true;
       repository = "/var/backup/restic";
