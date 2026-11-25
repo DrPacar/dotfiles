@@ -65,6 +65,20 @@ strip_endpoint_ip() {
 	sed -E 's/:[0-9]+$//; s/^\[//; s/\]$//'
 }
 
+get_outer_route_dev() {
+	local endpoint_ip="$1"
+	local fwmark="${2:-}"
+	local route_out=""
+
+	if [ -n "$fwmark" ] && [ "$fwmark" != "off" ]; then
+		route_out=$(ip route get "$endpoint_ip" mark "$fwmark" 2>/dev/null || true)
+	else
+		route_out=$(ip route get "$endpoint_ip" 2>/dev/null || true)
+	fi
+
+	echo "$route_out" | awk '{for (i=1; i<=NF; i++) if ($i=="dev") {print $(i+1); exit}}' || true
+}
+
 get_chain_packets() {
 	local chain="$1"
 	$SUDO ip netns exec "$NAMESPACE" iptables -L "$chain" -v -n -x 2>/dev/null |
@@ -129,11 +143,10 @@ do_selftest() {
 			run_check "WireGuard outer socket fwmark is valid" 1 "found '${ACTUAL_FWMARK:-none}', expected '$WG_FWMARK'"
 		fi
 
-		local ENDPOINT_IP ROUTE_OUT ROUTE_DEV
+		local ENDPOINT_IP ROUTE_DEV
 		ENDPOINT_IP=$($SUDO ip netns exec "$NAMESPACE" wg show "$WG_IFACE" endpoints 2>/dev/null | awk '{print $2}' | strip_endpoint_ip | head -n 1 || true)
 		if [ -n "$ENDPOINT_IP" ]; then
-			ROUTE_OUT=$(ip route get "$ENDPOINT_IP" mark "$WG_FWMARK" 2>/dev/null || true)
-			ROUTE_DEV=$(echo "$ROUTE_OUT" | awk '{for (i=1; i<=NF; i++) if ($i=="dev") {print $(i+1); exit}}' || true)
+			ROUTE_DEV=$(get_outer_route_dev "$ENDPOINT_IP" "$WG_FWMARK")
 			if [ -n "$ROUTE_DEV" ] && [ "$ROUTE_DEV" != "$SYSTEM_VPN_IFACE" ]; then
 				if [ -n "$PHYS_IFACE" ] && [ "$ROUTE_DEV" != "$PHYS_IFACE" ]; then
 					run_check "Endpoint $ENDPOINT_IP routes directly via $PHYS_IFACE (no double-VPN)" 1 "routed via '$ROUTE_DEV'"
@@ -181,9 +194,11 @@ do_selftest() {
 
 	# Check 4b: Active killswitch probe on veth-${NAMESPACE}
 	echo -e "  [*] Probing namespace egress on veth-${NAMESPACE} (testing OUTPUT DROP counter)..."
-	local INIT_VETH_DROPS FINAL_VETH_DROPS VETH_DIFF PROBE_CODE=0
+	local PROBE_IP INIT_VETH_DROPS FINAL_VETH_DROPS VETH_DIFF PROBE_CODE=0
+	PROBE_IP=$($SUDO ip -n "$NAMESPACE" route show dev "veth-${NAMESPACE}" 2>/dev/null | awk '/via/ {print $3; exit}' || true)
+	PROBE_IP="${PROBE_IP:-192.168.15.5}"
 	INIT_VETH_DROPS=$(get_veth_drop_packets)
-	$SUDO ip netns exec "$NAMESPACE" curl --connect-timeout 1 -m 1 -sSf http://192.168.0.1:80 >/dev/null 2>&1 || PROBE_CODE=$?
+	$SUDO ip netns exec "$NAMESPACE" curl --connect-timeout 1 -m 1 -sSf "http://${PROBE_IP}:9" >/dev/null 2>&1 || PROBE_CODE=$?
 	FINAL_VETH_DROPS=$(get_veth_drop_packets)
 	VETH_DIFF=$((FINAL_VETH_DROPS - INIT_VETH_DROPS))
 
@@ -328,11 +343,7 @@ do_status() {
 			print_kv "Outer Socket fwmark" "${FWMARK:-off}"
 			if [ -n "$ENDPOINT_IP" ]; then
 				local ROUTE_DEV
-				if [ -n "$FWMARK" ] && [ "$FWMARK" != "off" ]; then
-					ROUTE_DEV=$(ip route get "$ENDPOINT_IP" mark "$FWMARK" 2>/dev/null | awk '{for (i=1; i<=NF; i++) if ($i=="dev") {print $(i+1); exit}}' || true)
-				else
-					ROUTE_DEV=$(ip route get "$ENDPOINT_IP" 2>/dev/null | awk '{for (i=1; i<=NF; i++) if ($i=="dev") {print $(i+1); exit}}' || true)
-				fi
+				ROUTE_DEV=$(get_outer_route_dev "$ENDPOINT_IP" "${FWMARK:-}")
 				if [ "$ROUTE_DEV" = "$SYSTEM_VPN_IFACE" ]; then
 					print_kv "Outer Egress Path" "${YELLOW}${ROUTE_DEV} (nested double-VPN)${RESET}"
 				else

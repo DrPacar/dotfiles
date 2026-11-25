@@ -46,7 +46,7 @@
         customHandler = pkgs.writeShellApplication {
           name = "arr-vpn-notify";
           text = ''
-            export PATH="$PATH:/run/current-system/sw/bin"
+            export PATH="''${PATH:+$PATH:}/run/current-system/sw/bin"
             ${cfg.vpn.notifications.handler}
           '';
         };

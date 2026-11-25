@@ -17,15 +17,15 @@ echo -e "${BLUE}======================================================${NC}"
 
 # 1. Root check
 if [ "$EUID" -ne 0 ]; then
-  echo -e "${RED}[ERROR] This script must be run as root (use sudo).${NC}"
-  exit 1
+	echo -e "${RED}[ERROR] This script must be run as root (use sudo).${NC}"
+	exit 1
 fi
 
 # 2. Disk ID existence check
 if [ ! -e "$TARGET_ID" ]; then
-  echo -e "${RED}[ERROR] Target disk '$TARGET_ID' not found!${NC}"
-  echo -e "${RED}Is the target NVMe SSD connected?${NC}"
-  exit 1
+	echo -e "${RED}[ERROR] Target disk '$TARGET_ID' not found!${NC}"
+	echo -e "${RED}Is the target NVMe SSD connected?${NC}"
+	exit 1
 fi
 
 # 3. Realpath resolution
@@ -34,9 +34,9 @@ echo -e "Target disk by-id: ${YELLOW}$TARGET_ID${NC}"
 echo -e "Resolved block dev: ${YELLOW}$REAL_DEV${NC}"
 
 if [ "$REAL_DEV" != "$EXPECTED_REALDEV" ]; then
-  echo -e "${RED}[CRITICAL ERROR] Resolved device '$REAL_DEV' does not match expected '$EXPECTED_REALDEV'!${NC}"
-  echo -e "${RED}Aborting immediately to protect system drives.${NC}"
-  exit 1
+	echo -e "${RED}[CRITICAL ERROR] Resolved device '$REAL_DEV' does not match expected '$EXPECTED_REALDEV'!${NC}"
+	echo -e "${RED}Aborting immediately to protect system drives.${NC}"
+	exit 1
 fi
 
 # 4. Strict blacklist check
@@ -44,20 +44,20 @@ CURRENT_ROOT="$(findmnt -n -o SOURCE /)"
 echo -e "Current root source: $CURRENT_ROOT"
 
 if [[ $CURRENT_ROOT == *"$REAL_DEV"* ]]; then
-  echo -e "${RED}[FATAL ERROR] $REAL_DEV is part of the running root filesystem! ABORTING!${NC}"
-  exit 1
+	echo -e "${RED}[FATAL ERROR] $REAL_DEV is part of the running root filesystem! ABORTING!${NC}"
+	exit 1
 fi
 
 # Also protect nvme0n1 and nvme2n1 explicitly
 if [ "$REAL_DEV" == "/dev/nvme0n1" ] || [ "$REAL_DEV" == "/dev/nvme2n1" ]; then
-  echo -e "${RED}[FATAL ERROR] $REAL_DEV is a protected PC host drive! ABORTING!${NC}"
-  exit 1
+	echo -e "${RED}[FATAL ERROR] $REAL_DEV is a protected PC host drive! ABORTING!${NC}"
+	exit 1
 fi
 
 # 5. Check if /mnt has existing mounts
 if mountpoint -q /mnt; then
-  echo -e "${YELLOW}Unmounting existing mounts under /mnt...${NC}"
-  umount -R /mnt || true
+	echo -e "${YELLOW}Unmounting existing mounts under /mnt...${NC}"
+	umount -R /mnt || true
 fi
 
 echo -e "${GREEN}[PASS] Drive safety checks passed!${NC}"
@@ -80,14 +80,14 @@ echo -e "\n${BLUE}==> [4/4] Deploying Sops Age decryption key to haven...${NC}"
 AGE_SOURCE="/home/luka/.config/sops/age/keys.txt"
 AGE_DEST_DIR="/mnt/home/luka/.config/sops/age"
 if [ -f "$AGE_SOURCE" ]; then
-  mkdir -p "$AGE_DEST_DIR"
-  cp "$AGE_SOURCE" "$AGE_DEST_DIR/keys.txt"
-  chmod 700 /mnt/home/luka/.config /mnt/home/luka/.config/sops "$AGE_DEST_DIR"
-  chmod 600 "$AGE_DEST_DIR/keys.txt"
-  chown -R 1000:100 /mnt/home/luka
-  echo -e "${GREEN}[OK] Age key successfully copied and permissions secured (0600, luka:users).${NC}"
+	mkdir -p "$AGE_DEST_DIR"
+	cp "$AGE_SOURCE" "$AGE_DEST_DIR/keys.txt"
+	chmod 700 /mnt/home/luka/.config /mnt/home/luka/.config/sops "$AGE_DEST_DIR"
+	chmod 600 "$AGE_DEST_DIR/keys.txt"
+	chown -R 1000:100 /mnt/home/luka
+	echo -e "${GREEN}[OK] Age key successfully copied and permissions secured (0600, luka:users).${NC}"
 else
-  echo -e "${RED}[WARNING] Age key not found at $AGE_SOURCE! Sops secrets might fail to decrypt on first boot.${NC}"
+	echo -e "${RED}[WARNING] Age key not found at $AGE_SOURCE! Sops secrets might fail to decrypt on first boot.${NC}"
 fi
 
 echo -e "\n${BLUE}==> Unmounting /mnt cleanly...${NC}"
