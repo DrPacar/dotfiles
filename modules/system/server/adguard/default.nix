@@ -304,6 +304,10 @@ in {
           protection_enabled = true;
           filtering_enabled = true;
           rewrites_enabled = true;
+          safe_search = {
+            enabled = cfg.adguard.safeSearch.enable;
+            inherit (cfg.adguard.safeSearch) bing duckduckgo ecosia google pixabay yandex youtube;
+          };
           rewrites = autoSingleRewrites ++ uniformRewrites;
         };
         user_rules =
@@ -343,6 +347,18 @@ in {
             name = "OISD Big";
             url = "https://big.oisd.nl";
             id = 4;
+          }
+          {
+            enabled = true;
+            name = "HaGeZi Gambling";
+            url = "https://raw.githubusercontent.com/hagezi/dns-blocklists/main/adblock/gambling.txt";
+            id = 5;
+          }
+          {
+            enabled = true;
+            name = "OISD NSFW";
+            url = "https://nsfw.oisd.nl";
+            id = 6;
           }
         ];
       };

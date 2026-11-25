@@ -120,6 +120,56 @@ in {
       description = "Retention window for AdGuard Home's persistent query log.";
     };
 
+    safeSearch = {
+      enable = mkOption {
+        type = types.bool;
+        default = true;
+        description = "Enforce DNS-level SafeSearch across supported search engines.";
+      };
+
+      google = mkOption {
+        type = types.bool;
+        default = true;
+        description = "Enforce Google SafeSearch.";
+      };
+
+      bing = mkOption {
+        type = types.bool;
+        default = true;
+        description = "Enforce Bing SafeSearch.";
+      };
+
+      duckduckgo = mkOption {
+        type = types.bool;
+        default = true;
+        description = "Enforce DuckDuckGo SafeSearch.";
+      };
+
+      ecosia = mkOption {
+        type = types.bool;
+        default = true;
+        description = "Enforce Ecosia SafeSearch.";
+      };
+
+      pixabay = mkOption {
+        type = types.bool;
+        default = true;
+        description = "Enforce Pixabay SafeSearch.";
+      };
+
+      yandex = mkOption {
+        type = types.bool;
+        default = true;
+        description = "Enforce Yandex SafeSearch.";
+      };
+
+      youtube = mkOption {
+        type = types.bool;
+        default = false;
+        description = "Enforce YouTube Restricted Mode (disabled by default because it hides comments and benign videos on desktop/TVs).";
+      };
+    };
+
     rewrites = mkOption {
       type = types.listOf (types.submodule {
         options = {

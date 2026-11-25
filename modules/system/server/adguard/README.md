@@ -42,6 +42,7 @@ flowchart TD
 | `bypassSystemVpn` | `bool` | `false` | `false`: DoH zusätzlich durch `wg-system` getunnelt (Wartung auf `wg-system` beim Boot). `true`: läuft in `vpn-bypass` direkt über `eno1`. |
 | `ratelimit` | `int` | `300` | Abfragen/Sekunde pro Client (`127.0.0.1` & `::1` sind gewhitelistet). |
 | `querylogInterval` | `str` | `"30d"` | Aufbewahrungsdauer des Query-Logs. |
+| `safeSearch.*` | `bool` | `enable = true`, `youtube = false` | Erzwingt SafeSearch für Google, Bing, DuckDuckGo, Ecosia, Pixabay, Yandex (YouTube standardmäßig aus). |
 | `rewrites` | `listOf submodule` | `[]` | Deklarative Custom-DNS-Einträge (`domain`, entweder `answer` oder `lanAnswer`/`tailscaleAnswer`, `includeSubdomains`). |
 | `watchdog.enable` / `interval` / `failureThreshold` | `bool` / `str` / `int` | `true` / `"2m"` / `3` | Periodische Prüfung von WebUI und Live-DNS inkl. automatischem Neustart. |
 | `notifications.enable` / `handler` | `bool` / `str \| package` | `config.server.notify.enable or false` / `null` | Einmal-Benachrichtigungen bei Ausfall & Recovery (`$1` = Nachricht, `$2` = Tag). |
