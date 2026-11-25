@@ -78,16 +78,22 @@ read_password() {
 
 api_login() {
 	local cookie_file="$1"
-	local pass
+	local pass body
 	if ! pass=$(read_password); then
 		return 1
 	fi
-	local code
-	code=$(curl --connect-timeout 3 -m 5 -s -o /dev/null -w "%{http_code}" \
+	# qBittorrent 5.x returns HTTP 204 (Set-Cookie) or HTTP 200 ("Ok.") on login,
+	# and HTTP 200 ("Fails.") on bad credentials.
+	if ! body=$(curl --connect-timeout 3 -m 5 -fsS \
 		-c "$cookie_file" -X POST "${WEBUI_URL}/api/v2/auth/login" \
 		--data-urlencode "username=$WEBUI_USER" \
-		--data-urlencode "password=$pass" || true)
-	[ "$code" = "200" ]
+		--data-urlencode "password=$pass" 2>/dev/null); then
+		return 1
+	fi
+	if [ "$body" = "Fails." ]; then
+		return 1
+	fi
+	curl --connect-timeout 3 -m 5 -fsS -b "$cookie_file" "${WEBUI_URL}/api/v2/app/version" >/dev/null 2>&1
 }
 
 # -----------------------------------------------------------------------------
