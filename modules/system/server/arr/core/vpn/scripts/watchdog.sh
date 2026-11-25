@@ -49,14 +49,20 @@ send_alert() {
 	fi
 }
 
+send_tunnel_alert_once() {
+	local msg="$1"
+	local tag="${2:-warning}"
+	if [ ! -f "$TUNNEL_ALERTED_FILE" ]; then
+		touch "$TUNNEL_ALERTED_FILE"
+		send_alert "$msg" "$tag"
+	fi
+}
+
 # Revive failed tunnel unit (e.g. prolonged ISP outage), while respecting deliberate admin stops
 if systemctl is-failed --quiet "$UNIT"; then
 	mkdir -p "$STATE_DIR"
 	echo "WARN: [arr-vpn-watchdog] Service $UNIT is in failed state. Resetting and starting..." >&2
-	if [ ! -f "$TUNNEL_ALERTED_FILE" ]; then
-		touch "$TUNNEL_ALERTED_FILE"
-		send_alert "Arr VPN (${NAMESPACE}/${WG_IFACE}): Service ${UNIT} war im Fehlerzustand (failed). Starte neu." "rotating_light"
-	fi
+	send_tunnel_alert_once "Arr VPN (${NAMESPACE}/${WG_IFACE}): Service ${UNIT} war im Fehlerzustand (failed). Starte neu." "rotating_light"
 	systemctl reset-failed "$UNIT"
 	systemctl start "$UNIT"
 	exit 0
@@ -99,15 +105,13 @@ else
 	if [ "$AGE" -gt "$MAX_AGE" ]; then
 		echo "WARN: [arr-vpn-watchdog] Connectivity test to $PING_TARGET failed in netns '$NAMESPACE' ($WG_IFACE) and handshake age is ${AGE}s (> ${MAX_AGE}s). Restarting $UNIT..." >&2
 		rm -f "$FAIL_FILE"
-		touch "$TUNNEL_ALERTED_FILE"
-		send_alert "Arr VPN (${NAMESPACE}/${WG_IFACE}): Tunnel ausgefallen (Handshake vor ${AGE}s). Starte ${UNIT} neu." "rotating_light"
+		send_tunnel_alert_once "Arr VPN (${NAMESPACE}/${WG_IFACE}): Tunnel ausgefallen (Handshake vor ${AGE}s). Starte ${UNIT} neu." "rotating_light"
 		systemctl restart "$UNIT"
 		exit 0
 	elif [ "$FAILS" -ge 3 ]; then
 		echo "WARN: [arr-vpn-watchdog] Connectivity test to $PING_TARGET failed 3 consecutive times in netns '$NAMESPACE' despite recent handshake (${AGE}s). Restarting $UNIT..." >&2
 		rm -f "$FAIL_FILE"
-		touch "$TUNNEL_ALERTED_FILE"
-		send_alert "Arr VPN (${NAMESPACE}/${WG_IFACE}): 3 Ping-Fehlversuche trotz Handshake (${AGE}s). Starte ${UNIT} neu." "warning"
+		send_tunnel_alert_once "Arr VPN (${NAMESPACE}/${WG_IFACE}): 3 Ping-Fehlversuche trotz Handshake (${AGE}s). Starte ${UNIT} neu." "warning"
 		systemctl restart "$UNIT"
 		exit 0
 	else

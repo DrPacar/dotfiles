@@ -7,7 +7,7 @@
   inherit (lib) mkIf mkForce;
   cfg = config.server.arr;
   inherit (import ../../_lib.nix) secretRef;
-  resolvedEnabled = config.services.resolved.enable or false;
+  qbit = import ./_lib.nix {inherit config lib pkgs;};
 
   injectPasswordScript = pkgs.writeShellApplication {
     name = "qbittorrent-inject-password";
@@ -18,12 +18,35 @@
         --group "${cfg.mediaGroup}"
     '';
   };
+
+  watchdogScript = pkgs.writeShellApplication {
+    name = "arr-qbit-watchdog";
+    runtimeInputs = with pkgs; [
+      systemd
+      curl
+      coreutils
+    ];
+    runtimeEnv =
+      qbit.commonEnv
+      // {
+        FAILURE_THRESHOLD = toString cfg.qbittorrent.watchdog.failureThreshold;
+      };
+    text = builtins.readFile ./scripts/watchdog.sh;
+  };
 in {
   config = mkIf (cfg.enable && cfg.qbittorrent.enable) {
     assertions = [
       {
         assertion = cfg.qbittorrent.maxActiveTorrents >= cfg.qbittorrent.maxActiveDownloads;
-        message = "arr.qbittorrent: maxActiveTorrents must be greater than or equal to maxActiveDownloads";
+        message = "arr.qbittorrent: maxActiveTorrents must be greater than or equal to maxActiveDownloads.";
+      }
+      {
+        assertion = cfg.qbittorrent.maxConnections >= cfg.qbittorrent.maxConnectionsPerTorrent;
+        message = "arr.qbittorrent: maxConnections must be greater than or equal to maxConnectionsPerTorrent.";
+      }
+      {
+        assertion = cfg.qbittorrent.maxUploads == 0 || cfg.qbittorrent.maxUploads >= cfg.qbittorrent.maxUploadsPerTorrent;
+        message = "arr.qbittorrent: maxUploads must be 0 (unlimited) or greater than or equal to maxUploadsPerTorrent.";
       }
       {
         assertion = config.sops.secrets ? services_password;
@@ -128,19 +151,47 @@ in {
 
     # Automatically derive and inject the PBKDF2 HMAC-SHA512 password hash into qBittorrent.conf on service start.
     # Keeps plaintext secrets strictly out of the world-readable nix store.
-    systemd.services.qbittorrent = {
-      serviceConfig = {
-        Slice = "arr.slice";
-        Restart = "on-failure";
-        RestartSec = 5;
-        MemoryHigh = "2G";
-        MemoryMax = "4G";
-        # Isolate /run/systemd/resolve so host systemd-resolved updates cannot
-        # replace the namespace resolv.conf bind mount underneath qBittorrent.
-        TemporaryFileSystem = mkIf (cfg.vpn.enable && resolvedEnabled) ["/run/systemd/resolve:ro"];
-        ExecStartPre = lib.mkAfter [
-          "${injectPasswordScript}/bin/qbittorrent-inject-password"
-        ];
+    systemd.services = {
+      qbittorrent = {
+        serviceConfig = {
+          Slice = "arr.slice";
+          Restart = "on-failure";
+          RestartSec = "5s";
+          RestartSteps = 5;
+          RestartMaxDelaySec = "1m";
+          MemoryHigh = "2G";
+          MemoryMax = "4G";
+          # Isolate /run/systemd/resolve so host systemd-resolved updates cannot
+          # replace the namespace resolv.conf bind mount underneath qBittorrent.
+          TemporaryFileSystem = mkIf (qbit.vpnEnabled && qbit.resolvedEnabled) ["/run/systemd/resolve:ro"];
+          ExecStartPre = lib.mkAfter [
+            "${injectPasswordScript}/bin/qbittorrent-inject-password"
+          ];
+        };
+
+        unitConfig = {
+          StartLimitIntervalSec = 0;
+        };
+      };
+
+      qbittorrent-watchdog = mkIf cfg.qbittorrent.watchdog.enable {
+        description = "Health check and auto-recovery for qBittorrent and its WebUI proxy";
+        serviceConfig = {
+          Type = "oneshot";
+          RuntimeDirectory = "arr-qbittorrent";
+          RuntimeDirectoryPreserve = "yes";
+          ExecStart = "${watchdogScript}/bin/arr-qbit-watchdog";
+        };
+      };
+    };
+
+    systemd.timers.qbittorrent-watchdog = mkIf cfg.qbittorrent.watchdog.enable {
+      description = "Timer for qBittorrent WebUI health check";
+      wantedBy = ["timers.target"];
+      timerConfig = {
+        OnBootSec = "2m";
+        OnUnitActiveSec = cfg.qbittorrent.watchdog.interval;
+        RandomizedDelaySec = "10s";
       };
     };
   };

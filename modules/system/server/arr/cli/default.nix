@@ -149,6 +149,7 @@
             vpn) svc="${cfg.vpn.namespace}" ;;
             proxy) svc="qbittorrent-webui-proxy" ;;
             forwarder|natpmp) svc="protonvpn-port-forward" ;;
+            cleaner|stalled) svc="arr-stalled-cleaner" ;;
           esac
           exec journalctl -u "''${svc}.service" -f
           ;;
@@ -183,6 +184,19 @@
         ''
       }
           ;;
+        qbit)
+          shift || true
+          ${
+        if cfg.qbittorrent.enable
+        then ''
+          exec arr-qbit "$@"
+        ''
+        else ''
+          echo "Error: arr.qbittorrent is disabled in your NixOS configuration."
+          exit 1
+        ''
+      }
+          ;;
         help|--help|-h)
           echo "Arr Stack Management CLI"
           echo ""
@@ -194,6 +208,8 @@
           echo "  status --json  Output raw JSON for scripts/monitoring"
           echo "  vpn [status|check]"
           echo "                 Inspect BitTorrent VPN namespace, fwmark routing, DNS, and NAT-PMP"
+          echo "  qbit [status|check]"
+          echo "                 Inspect qBittorrent runtime health, API tuning, queue, and storage"
           echo "  backup         Trigger on-demand backup via arr-backup.service"
           echo "  logs <svc>     Follow journal logs for a service (e.g., arr logs sonarr)"
           echo "  restart <svc>  Restart a service (e.g., arr restart radarr)"

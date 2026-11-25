@@ -79,6 +79,42 @@ in {
       description = "Maximum number of simultaneous connections per torrent.";
     };
 
+    maxUploads = mkOption {
+      type = types.ints.unsigned;
+      default = 8;
+      description = "Global maximum number of concurrent upload slots (tuned so peers are not starved on modest upload caps).";
+    };
+
+    maxUploadsPerTorrent = mkOption {
+      type = types.ints.unsigned;
+      default = 2;
+      description = "Maximum number of concurrent upload slots per torrent.";
+    };
+
+    connectionSpeed = mkOption {
+      type = types.ints.positive;
+      default = 50;
+      description = "Number of outgoing peer connection attempts per second (higher speeds up ramp-up over VPN).";
+    };
+
+    socketBacklogSize = mkOption {
+      type = types.ints.positive;
+      default = 100;
+      description = "TCP listen socket backlog size for incoming peer bursts via NAT-PMP port forwarding.";
+    };
+
+    hashingThreads = mkOption {
+      type = types.ints.positive;
+      default = 2;
+      description = "Number of threads used by libtorrent for piece SHA verification.";
+    };
+
+    saveResumeDataInterval = mkOption {
+      type = types.ints.positive;
+      default = 15;
+      description = "Interval in minutes for persisting torrent fast-resume data to disk.";
+    };
+
     downloadRateLimitKiB = mkOption {
       type = types.ints.unsigned;
       default = 0;
@@ -127,6 +163,51 @@ in {
       type = types.port;
       default = 6881;
       description = "Incoming BitTorrent peer listening port (inside the VPN namespace if VPN is enabled).";
+    };
+
+    watchdog = {
+      enable = mkOption {
+        type = types.bool;
+        default = true;
+        description = "Enable automated host-side watchdog that monitors qBittorrent WebUI responsiveness and revives failed units.";
+      };
+
+      interval = mkOption {
+        type = types.str;
+        default = "2m";
+        description = "Interval between qBittorrent watchdog checks (systemd timer syntax).";
+      };
+
+      failureThreshold = mkOption {
+        type = types.ints.positive;
+        default = 3;
+        description = "Consecutive WebUI probe failures before restarting qbittorrent.service.";
+      };
+    };
+
+    notifications = {
+      enable = mkOption {
+        type = types.bool;
+        default = config.server.notify.enable or false;
+        description = "Enable alerts when qBittorrent fails, freezes, recovers, or removes dead stalled torrents.";
+      };
+
+      handler = mkOption {
+        type = types.nullOr (types.either types.str types.package);
+        default = null;
+        example = lib.literalExpression ''
+          '''
+            # $1 contains the alert message string, $2 an optional tag
+            ntfy-send media "$1" "qBittorrent Alert" "$2"
+          '''
+        '';
+        description = ''
+          Custom notification handler invoked for qBittorrent watchdog and stalled-cleaner events.
+          Receives the formatted message string as $1 and an optional severity/ntfy tag as $2.
+          Accepts either a shell snippet string or an executable package/derivation.
+          When null and server.notify.enable is true, defaults to sending alerts via server.notify.
+        '';
+      };
     };
   };
 }

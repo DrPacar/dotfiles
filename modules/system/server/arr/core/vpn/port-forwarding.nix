@@ -53,10 +53,16 @@ in {
         REFRESH_INTERVAL = toString cfg.vpn.portForwarding.refreshInterval;
         MAX_CONNECTIONS = toString cfg.qbittorrent.maxConnections;
         MAX_CONNECTIONS_PER_TORRENT = toString cfg.qbittorrent.maxConnectionsPerTorrent;
+        MAX_UPLOADS = toString cfg.qbittorrent.maxUploads;
+        MAX_UPLOADS_PER_TORRENT = toString cfg.qbittorrent.maxUploadsPerTorrent;
         MAX_ACTIVE_DOWNLOADS = toString cfg.qbittorrent.maxActiveDownloads;
         MAX_ACTIVE_TORRENTS = toString cfg.qbittorrent.maxActiveTorrents;
         DL_LIMIT_KIB = toString cfg.qbittorrent.downloadRateLimitKiB;
         UP_LIMIT_KIB = toString cfg.qbittorrent.uploadRateLimitKiB;
+        CONNECTION_SPEED = toString cfg.qbittorrent.connectionSpeed;
+        SOCKET_BACKLOG_SIZE = toString cfg.qbittorrent.socketBacklogSize;
+        HASHING_THREADS = toString cfg.qbittorrent.hashingThreads;
+        SAVE_RESUME_DATA_INTERVAL = toString cfg.qbittorrent.saveResumeDataInterval;
         ANNOUNCE_TO_ALL_TRACKERS = lib.boolToString cfg.qbittorrent.announceToAllTrackers;
         PIECE_EXTENT_AFFINITY = lib.boolToString cfg.qbittorrent.pieceExtentAffinity;
         COALESCE_READ_WRITE = lib.boolToString cfg.qbittorrent.coalesceReadWrite;

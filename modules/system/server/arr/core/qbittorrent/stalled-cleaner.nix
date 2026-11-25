@@ -4,13 +4,34 @@
   lib,
   ...
 }: let
-  inherit (lib) mkIf mkEnableOption;
+  inherit (lib) mkIf mkEnableOption optionalString;
   cfg = config.server.arr;
+  qbit = import ./_lib.nix {inherit config lib pkgs;};
+
+  stalledCleanerScript = pkgs.writeShellApplication {
+    name = "arr-stalled-cleaner";
+    runtimeInputs = [pkgs.python3];
+    text = ''
+      args=(
+        --max-stalled-minutes "${toString cfg.qbittorrent.stalledCleaner.maxStalledMinutes}"
+      )
+      ${optionalString cfg.sonarr.enable ''
+        args+=(--sonarr-url "http://${cfg.network.localAddress}:${toString cfg.sonarr.port}" --sonarr-key-file "${config.sops.secrets.arr_sonarr_api_key.path}")
+      ''}
+      ${optionalString cfg.radarr.enable ''
+        args+=(--radarr-url "http://${cfg.network.localAddress}:${toString cfg.radarr.port}" --radarr-key-file "${config.sops.secrets.arr_radarr_api_key.path}")
+      ''}
+      ${optionalString (qbit.notifyBin != "") ''
+        args+=(--notify-bin "${qbit.notifyBin}")
+      ''}
+      exec python3 ${./scripts/clean-stalled-downloads.py} "''${args[@]}"
+    '';
+  };
 in {
   options.server.arr.qbittorrent.stalledCleaner = {
     enable = mkEnableOption "automated cleanup of dead or stalled torrents in Sonarr and Radarr" // {default = true;};
     maxStalledMinutes = lib.mkOption {
-      type = lib.types.int;
+      type = lib.types.ints.positive;
       default = 20;
       description = "Minutes a torrent can remain stalled with 0 connections before being removed and blocklisted.";
     };
@@ -30,16 +51,12 @@ in {
         ++ ["qbittorrent.service"];
       serviceConfig = {
         Type = "oneshot";
-        ExecStart = [
-          (
-            "${pkgs.python3}/bin/python3 ${./scripts/clean-stalled-downloads.py}"
-            + (lib.optionalString cfg.sonarr.enable " --sonarr-url http://${cfg.network.localAddress}:${toString cfg.sonarr.port} --sonarr-key-file ${config.sops.secrets.arr_sonarr_api_key.path}")
-            + (lib.optionalString cfg.radarr.enable " --radarr-url http://${cfg.network.localAddress}:${toString cfg.radarr.port} --radarr-key-file ${config.sops.secrets.arr_radarr_api_key.path}")
-            + " --max-stalled-minutes ${toString cfg.qbittorrent.stalledCleaner.maxStalledMinutes}"
-          )
-        ];
+        ExecStart = "${stalledCleanerScript}/bin/arr-stalled-cleaner";
         User = cfg.mediaUser;
         Group = cfg.mediaGroup;
+        PrivateTmp = true;
+        ProtectHome = true;
+        NoNewPrivileges = true;
       };
     };
 

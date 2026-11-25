@@ -30,10 +30,16 @@ LEASE_DURATION="${LEASE_DURATION:-60}"
 REFRESH_INTERVAL="${REFRESH_INTERVAL:-45}"
 MAX_CONNECTIONS="${MAX_CONNECTIONS:-100}"
 MAX_CONNECTIONS_PER_TORRENT="${MAX_CONNECTIONS_PER_TORRENT:-25}"
+MAX_UPLOADS="${MAX_UPLOADS:-8}"
+MAX_UPLOADS_PER_TORRENT="${MAX_UPLOADS_PER_TORRENT:-2}"
 MAX_ACTIVE_DOWNLOADS="${MAX_ACTIVE_DOWNLOADS:-2}"
 MAX_ACTIVE_TORRENTS="${MAX_ACTIVE_TORRENTS:-4}"
 DL_LIMIT_KIB="${DL_LIMIT_KIB:-25000}"
 UP_LIMIT_KIB="${UP_LIMIT_KIB:-3000}"
+CONNECTION_SPEED="${CONNECTION_SPEED:-50}"
+SOCKET_BACKLOG_SIZE="${SOCKET_BACKLOG_SIZE:-100}"
+HASHING_THREADS="${HASHING_THREADS:-2}"
+SAVE_RESUME_DATA_INTERVAL="${SAVE_RESUME_DATA_INTERVAL:-15}"
 ANNOUNCE_TO_ALL_TRACKERS="${ANNOUNCE_TO_ALL_TRACKERS:-true}"
 PIECE_EXTENT_AFFINITY="${PIECE_EXTENT_AFFINITY:-true}"
 COALESCE_READ_WRITE="${COALESCE_READ_WRITE:-true}"
@@ -150,7 +156,7 @@ sync_qbittorrent_prefs() {
 	fi
 
 	local payload status
-	payload="json={${port_json}\"upnp\": false, \"current_network_interface\": \"${WG_IFACE}\", \"max_connec\": ${MAX_CONNECTIONS}, \"max_connec_per_torrent\": ${MAX_CONNECTIONS_PER_TORRENT}, \"max_active_downloads\": ${MAX_ACTIVE_DOWNLOADS}, \"max_active_torrents\": ${MAX_ACTIVE_TORRENTS}, \"dl_limit\": $((DL_LIMIT_KIB * 1024)), \"up_limit\": $((UP_LIMIT_KIB * 1024)), \"announce_to_all_trackers\": ${ANNOUNCE_TO_ALL_TRACKERS}, \"announce_to_all_tiers\": ${ANNOUNCE_TO_ALL_TRACKERS}, \"enable_piece_extent_affinity\": ${PIECE_EXTENT_AFFINITY}, \"enable_coalesce_read_write\": ${COALESCE_READ_WRITE}, \"category_changed_tmm_enabled\": true}"
+	payload="json={${port_json}\"upnp\": false, \"lsd\": false, \"reannounce_when_address_changed\": true, \"resolve_peer_host_names\": false, \"limit_tcp_overhead\": false, \"utp_tcp_mixed_mode\": 0, \"current_network_interface\": \"${WG_IFACE}\", \"max_connec\": ${MAX_CONNECTIONS}, \"max_connec_per_torrent\": ${MAX_CONNECTIONS_PER_TORRENT}, \"max_uploads\": ${MAX_UPLOADS}, \"max_uploads_per_torrent\": ${MAX_UPLOADS_PER_TORRENT}, \"max_active_downloads\": ${MAX_ACTIVE_DOWNLOADS}, \"max_active_torrents\": ${MAX_ACTIVE_TORRENTS}, \"dl_limit\": $((DL_LIMIT_KIB * 1024)), \"up_limit\": $((UP_LIMIT_KIB * 1024)), \"connection_speed\": ${CONNECTION_SPEED}, \"socket_backlog_size\": ${SOCKET_BACKLOG_SIZE}, \"hashing_threads\": ${HASHING_THREADS}, \"save_resume_data_interval\": ${SAVE_RESUME_DATA_INTERVAL}, \"announce_to_all_trackers\": ${ANNOUNCE_TO_ALL_TRACKERS}, \"announce_to_all_tiers\": ${ANNOUNCE_TO_ALL_TRACKERS}, \"enable_piece_extent_affinity\": ${PIECE_EXTENT_AFFINITY}, \"enable_coalesce_read_write\": ${COALESCE_READ_WRITE}, \"category_changed_tmm_enabled\": true}"
 
 	status=$(curl --connect-timeout 5 -m 10 -s -o /dev/null -w "%{http_code}" -b "$COOKIE_FILE" -X POST "$WEBUI_URL/api/v2/app/setPreferences" --data-urlencode "$payload" || true)
 	if [[ $status != "200" ]]; then

@@ -7,6 +7,7 @@
   inherit (lib) any filter mkIf optional;
   cfg = config.server.arr;
   vpn = import ./_lib.nix {inherit config lib;};
+  inherit (import ../../_lib.nix) mkNotifyBin;
 
   # ---------------------------------------------------------------------------
   # Lifecycle & Watchdog Scripts
@@ -34,41 +35,12 @@
     text = builtins.readFile ./scripts/post-up.sh;
   };
 
-  notifyCfg = config.server.notify or {};
-
-  notifyBin =
-    if !cfg.vpn.notifications.enable
-    then ""
-    else if cfg.vpn.notifications.handler != null
-    then
-      if builtins.isString cfg.vpn.notifications.handler
-      then let
-        customHandler = pkgs.writeShellApplication {
-          name = "arr-vpn-notify";
-          text = ''
-            export PATH="''${PATH:+$PATH:}/run/current-system/sw/bin"
-            ${cfg.vpn.notifications.handler}
-          '';
-        };
-      in "${customHandler}/bin/arr-vpn-notify"
-      else lib.getExe cfg.vpn.notifications.handler
-    else if (notifyCfg.enable or false)
-    then let
-      defaultHandler = pkgs.writeShellApplication {
-        name = "arr-vpn-notify";
-        runtimeInputs = [pkgs.curl];
-        text = ''
-          MSG="''${1:-Arr VPN notification}"
-          TAG="''${2:-warning}"
-          curl -fsS -m 5 \
-            -H "Title: Arr VPN (${vpn.ns})" \
-            -H "Tags: $TAG" \
-            -d "$MSG" \
-            "http://127.0.0.1:${toString (notifyCfg.port or 2586)}/${notifyCfg.topic or "media"}" >/dev/null
-        '';
-      };
-    in "${defaultHandler}/bin/arr-vpn-notify"
-    else "";
+  notifyBin = mkNotifyBin {
+    inherit pkgs lib config;
+    inherit (cfg.vpn.notifications) enable handler;
+    name = "arr-vpn-notify";
+    title = "Arr VPN (${vpn.ns})";
+  };
 
   watchdogScript = pkgs.writeShellApplication {
     name = "arr-vpn-watchdog";
