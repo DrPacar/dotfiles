@@ -4,10 +4,14 @@
   lib,
   ...
 }: let
-  inherit (lib) mkIf;
+  inherit (lib) mkIf optionalAttrs;
   cfg = config.server.arr;
   inherit (import ../../_lib.nix) secretRef;
   jellyfinUser = "jellyfin";
+  publishedDomain =
+    if cfg.domain != null
+    then cfg.domain
+    else config.server.domain or null;
 in {
   config = mkIf (cfg.enable && cfg.jellyfin.enable) {
     assertions = [
@@ -64,7 +68,26 @@ in {
       enable = true;
       user = jellyfinUser;
       group = cfg.mediaGroup;
-      network.internalHttpPort = cfg.jellyfin.port;
+      network =
+        {
+          internalHttpPort = cfg.jellyfin.port;
+          knownProxies = [
+            cfg.network.localAddress
+            "::1"
+          ];
+          localNetworkSubnets = [
+            "192.168.0.0/16"
+            "10.0.0.0/8"
+            "172.16.0.0/12"
+            "100.64.0.0/10"
+          ];
+          enablePublishedServerUriByRequest = publishedDomain != null;
+        }
+        // optionalAttrs (publishedDomain != null) {
+          publishedServerUriBySubnet = [
+            "all=https://${cfg.jellyfin.subdomain}.${publishedDomain}"
+          ];
+        };
       openFirewall = cfg.jellyfin.openFirewall;
       apiKey = secretRef config.sops.secrets.arr_jellyfin_api_key.path;
     };

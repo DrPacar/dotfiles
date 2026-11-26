@@ -410,7 +410,7 @@ def render_rich_ui(console, data):
             if svc["port"]:
                 domain = data["config"].get("domain")
                 if domain and svc.get("subdomain"):
-                    url = f"http://{svc['subdomain']}.{domain}"
+                    url = f"https://{svc['subdomain']}.{domain}"
                 else:
                     url = f"http://localhost:{svc['port']}"
             else:
