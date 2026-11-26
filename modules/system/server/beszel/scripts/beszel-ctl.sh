@@ -38,7 +38,7 @@ check_health() {
 
 	if [ "$(id -u)" -eq 0 ] && [ -f "$BESZEL_DB_PATH" ]; then
 		local bad_smart
-		bad_smart=$(sqlite3 "$BESZEL_DB_PATH" "SELECT count(*) FROM smart_devices WHERE lower(status) != 'passed';" 2>/dev/null || echo 0)
+		bad_smart=$(sqlite3 "$BESZEL_DB_PATH" "SELECT count(*) FROM smart_devices WHERE lower(state) != 'passed';" 2>/dev/null)
 		if [ "$bad_smart" != "0" ]; then
 			echo "[FAIL] ${bad_smart} SMART device(s) not reporting PASSED" >&2
 			return 1
@@ -70,10 +70,10 @@ status)
 	if [ "$(id -u)" -eq 0 ] && [ -f "$BESZEL_DB_PATH" ]; then
 		echo ""
 		echo "=== Systems ==="
-		sqlite3 -header -column "$BESZEL_DB_PATH" "SELECT name, status, host || ':' || port AS endpoint, json_extract(info, '$.cpu') AS cpu_pct, json_extract(info, '$.mp') AS mem_pct, json_extract(info, '$.dp') AS disk_pct, json_extract(info, '$.dt') AS temp_c, json_extract(info, '$.sv[1]') AS failed_units, json_extract(info, '$.g') AS gpu_pct FROM systems;"
+		sqlite3 -header -column "$BESZEL_DB_PATH" "SELECT s.name, s.status, s.host || ':' || s.port AS endpoint, json_extract(s.info, '$.cpu') AS cpu_pct, json_extract(s.info, '$.mp') AS mem_pct, json_extract(s.info, '$.dp') AS disk_pct, json_extract(s.info, '$.dt') AS temp_c, json_extract(s.info, '$.sv[1]') AS failed_units, (SELECT json_extract(ss.stats, '$.g.i0.u') FROM system_stats ss WHERE ss.system = s.id ORDER BY ss.created DESC LIMIT 1) AS gpu_pct FROM systems s;"
 		echo ""
 		echo "=== SMART Health ==="
-		sqlite3 -header -column "$BESZEL_DB_PATH" "SELECT model, name, status, temp AS temp_c, hours, cycles, capacity FROM smart_devices;"
+		sqlite3 -header -column "$BESZEL_DB_PATH" "SELECT model, name, state, temp AS temp_c, hours, cycles, ROUND(capacity / 1000000000.0, 0) || ' GB' AS size FROM smart_devices;"
 	fi
 	;;
 alerts)
@@ -86,7 +86,7 @@ alerts)
 	;;
 smart)
 	require_root_db "$@"
-	sqlite3 -header -column "$BESZEL_DB_PATH" "SELECT model, name, serial, firmware, status, temp AS temp_c, hours, cycles FROM smart_devices;"
+	sqlite3 -header -column "$BESZEL_DB_PATH" "SELECT model, name, serial, firmware, state, temp AS temp_c, hours, cycles, ROUND(capacity / 1000000000.0, 0) || ' GB' AS size FROM smart_devices;"
 	;;
 logs)
 	exec journalctl -u beszel-hub.service -u beszel-agent.service -n "${1:-50}" --no-pager
