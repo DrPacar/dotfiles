@@ -12,6 +12,7 @@
 
   arrNotifyPkg = pkgs.writeShellScriptBin "arr-notify" ''
     export NTFY_URL="''${NTFY_URL:-${cfg.notifications.ntfyUrl}}"
+    export NTFY_ALERTS_URL="''${NTFY_ALERTS_URL:-${cfg.notifications.alertsUrl}}"
     export JELLYFIN_URL="''${JELLYFIN_URL:-${cfg.notifications.jellyfinUrl}}"
     exec ${pkgs.python3}/bin/python3 ${./scripts/arr-notify.py} "$@"
   '';

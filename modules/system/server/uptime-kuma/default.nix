@@ -267,7 +267,7 @@ in {
 
         topic = mkOption {
           type = types.str;
-          default = "alerts";
+          default = cfg.notify.alertTopic or "alerts";
           description = "Ntfy topic to send notifications to.";
         };
 

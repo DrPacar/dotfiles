@@ -17,7 +17,13 @@ in {
     ntfyUrl = mkOption {
       type = types.str;
       default = "http://127.0.0.1:${toString (notifyCfg.port or 2586)}/${notifyCfg.topic or "media"}";
-      description = "Internal ntfy endpoint URL for Arr stack events.";
+      description = "Internal ntfy endpoint URL for Arr stack media events.";
+    };
+
+    alertsUrl = mkOption {
+      type = types.str;
+      default = "http://127.0.0.1:${toString (notifyCfg.port or 2586)}/${notifyCfg.alertTopic or "alerts"}";
+      description = "Internal ntfy endpoint URL for critical Arr HealthIssue alerts.";
     };
 
     jellyfinUrl = mkOption {

@@ -12,6 +12,7 @@ import json
 import logging
 import os
 import re
+import socket
 import sys
 import urllib.error
 import urllib.parse
@@ -135,7 +136,7 @@ def send_ntfy(
         return False
 
 
-def handle_radarr(ntfy_url: str, jellyfin_url: str):
+def handle_radarr(ntfy_url: str, alerts_url: str, jellyfin_url: str):
     """Processes Radarr Custom Script events."""
     event = os.environ.get("radarr_eventtype", "")
     movie_title = os.environ.get("radarr_movie_title", "Unbekannter Film")
@@ -193,7 +194,7 @@ def handle_radarr(ntfy_url: str, jellyfin_url: str):
         msg = os.environ.get("radarr_health_issue_message", "Health-Problem gemeldet")
         title = "⚠️ Radarr Warnung"
         send_ntfy(
-            url=ntfy_url,
+            url=alerts_url,
             title=title,
             body=f"Meldung: {msg}",
             tags="warning",
@@ -209,7 +210,7 @@ def handle_radarr(ntfy_url: str, jellyfin_url: str):
         )
 
 
-def handle_sonarr(ntfy_url: str, jellyfin_url: str):
+def handle_sonarr(ntfy_url: str, alerts_url: str, jellyfin_url: str):
     """Processes Sonarr Custom Script events."""
     event = os.environ.get("sonarr_eventtype", "")
     series_title = os.environ.get("sonarr_series_title", "Unbekannte Serie")
@@ -272,7 +273,7 @@ def handle_sonarr(ntfy_url: str, jellyfin_url: str):
         msg = os.environ.get("sonarr_health_issue_message", "Health-Problem gemeldet")
         title = "⚠️ Sonarr Warnung"
         send_ntfy(
-            url=ntfy_url,
+            url=alerts_url,
             title=title,
             body=f"Meldung: {msg}",
             tags="warning",
@@ -325,7 +326,8 @@ def handle_qbit(ntfy_url: str, event: str, name: str, size: str, category: str):
 
 def main():
     parser = argparse.ArgumentParser(description="Unified Arr / qBittorrent notification dispatcher")
-    parser.add_argument("--url", default=os.environ.get("NTFY_URL", "http://127.0.0.1:2586/media"), help="ntfy target URL")
+    parser.add_argument("--url", default=os.environ.get("NTFY_URL", "http://127.0.0.1:2586/media"), help="ntfy media target URL")
+    parser.add_argument("--alerts-url", default=os.environ.get("NTFY_ALERTS_URL", "http://127.0.0.1:2586/alerts"), help="ntfy alerts target URL")
     parser.add_argument("--jellyfin-url", default=os.environ.get("JELLYFIN_URL", "https://jellyfin.lukpac.dev"), help="Jellyfin target URL")
     parser.add_argument("--test", action="store_true", help="Send test notification")
     # qBittorrent CLI flags
@@ -341,7 +343,7 @@ def main():
         send_ntfy(
             url=args.url,
             title="🔔 Notification Test",
-            body="ntfy Benachrichtigungssystem auf lighthouse erfolgreich eingerichtet!",
+            body=f"ntfy Benachrichtigungssystem auf {socket.gethostname()} erfolgreich eingerichtet!",
             tags="tada,bell",
         )
         return
@@ -352,9 +354,9 @@ def main():
 
     # Auto-detect from Arr environment variables
     if os.environ.get("radarr_eventtype"):
-        handle_radarr(args.url, args.jellyfin_url)
+        handle_radarr(args.url, args.alerts_url, args.jellyfin_url)
     elif os.environ.get("sonarr_eventtype"):
-        handle_sonarr(args.url, args.jellyfin_url)
+        handle_sonarr(args.url, args.alerts_url, args.jellyfin_url)
     else:
         logger.info("No known event detected (not invoked by Sonarr/Radarr/qBit). Nothing to do.")
 

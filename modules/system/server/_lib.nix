@@ -9,8 +9,13 @@
     handler,
     name,
     title,
+    topic ? null,
   }: let
     notifyCfg = config.server.notify or {};
+    targetTopic =
+      if topic != null
+      then topic
+      else (notifyCfg.alertTopic or "alerts");
   in
     if !enable
     then ""
@@ -35,11 +40,18 @@
         text = ''
           MSG="''${1:-${title} notification}"
           TAG="''${2:-warning}"
+          PRIORITY="default"
+          case "$TAG" in
+            *rotating_light* | *warning* | *fire* | *skull* | *sos* | x)
+              PRIORITY="high"
+              ;;
+          esac
           curl -fsS -m 5 \
             -H "Title: ${title}" \
             -H "Tags: $TAG" \
+            -H "Priority: $PRIORITY" \
             -d "$MSG" \
-            "http://127.0.0.1:${toString (notifyCfg.port or 2586)}/${notifyCfg.topic or "media"}" >/dev/null
+            "http://127.0.0.1:${toString (notifyCfg.port or 2586)}/${targetTopic}" >/dev/null
         '';
       };
     in "${defaultHandler}/bin/${name}"
