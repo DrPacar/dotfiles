@@ -100,9 +100,13 @@ for svc in $SERVICES; do
 	jellyfin)
 		if [[ -d /var/lib/jellyfin ]]; then
 			[[ -d /var/lib/jellyfin/config ]] && cp -a /var/lib/jellyfin/config "$SVC_OUT/"
-			backup_sqlite /var/lib/jellyfin/data/jellyfin.db "$SVC_OUT/data/jellyfin.db"
-			backup_sqlite /var/lib/jellyfin/data/users.db "$SVC_OUT/data/users.db"
-			backup_sqlite /var/lib/jellyfin/data/displaypreferences.db "$SVC_OUT/data/displaypreferences.db"
+			if [[ -d /var/lib/jellyfin/data ]]; then
+				shopt -s nullglob
+				for db_file in /var/lib/jellyfin/data/*.db; do
+					backup_sqlite "$db_file" "$SVC_OUT/data/$(basename "$db_file")"
+				done
+				shopt -u nullglob
+			fi
 		fi
 		;;
 	qbittorrent)

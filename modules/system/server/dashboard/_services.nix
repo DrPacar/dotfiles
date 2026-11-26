@@ -116,7 +116,7 @@ in
     domain = arrCfg.domain;
     port = arrCfg.jellyfin.port;
     category = "Streaming & Mediathek";
-    desc = "Medienplayer mit Intel QuickSync Hardware-Transcoding.";
+    desc = "Medienplayer mit Hardware-Transcoding.";
     color = "#89b4fa";
     icon = ''<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.25a.75.75 0 0 1 .65.375l8.25 14.25a.75.75 0 0 1-.65 1.125h-4.5a.75.75 0 0 1-.65-.375L12 12.375l-3.1 5.25a.75.75 0 0 1-.65.375h-4.5a.75.75 0 0 1-.65-1.125l8.25-14.25A.75.75 0 0 1 12 2.25z"/></svg>'';
   })

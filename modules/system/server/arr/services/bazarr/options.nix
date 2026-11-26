@@ -36,6 +36,21 @@ in {
       description = "Enabled subtitle providers for Bazarr searches.";
     };
 
+    jellyfinMovieLibraries = mkOption {
+      type = types.listOf types.str;
+      default = ["Movies"];
+      description = "Jellyfin movie library names whose IDs should be resolved dynamically for Bazarr refresh notifications.";
+    };
+
+    jellyfinSeriesLibraries = mkOption {
+      type = types.listOf types.str;
+      default = [
+        "Anime"
+        "Shows"
+      ];
+      description = "Jellyfin TV/anime library names whose IDs should be resolved dynamically for Bazarr refresh notifications.";
+    };
+
     subsync = {
       enable = mkOption {
         type = types.bool;
