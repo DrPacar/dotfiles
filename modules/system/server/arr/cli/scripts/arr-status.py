@@ -550,7 +550,7 @@ def run_checks(config: dict) -> int:
 
     probes = {
         "jellyfin": "/health",
-        "qbittorrent": "/api/v2/app/version",
+        "qbittorrent": "/",
         "radarr": "/ping",
         "sonarr": "/ping",
         "prowlarr": "/ping",
