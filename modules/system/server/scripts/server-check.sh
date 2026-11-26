@@ -20,6 +20,7 @@ set -euo pipefail
 : "${HAS_ADGUARD:?HAS_ADGUARD is required}"
 HAS_VAULTWARDEN="${HAS_VAULTWARDEN:-0}"
 HAS_NOTIFY="${HAS_NOTIFY:-0}"
+HAS_BESZEL="${HAS_BESZEL:-0}"
 HAS_SHARES="${HAS_SHARES:-0}"
 CHECK_STORAGE_PATHS="${CHECK_STORAGE_PATHS:-/}"
 
@@ -44,6 +45,7 @@ Runs all enabled server health checks in sequence:
   - adguard check      (if enabled)
   - vaultwarden check  (if enabled)
   - notify check       (if enabled)
+  - beszel check       (if enabled)
   - shares check       (if enabled)
 
 Options:
@@ -192,6 +194,14 @@ fi
 
 if [ "$HAS_NOTIFY" = "1" ]; then
 	run_suite "notify check" ntfy-ctl check
+fi
+
+if [ "$HAS_BESZEL" = "1" ]; then
+	if [ "$EUID" -eq 0 ] || [ -n "$SUDO" ]; then
+		run_suite "beszel check" $SUDO beszel-ctl check
+	else
+		run_suite "beszel check" beszel-ctl check
+	fi
 fi
 
 if [ "$HAS_SHARES" = "1" ]; then
