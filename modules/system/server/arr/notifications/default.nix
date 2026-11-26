@@ -28,14 +28,19 @@ in {
     # -------------------------------------------------------------------------
     systemd.services.sonarr-notify-sync = mkIf cfg.sonarr.enable {
       description = "Synchronize ntfy notification into Sonarr";
-      after = ["sonarr.service" "ntfy-sh.service"];
-      wants = ["sonarr.service" "ntfy-sh.service"];
-      wantedBy = ["multi-user.target"];
+      # Must run strictly AFTER nixflix's sonarr-notifications.service, which
+      # reconciles /api/v3/notification and would otherwise delete ntfy-arr.
+      after = ["sonarr.service" "sonarr-config.service" "sonarr-notifications.service" "ntfy-sh.service"];
+      requires = ["sonarr.service"];
+      wants = ["sonarr-config.service" "sonarr-notifications.service" "ntfy-sh.service"];
+      partOf = ["sonarr.service" "sonarr-notifications.service"];
+      wantedBy = ["multi-user.target" "sonarr-notifications.service"];
       restartTriggers = [arrNotifyPkg ./scripts/arr-notify-sync.py];
 
       serviceConfig = {
         Type = "oneshot";
         RemainAfterExit = true;
+        Slice = "arr.slice";
         ExecStart = "${pkgs.writeShellScript "sonarr-notify-sync" ''
           exec ${pkgs.python3}/bin/python3 ${./scripts/arr-notify-sync.py} \
             --app sonarr \
@@ -51,14 +56,19 @@ in {
     # -------------------------------------------------------------------------
     systemd.services.radarr-notify-sync = mkIf cfg.radarr.enable {
       description = "Synchronize ntfy notification into Radarr";
-      after = ["radarr.service" "ntfy-sh.service"];
-      wants = ["radarr.service" "ntfy-sh.service"];
-      wantedBy = ["multi-user.target"];
+      # Must run strictly AFTER nixflix's radarr-notifications.service, which
+      # reconciles /api/v3/notification and would otherwise delete ntfy-arr.
+      after = ["radarr.service" "radarr-config.service" "radarr-notifications.service" "ntfy-sh.service"];
+      requires = ["radarr.service"];
+      wants = ["radarr-config.service" "radarr-notifications.service" "ntfy-sh.service"];
+      partOf = ["radarr.service" "radarr-notifications.service"];
+      wantedBy = ["multi-user.target" "radarr-notifications.service"];
       restartTriggers = [arrNotifyPkg ./scripts/arr-notify-sync.py];
 
       serviceConfig = {
         Type = "oneshot";
         RemainAfterExit = true;
+        Slice = "arr.slice";
         ExecStart = "${pkgs.writeShellScript "radarr-notify-sync" ''
           exec ${pkgs.python3}/bin/python3 ${./scripts/arr-notify-sync.py} \
             --app radarr \

@@ -145,11 +145,16 @@ def sync_notification(app: str, base_url: str, api_key: str, script_path: str, r
     if existing and "id" in existing:
         payload["id"] = existing["id"]
         update_url = f"{notifications_url}/{existing['id']}"
-        api_request(update_url, api_key, method="PUT", data=payload)
-        logger.info("Updated '%s' notification in %s with script path '%s'", target_name, app, script_path)
-    else:
-        api_request(notifications_url, api_key, method="POST", data=payload)
-        logger.info("Created '%s' notification in %s with script path '%s'", target_name, app, script_path)
+        try:
+            api_request(update_url, api_key, method="PUT", data=payload)
+            logger.info("Updated '%s' notification in %s with script path '%s'", target_name, app, script_path)
+            return
+        except urllib.error.HTTPError as exc:
+            if exc.code != 404:
+                raise
+            payload.pop("id", None)
+    api_request(notifications_url, api_key, method="POST", data=payload)
+    logger.info("Created '%s' notification in %s with script path '%s'", target_name, app, script_path)
 
 
 def main():

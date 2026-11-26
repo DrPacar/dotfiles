@@ -10,10 +10,13 @@ in {
   config = mkIf (cfg.enable && cfg.seerr.enable && (config.server.notify.enable or false)) {
     systemd.services.seerr-ntfy-webhook = {
       description = "Configure Seerr ntfy webhook notifications";
-      after = ["seerr-setup.service" "seerr.service" "ntfy-sh.service"];
+      # Must run strictly AFTER nixflix's seerr-notifications.service, which
+      # disables unmanaged Seerr webhooks on activation/restart.
+      after = ["seerr-setup.service" "seerr-notifications.service" "seerr.service" "ntfy-sh.service"];
       requires = ["seerr-setup.service" "seerr.service"];
-      wants = ["ntfy-sh.service"];
-      wantedBy = ["multi-user.target"];
+      wants = ["seerr-notifications.service" "ntfy-sh.service"];
+      partOf = ["seerr.service" "seerr-notifications.service"];
+      wantedBy = ["multi-user.target" "seerr-notifications.service"];
 
       serviceConfig = {
         Type = "oneshot";
