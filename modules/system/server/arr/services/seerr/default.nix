@@ -7,6 +7,13 @@
   inherit (lib) mkIf mkDefault;
   cfg = config.server.arr;
   inherit (import ../../_lib.nix) secretRef;
+
+  mkExternalUrl = subdomain: port:
+    if cfg.domain != null
+    then "https://${subdomain}.${cfg.domain}"
+    else if (config.server.domain or null) != null
+    then "https://${subdomain}.${config.server.domain}"
+    else "http://${config.networking.hostName}:${toString port}";
 in {
   config = mkIf (cfg.enable && cfg.seerr.enable) {
     warnings = lib.optional (!cfg.jellyfin.enable) "arr.seerr: Jellyseerr uses Jellyfin as its authentication backend. If local Jellyfin is disabled, ensure you connect an external Jellyfin server in the Seerr setup wizard.";
@@ -39,6 +46,7 @@ in {
       jellyfin = mkIf cfg.jellyfin.enable {
         adminUsername = cfg.adminUser;
         adminPassword = secretRef cfg.adminPasswordFile;
+        externalHostname = mkDefault (mkExternalUrl cfg.jellyfin.subdomain cfg.jellyfin.port);
       };
 
       settings.users = {
@@ -61,6 +69,7 @@ in {
         apiKey = secretRef config.sops.secrets.arr_radarr_api_key.path;
         activeProfileName = mkDefault cfg.seerr.defaultMovieProfile;
         activeDirectory = mkDefault cfg.paths.movies;
+        externalUrl = mkDefault (mkExternalUrl cfg.radarr.subdomain cfg.radarr.port);
       };
 
       # Unified TV & Anime Series instance - only configure if Sonarr is enabled
@@ -72,6 +81,7 @@ in {
         activeAnimeProfileName = mkDefault cfg.seerr.defaultAnimeProfile;
         activeAnimeDirectory = mkDefault cfg.paths.anime;
         animeSeriesType = mkDefault "anime";
+        externalUrl = mkDefault (mkExternalUrl cfg.sonarr.subdomain cfg.sonarr.port);
       };
     };
 
@@ -94,6 +104,21 @@ in {
         fi
       '';
     };
+
+    systemd.services.seerr-setup.postStart = ''
+      BASE_URL="http://127.0.0.1:${toString cfg.seerr.port}"
+      API_KEY_FILE="${config.sops.secrets.arr_seerr_api_key.path}"
+      APP_URL="${mkExternalUrl cfg.seerr.subdomain cfg.seerr.port}"
+      if [ -f "$API_KEY_FILE" ]; then
+        API_KEY=$(cat "$API_KEY_FILE")
+        PAYLOAD=$(${pkgs.jq}/bin/jq -n --arg url "$APP_URL" '{applicationUrl: $url}')
+        ${pkgs.curl}/bin/curl -sf -X POST \
+          -H "X-Api-Key: $API_KEY" \
+          -H "Content-Type: application/json" \
+          -d "$PAYLOAD" \
+          "$BASE_URL/api/v1/settings/main" >/dev/null || true
+      fi
+    '';
 
     systemd.services.seerr-sonarr = mkIf cfg.sonarr.enable {
       postStart = ''
