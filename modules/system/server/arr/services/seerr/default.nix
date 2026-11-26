@@ -86,6 +86,8 @@ in {
     };
 
     systemd.services.seerr = {
+      after = lib.optional cfg.jellyfin.enable "jellyfin.service";
+      wants = lib.optional cfg.jellyfin.enable "jellyfin.service";
       serviceConfig = {
         Slice = "arr.slice";
         MemoryHigh = "768M";

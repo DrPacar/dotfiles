@@ -32,6 +32,24 @@ in {
           type = "anime";
           qualities = [
             {
+              name = "Bluray-2160p";
+              min = 25;
+              preferred = 120;
+              max = 250;
+            }
+            {
+              name = "WEBDL-2160p";
+              min = 20;
+              preferred = 90;
+              max = 180;
+            }
+            {
+              name = "WEBRip-2160p";
+              min = 20;
+              preferred = 90;
+              max = 180;
+            }
+            {
               name = "Bluray-1080p";
               min = 5;
               preferred = 45;

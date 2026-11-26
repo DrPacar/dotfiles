@@ -19,8 +19,22 @@ import urllib.parse
 import urllib.request
 from typing import Optional, Tuple
 
-logging.basicConfig(level=logging.INFO, format="[arr-notify] %(levelname)s: %(message)s")
 logger = logging.getLogger("arr-notify")
+logger.setLevel(logging.INFO)
+logger.propagate = False
+_log_fmt = logging.Formatter("[arr-notify] %(levelname)s: %(message)s")
+
+_stdout_handler = logging.StreamHandler(sys.stdout)
+_stdout_handler.setLevel(logging.DEBUG)
+_stdout_handler.addFilter(lambda record: record.levelno < logging.WARNING)
+_stdout_handler.setFormatter(_log_fmt)
+
+_stderr_handler = logging.StreamHandler(sys.stderr)
+_stderr_handler.setLevel(logging.WARNING)
+_stderr_handler.setFormatter(_log_fmt)
+
+logger.addHandler(_stdout_handler)
+logger.addHandler(_stderr_handler)
 
 
 def parse_release_meta(release_title: str, quality_str: str = "") -> Tuple[str, str, str, str]:
