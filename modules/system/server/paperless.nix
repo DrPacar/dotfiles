@@ -95,6 +95,14 @@ in {
       settings =
         {
           PAPERLESS_URL = externalUrl;
+          PAPERLESS_ALLOWED_HOSTS = lib.concatStringsSep "," (
+            lib.optional (cfg.domain != null) "${cfg.paperless.subdomain}.${cfg.domain}"
+            ++ [
+              "127.0.0.1"
+              "localhost"
+              config.networking.hostName
+            ]
+          );
           PAPERLESS_OCR_LANGUAGE = cfg.paperless.ocrLanguage;
           PAPERLESS_OCR_USER_ARGS = {
             optimize = 1;

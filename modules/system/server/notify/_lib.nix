@@ -24,6 +24,7 @@
     NTFY_BASE_URL = baseUrl;
     NTFY_MEDIA_TOPIC = notifyCfg.topic;
     NTFY_ALERT_TOPIC = notifyCfg.alertTopic;
+    NTFY_CACHE_DURATION = notifyCfg.cacheDuration;
   };
 in {
   inherit

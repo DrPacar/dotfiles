@@ -6,6 +6,7 @@ set -euo pipefail
 : "${NTFY_BASE_URL:=${NTFY_LOCAL_URL}}"
 : "${NTFY_MEDIA_TOPIC:=media}"
 : "${NTFY_ALERT_TOPIC:=alerts}"
+: "${NTFY_CACHE_DURATION:=72h}"
 
 cmd="${1:-help}"
 if [ "$#" -gt 0 ]; then
@@ -36,12 +37,12 @@ show_recent() {
 	local topic="${1:-$NTFY_ALERT_TOPIC}"
 	local limit="${2:-10}"
 	local raw
-	raw=$(curl -fsS -m 5 "${NTFY_LOCAL_URL}/${topic}/json?poll=1&since=72h" || true)
+	raw=$(curl -fsS -m 5 "${NTFY_LOCAL_URL}/${topic}/json?poll=1&since=${NTFY_CACHE_DURATION}" || true)
 	if [ -z "$raw" ]; then
-		echo "(no cached messages in topic '${topic}' over the last 72h)"
+		echo "(no cached messages in topic '${topic}' over the last ${NTFY_CACHE_DURATION})"
 		return 0
 	fi
-	printf '%s\n' "$raw" | jq -r 'select(.event == "message") | [(.time | strftime("%Y-%m-%d %H:%M:%S")), (.priority // 3 | tostring), (.title // "-"), (.message // "")] | @tsv' | tail -n "$limit"
+	printf '%s\n' "$raw" | jq -r 'select(.event == "message") | [(.time | strflocaltime("%Y-%m-%d %H:%M:%S")), (.priority // 3 | tostring), (.title // "-"), (.message // "")] | @tsv' | tail -n "$limit"
 }
 
 send_msg() {

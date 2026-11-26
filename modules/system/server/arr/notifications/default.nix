@@ -28,8 +28,8 @@ in {
     # -------------------------------------------------------------------------
     systemd.services.sonarr-notify-sync = mkIf cfg.sonarr.enable {
       description = "Synchronize ntfy notification into Sonarr";
-      after = ["sonarr.service"];
-      wants = ["sonarr.service"];
+      after = ["sonarr.service" "ntfy-sh.service"];
+      wants = ["sonarr.service" "ntfy-sh.service"];
       wantedBy = ["multi-user.target"];
       restartTriggers = [arrNotifyPkg ./scripts/arr-notify-sync.py];
 
@@ -51,8 +51,8 @@ in {
     # -------------------------------------------------------------------------
     systemd.services.radarr-notify-sync = mkIf cfg.radarr.enable {
       description = "Synchronize ntfy notification into Radarr";
-      after = ["radarr.service"];
-      wants = ["radarr.service"];
+      after = ["radarr.service" "ntfy-sh.service"];
+      wants = ["radarr.service" "ntfy-sh.service"];
       wantedBy = ["multi-user.target"];
       restartTriggers = [arrNotifyPkg ./scripts/arr-notify-sync.py];
 

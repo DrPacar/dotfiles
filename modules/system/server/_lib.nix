@@ -42,7 +42,7 @@
           TAG="''${2:-warning}"
           PRIORITY="default"
           case "$TAG" in
-            *rotating_light* | *warning* | *fire* | *skull* | *sos* | x)
+            *rotating_light* | *warning* | *fire* | *skull* | *sos* | *exclamation* | *red_circle* | *no_entry* | *alert* | *bangbang* | *boom* | x)
               PRIORITY="high"
               ;;
           esac
