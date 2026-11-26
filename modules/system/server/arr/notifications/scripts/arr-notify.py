@@ -328,7 +328,7 @@ def main():
     parser = argparse.ArgumentParser(description="Unified Arr / qBittorrent notification dispatcher")
     parser.add_argument("--url", default=os.environ.get("NTFY_URL", "http://127.0.0.1:2586/media"), help="ntfy media target URL")
     parser.add_argument("--alerts-url", default=os.environ.get("NTFY_ALERTS_URL", "http://127.0.0.1:2586/alerts"), help="ntfy alerts target URL")
-    parser.add_argument("--jellyfin-url", default=os.environ.get("JELLYFIN_URL", "https://jellyfin.lukpac.dev"), help="Jellyfin target URL")
+    parser.add_argument("--jellyfin-url", default=os.environ.get("JELLYFIN_URL", "http://127.0.0.1:8096"), help="Jellyfin target URL")
     parser.add_argument("--test", action="store_true", help="Send test notification")
     # qBittorrent CLI flags
     parser.add_argument("--qbit", action="store_true", help="Trigger from qBittorrent")

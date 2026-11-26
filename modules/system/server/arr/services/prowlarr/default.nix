@@ -46,5 +46,12 @@ in {
         indexers = cfg.prowlarr.indexers;
       };
     };
+
+    systemd.services.prowlarr.serviceConfig = {
+      MemoryHigh = "512M";
+      MemoryMax = "1G";
+      Restart = "on-failure";
+      RestartSec = "15s";
+    };
   };
 }

@@ -180,6 +180,10 @@ if [ "$HAS_ARR_QBIT" = "1" ]; then
 	run_suite "arr qbit check" arr qbit check
 fi
 
+if [ "$HAS_ARR_SERVICES" = "1" ]; then
+	run_suite "arr services" arr check --services
+fi
+
 if [ "$HAS_ADGUARD" = "1" ]; then
 	run_suite "adguard check" adguard check
 fi

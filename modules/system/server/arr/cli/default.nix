@@ -24,6 +24,11 @@
       calendar = cfg.backup.calendar;
       retentionDays = cfg.backup.retentionDays;
     };
+    transcodingTempPath =
+      if cfg.jellyfin.enable
+      then cfg.jellyfin.transcodingTempPath
+      else null;
+    localAddress = cfg.network.localAddress;
     services = {
       jellyfin = {
         enable = cfg.jellyfin.enable;
@@ -123,6 +128,31 @@
           shift || true
           exec arr-status "$@"
           ;;
+        check)
+          shift || true
+          if [[ "''${1:-}" == "--services" ]]; then
+            exec arr-status --check
+          fi
+          rc=0
+          arr-status --check || rc=1
+          ${
+        if cfg.vpn.enable
+        then ''
+          echo ""
+          arr-vpn check || rc=1
+        ''
+        else ""
+      }
+          ${
+        if cfg.qbittorrent.enable
+        then ''
+          echo ""
+          arr-qbit check || rc=1
+        ''
+        else ""
+      }
+          exit "$rc"
+          ;;
         backup)
           ${
         if cfg.backup.enable
@@ -206,6 +236,7 @@
           echo "  status         Display comprehensive stack status (default, aliases: arr-status)"
           echo "  status -w      Continuously watch stack status"
           echo "  status --json  Output raw JSON for scripts/monitoring"
+          echo "  check          Run full diagnostics (services, HTTP endpoints, VPN & qBittorrent)"
           echo "  vpn [status|check]"
           echo "                 Inspect BitTorrent VPN namespace, fwmark routing, DNS, and NAT-PMP"
           echo "  qbit [status|check]"

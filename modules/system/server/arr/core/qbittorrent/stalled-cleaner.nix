@@ -14,6 +14,8 @@
     text = ''
       args=(
         --max-stalled-minutes "${toString cfg.qbittorrent.stalledCleaner.maxStalledMinutes}"
+        --max-stalled-partial-minutes "${toString cfg.qbittorrent.stalledCleaner.maxStalledPartialMinutes}"
+        --state-file "/var/lib/arr-stalled-cleaner/state.json"
       )
       ${optionalString cfg.sonarr.enable ''
         args+=(--sonarr-url "http://${cfg.network.localAddress}:${toString cfg.sonarr.port}" --sonarr-key-file "${config.sops.secrets.arr_sonarr_api_key.path}")
@@ -33,7 +35,12 @@ in {
     maxStalledMinutes = lib.mkOption {
       type = lib.types.ints.positive;
       default = 20;
-      description = "Minutes a torrent can remain stalled with 0 connections before being removed and blocklisted.";
+      description = "Minutes a 0%-progress torrent can remain stalled with 0 connections before being removed and blocklisted.";
+    };
+    maxStalledPartialMinutes = lib.mkOption {
+      type = lib.types.ints.unsigned;
+      default = 120;
+      description = "Minutes a partially downloaded torrent may make zero progress while stalled before removal (0 disables partial eviction).";
     };
     interval = lib.mkOption {
       type = lib.types.str;
@@ -51,6 +58,8 @@ in {
         ++ ["qbittorrent.service"];
       serviceConfig = {
         Type = "oneshot";
+        Slice = lib.mkIf cfg.resources.enable "arr.slice";
+        StateDirectory = "arr-stalled-cleaner";
         ExecStart = "${stalledCleanerScript}/bin/arr-stalled-cleaner";
         User = cfg.mediaUser;
         Group = cfg.mediaGroup;

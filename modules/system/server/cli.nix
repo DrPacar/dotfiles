@@ -29,6 +29,10 @@
         if ((arrCfg.enable or false) && (arrCfg.qbittorrent.enable or false))
         then "1"
         else "0";
+      HAS_ARR_SERVICES =
+        if ((arrCfg.enable or false) && (arrCfg.cli.enable or true))
+        then "1"
+        else "0";
       HAS_ADGUARD =
         if (cfg.adguard.enable or false)
         then "1"

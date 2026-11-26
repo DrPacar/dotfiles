@@ -10,6 +10,12 @@
     "Full HD (1080p) – Englisch"
     "4K (2160p) – Englisch"
   ];
+  allProfiles =
+    englishProfiles
+    ++ [
+      "Full HD (1080p) – Deutsch"
+      "4K (2160p) – Deutsch"
+    ];
   assignScore = score: profiles:
     map (name: {
       inherit name score;
@@ -150,7 +156,12 @@ in {
         }
         {
           trash_ids = [
-            "cae4ca30163749b891686f95532519bd" # AV1 (no hardware decode on Coffee Lake UHD 630)
+            "cae4ca30163749b891686f95532519bd" # AV1 (no hardware decode on older Intel VAAPI/UHD 630)
+          ];
+          assign_scores_to = assignScore (-10000) allProfiles;
+        }
+        {
+          trash_ids = [
             "b8cd450cbfa689c0259a01d9e29ba3d6" # 3D
             "ed38b889b31be83fda192888e2286d83" # BR-DISK
             "c465ccc73923871b3eb1802042331306" # Line/Mic Dubbed

@@ -62,5 +62,12 @@ in {
         apiKeySecret = config.sops.secrets.arr_sonarr_api_key;
       };
     };
+
+    systemd.services.sonarr.serviceConfig = {
+      MemoryHigh = "768M";
+      MemoryMax = "1536M";
+      Restart = "on-failure";
+      RestartSec = "15s";
+    };
   };
 }

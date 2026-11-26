@@ -46,5 +46,12 @@ in {
         apiKey = secretRef config.sops.secrets.arr_radarr_api_key.path;
       };
     };
+
+    systemd.services.radarr.serviceConfig = {
+      MemoryHigh = "768M";
+      MemoryMax = "1536M";
+      Restart = "on-failure";
+      RestartSec = "15s";
+    };
   };
 }

@@ -10,6 +10,8 @@ import shutil
 import subprocess
 import sys
 import time
+import urllib.error
+import urllib.request
 from datetime import datetime
 from pathlib import Path
 
@@ -41,6 +43,11 @@ def parse_args():
         "-w",
         action="store_true",
         help="Continuously refresh and watch status (updates every 2 seconds).",
+    )
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="Run non-interactive health and HTTP endpoint checks for enabled Arr services.",
     )
     return parser.parse_args()
 
@@ -516,9 +523,88 @@ def render_rich_ui(console, data):
     console.print(Panel(footer, border_style="dim", box=box.ROUNDED))
 
 
+def http_probe(url: str, timeout: int = 5) -> tuple[bool, str]:
+    """Probe an HTTP endpoint and treat HTTP < 400 as healthy."""
+    req = urllib.request.Request(url, method="GET")
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            return (resp.status < 400, f"HTTP {resp.status}")
+    except urllib.error.HTTPError as exc:
+        return (exc.code < 400, f"HTTP {exc.code}")
+    except Exception as exc:
+        return (False, str(exc))
+
+
+def run_checks(config: dict) -> int:
+    """Run non-interactive systemd, HTTP, storage, and transcode checks."""
+    data = build_status_dict(config)
+    local_addr = config.get("localAddress") or "127.0.0.1"
+    failures = 0
+
+    def report(ok: bool, label: str, detail: str) -> None:
+        nonlocal failures
+        tag = "[OK]" if ok else "[FAIL]"
+        print(f"{tag:6s} {label}: {detail}")
+        if not ok:
+            failures += 1
+
+    probes = {
+        "jellyfin": "/health",
+        "qbittorrent": "/api/v2/app/version",
+        "radarr": "/ping",
+        "sonarr": "/ping",
+        "prowlarr": "/ping",
+        "bazarr": "/",
+        "seerr": "/api/v1/status",
+        "flaresolverr": "/",
+    }
+
+    for svc_name, svc in data["services"].items():
+        if not svc["enabled"]:
+            continue
+        active = svc["active_state"]
+        sub = svc["sub_state"]
+        if svc_name == "recyclarr":
+            ok_unit = active != "failed"
+            report(ok_unit, svc["unit"], f"state={active}/{sub}")
+            continue
+
+        ok_unit = active == "active"
+        report(ok_unit, svc["unit"], f"state={active}/{sub}")
+
+        port = svc.get("port")
+        path = probes.get(svc_name)
+        if port and path and ok_unit:
+            url = f"http://{local_addr}:{port}{path}"
+            ok_http, detail = http_probe(url)
+            report(ok_http, f"{svc_name} http", f"{url} -> {detail}")
+
+    data_dir = config.get("dataDir")
+    if data_dir:
+        report(os.path.isdir(data_dir), "arr dataDir", data_dir)
+
+    transcode_dir = config.get("transcodingTempPath")
+    if transcode_dir and os.path.exists(transcode_dir):
+        usage = shutil.disk_usage(transcode_dir)
+        pct = (usage.used / usage.total) * 100.0 if usage.total else 0.0
+        report(pct < 85.0, "jellyfin transcode tmpfs", f"{transcode_dir} {pct:.1f}% full ({format_bytes(usage.used)} / {format_bytes(usage.total)})")
+
+    if data["backup"]["enabled"]:
+        b_units = query_systemd_units(["arr-backup.service", "arr-backup.timer"])
+        b_svc = b_units.get("arr-backup.service", {}).get("ActiveState", "inactive")
+        b_tmr = b_units.get("arr-backup.timer", {}).get("ActiveState", "inactive")
+        report(b_svc != "failed" and b_tmr == "active", "arr-backup", f"service={b_svc}, timer={b_tmr}")
+
+    return 1 if failures else 0
+
+
 def main():
     args = parse_args()
     config = load_config(args.config)
+
+    if args.check:
+        sys.exit(run_checks(config))
+
     console = Console()
 
     if args.json:

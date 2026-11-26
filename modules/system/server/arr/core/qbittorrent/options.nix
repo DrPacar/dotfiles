@@ -37,6 +37,12 @@ in {
       description = "Suppress qBittorrent interactive legal notice warning on startup (--confirm-legal-notice).";
     };
 
+    useTempPath = mkOption {
+      type = types.bool;
+      default = true;
+      description = "Store incomplete downloads in a separate temp folder before moving atomically on completion.";
+    };
+
     announceToAllTrackers = mkOption {
       type = types.bool;
       default = true;

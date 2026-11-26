@@ -48,6 +48,15 @@ in {
       enableTonemapping = enc.enableTonemapping;
       enableVppTonemapping = enc.enableVppTonemapping;
 
+      enableThrottling = enc.enableThrottling;
+      throttleDelaySeconds = enc.throttleDelaySeconds;
+      enableSegmentDeletion = enc.enableSegmentDeletion;
+      segmentKeepSeconds = enc.segmentKeepSeconds;
+      maxMuxingQueueSize = enc.maxMuxingQueueSize;
+      h264Crf = enc.h264Crf;
+      h265Crf = enc.h265Crf;
+      encoderPreset = enc.encoderPreset;
+
       encodingThreadCount = enc.encodingThreadCount;
     };
   };

@@ -91,6 +91,8 @@ in {
             SaveResumeDataInterval = cfg.qbittorrent.saveResumeDataInterval;
             # Fallback path for manually added torrents without a category
             DefaultSavePath = "${cfg.paths.torrents}/default";
+            TempPathEnabled = cfg.qbittorrent.useTempPath;
+            TempPath = "${cfg.paths.torrents}/incomplete";
             # Enable Automatic Torrent Management (TMM) so categories use their explicit save paths
             DisableAutoTMMByDefault = false;
             QueueingSystemEnabled = true;

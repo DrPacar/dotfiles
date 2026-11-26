@@ -151,6 +151,12 @@ in {
       description = "Port for Jellyfin web interface.";
     };
 
+    openFirewall = mkOption {
+      type = types.bool;
+      default = false;
+      description = "Open Jellyfin ports directly in the host firewall (keep false behind a reverse proxy).";
+    };
+
     subdomain = mkOption {
       type = types.str;
       default = "jellyfin";
@@ -419,6 +425,65 @@ in {
         type = types.bool;
         default = true;
         description = "Enable Intel VPP tone-mapping (hardware-accelerated HDR to SDR conversion).";
+      };
+
+      enableThrottling = mkOption {
+        type = types.bool;
+        default = true;
+        description = "Throttle FFmpeg transcoding once ahead of client playback position to bound RAM/tmpfs usage.";
+      };
+
+      throttleDelaySeconds = mkOption {
+        type = types.ints.positive;
+        default = 120;
+        description = "Transcode buffer horizon in seconds ahead of current playback when throttling is enabled.";
+      };
+
+      enableSegmentDeletion = mkOption {
+        type = types.bool;
+        default = true;
+        description = "Delete old HLS transcode segments after playback progresses to prevent tmpfs exhaustion.";
+      };
+
+      segmentKeepSeconds = mkOption {
+        type = types.ints.positive;
+        default = 180;
+        description = "Seconds of watched HLS segments to retain for seeking before deletion.";
+      };
+
+      maxMuxingQueueSize = mkOption {
+        type = types.ints.positive;
+        default = 2048;
+        description = "FFmpeg max_muxing_queue_size to prevent muxer failures on complex audio/subtitle streams.";
+      };
+
+      h264Crf = mkOption {
+        type = types.ints.between 0 51;
+        default = 21;
+        description = "H.264 CRF quality target for software fallback transcodes (lower = higher quality).";
+      };
+
+      h265Crf = mkOption {
+        type = types.ints.between 0 51;
+        default = 25;
+        description = "H.265/HEVC CRF quality target when HEVC encoding is enabled.";
+      };
+
+      encoderPreset = mkOption {
+        type = types.enum [
+          "auto"
+          "ultrafast"
+          "superfast"
+          "veryfast"
+          "faster"
+          "fast"
+          "medium"
+          "slow"
+          "slower"
+          "veryslow"
+        ];
+        default = "veryfast";
+        description = "FFmpeg encoder speed/compression preset for software transcode fallback.";
       };
 
       encodingThreadCount = mkOption {

@@ -65,8 +65,8 @@ in {
     network = {
       bindAddress = mkOption {
         type = types.str;
-        default = "0.0.0.0";
-        description = "IP address on which Arr service web interfaces listen.";
+        default = "127.0.0.1";
+        description = "IP address on which Arr service web interfaces listen (defaults to loopback for reverse-proxy deployments).";
       };
 
       localAddress = mkOption {

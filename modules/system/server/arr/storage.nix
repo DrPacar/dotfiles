@@ -37,6 +37,11 @@ in {
           user = "root";
           group = cfg.mediaGroup;
         };
+        "${cfg.paths.torrents}/incomplete".d = {
+          mode = "2775";
+          user = "root";
+          group = cfg.mediaGroup;
+        };
         "${cfg.paths.media}".d = {
           mode = mkForce "2775";
           user = "root";

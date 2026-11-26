@@ -5,6 +5,25 @@
 }: let
   inherit (lib) mkIf mkForce;
   cfg = config.server.arr;
+
+  englishProfiles = [
+    "Full HD (1080p) – Englisch"
+    "4K (2160p) – Englisch"
+  ];
+  allProfiles =
+    englishProfiles
+    ++ [
+      "Full HD (1080p) – Deutsch"
+      "4K (2160p) – Deutsch"
+      "Anime (1080p) – Japanisch (Sub)"
+      "Anime (1080p) – Deutsch (Dub)"
+      "Anime (1080p) – Englisch (Dub)"
+    ];
+  assignScore = score: profiles:
+    map (name: {
+      inherit name score;
+    })
+    profiles;
 in {
   config = mkIf (cfg.enable && cfg.recyclarr.enable && cfg.sonarr.enable) {
     nixflix.recyclarr.config = {
@@ -217,18 +236,53 @@ in {
           }
           {
             trash_ids = [
+              "15a05bc7c1a36e2b57fd628f8977e2fc" # AV1 (software decode fallback risk on older iGPUs)
+            ];
+            assign_scores_to = assignScore (-10000) allProfiles;
+          }
+          {
+            trash_ids = ["4232a509ce60c4e208d13825b7c06264"]; # DD+ ATMOS
+            assign_scores_to = assignScore 250 englishProfiles;
+          }
+          {
+            trash_ids = ["63487786a8b01b7f20dd2bc90dd4a477"]; # DD+
+            assign_scores_to = assignScore 200 englishProfiles;
+          }
+          {
+            trash_ids = ["a50b8a0c62274a7c38b09a9619ba9d86"]; # AAC
+            assign_scores_to = assignScore 100 englishProfiles;
+          }
+          {
+            trash_ids = [
+              "0d7824bb924701997f874e7ff7d4844a" # TrueHD ATMOS
+              "1808e4b9cee74e064dfae3f1db99dbfe" # TrueHD
+              "9d00418ba386a083fbf4d58235fc37ef" # DTS X
+              "c429417a57ea8c41d57e6990a8b0033f" # DTS-HD MA
+              "cfa5fbd8f02a86fc55d8d223d06a5e1f" # DTS-HD HRA
+            ];
+            assign_scores_to = assignScore (-150) englishProfiles;
+          }
+          {
+            trash_ids = [
+              "9c11cd3f07101cdba90a2d81cf0e56b4" # LQ
+              "e2315f990da2e2cbfc9fa5b7a6fcfe48" # LQ (Release Title)
+            ];
+            assign_scores_to = assignScore (-200) englishProfiles;
+          }
+          {
+            trash_ids = [
+              "82d40da2bc6923f41e14394075dd4b03" # No-RlsGroup
+            ];
+            assign_scores_to = assignScore (-100) englishProfiles;
+          }
+          {
+            trash_ids = [
               "9965a052eb87b0d10313b1cea89eb451" # Remux Tier 01
               "8a1d0c3d7497e741736761a1da866a2e" # Remux Tier 02
             ];
-            assign_scores_to = [
-              {
-                name = "Anime (1080p) – Japanisch (Sub)";
-                score = -10000;
-              }
-              {
-                name = "Anime (1080p) – Englisch (Dub)";
-                score = -10000;
-              }
+            assign_scores_to = assignScore (-10000) [
+              "Anime (1080p) – Japanisch (Sub)"
+              "Anime (1080p) – Englisch (Dub)"
             ];
           }
         ];
